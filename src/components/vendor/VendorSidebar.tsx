@@ -19,6 +19,7 @@ const menuItems = [
   { title: "Dashboard", url: "/vendor/dashboard", icon: LayoutDashboard },
   { title: "Products", url: "/vendor/products", icon: Package },
   { title: "Orders", url: "/vendor/orders", icon: ShoppingCart },
+  { title: "Settings", url: "/vendor/settings", icon: Settings },
 ];
 
 export function VendorSidebar() {

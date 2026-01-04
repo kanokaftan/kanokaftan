@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
+import { useCart } from "@/hooks/useCart";
 
 const authSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -29,8 +30,10 @@ export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { mergeSessionCart } = useCart();
   
   const defaultRole = searchParams.get("role") === "vendor" ? "vendor" : "customer";
+  const redirectTo = searchParams.get("redirect") || "/";
 
   const {
     register,
@@ -56,7 +59,8 @@ export default function AuthPage() {
     if (data) {
       navigate("/vendor/dashboard");
     } else {
-      navigate("/");
+      // Use redirect parameter or default to home
+      navigate(redirectTo);
     }
   };
 
@@ -65,6 +69,8 @@ export default function AuthPage() {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        // Merge cart then redirect
+        await mergeSessionCart(session.user.id);
         await checkVendorAndRedirect(session.user.id);
       }
     };
@@ -72,16 +78,18 @@ export default function AuthPage() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        if (session) {
-          setTimeout(() => {
-            checkVendorAndRedirect(session.user.id);
+        if (event === 'SIGNED_IN' && session) {
+          // Merge cart then redirect
+          setTimeout(async () => {
+            await mergeSessionCart(session.user.id);
+            await checkVendorAndRedirect(session.user.id);
           }, 0);
         }
       }
     );
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, mergeSessionCart, redirectTo]);
 
   const onSubmit = async (data: AuthFormData) => {
     setIsLoading(true);
