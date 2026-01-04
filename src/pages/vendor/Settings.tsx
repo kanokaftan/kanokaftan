@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { 
   Store, CreditCard, Save, Loader2, Camera, BadgeCheck, 
-  ShieldCheck, Star 
+  ShieldCheck
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { VendorLayout } from "@/components/vendor/VendorLayout";
@@ -72,26 +72,36 @@ export default function VendorSettings() {
     if (!user) return;
 
     const loadProfile = async () => {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
+      try {
+        const { data: profile, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
 
-      if (profile) {
-        form.reset({
-          store_name: profile.store_name || "",
-          store_description: profile.store_description || "",
-          phone: profile.phone || "",
-          bank_name: profile.bank_name || "",
-          account_number: profile.account_number || "",
-          account_name: profile.account_name || "",
-          payout_preference: (profile.payout_preference as "daily" | "weekly" | "monthly") || "weekly",
-        });
-        setAvatarUrl(profile.avatar_url);
-        setIsVerified(profile.is_verified || false);
+        if (error) {
+          console.error("Error loading profile:", error);
+          throw error;
+        }
+
+        if (profile) {
+          form.reset({
+            store_name: profile.store_name || "",
+            store_description: profile.store_description || "",
+            phone: profile.phone || "",
+            bank_name: profile.bank_name || "",
+            account_number: profile.account_number || "",
+            account_name: profile.account_name || "",
+            payout_preference: (profile.payout_preference as "daily" | "weekly" | "monthly") || "weekly",
+          });
+          setAvatarUrl(profile.avatar_url);
+          setIsVerified(profile.is_verified || false);
+        }
+      } catch (error) {
+        console.error("Failed to load profile:", error);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     loadProfile();
@@ -106,24 +116,33 @@ export default function VendorSettings() {
       const fileExt = file.name.split(".").pop();
       const fileName = `${user.id}/avatar.${fileExt}`;
 
+      console.log("Uploading avatar:", fileName);
+
       const { error: uploadError } = await supabase.storage
         .from("product-images")
         .upload(fileName, file, { upsert: true });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        throw uploadError;
+      }
 
       const { data } = supabase.storage
         .from("product-images")
         .getPublicUrl(fileName);
 
       const newAvatarUrl = `${data.publicUrl}?t=${Date.now()}`;
+      console.log("New avatar URL:", newAvatarUrl);
 
       const { error: updateError } = await supabase
         .from("profiles")
         .update({ avatar_url: newAvatarUrl })
         .eq("id", user.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("Profile update error:", updateError);
+        throw updateError;
+      }
 
       setAvatarUrl(newAvatarUrl);
       toast({
@@ -131,9 +150,10 @@ export default function VendorSettings() {
         description: "Your profile picture has been uploaded successfully.",
       });
     } catch (error: any) {
+      console.error("Avatar upload failed:", error);
       toast({
         title: "Upload failed",
-        description: error.message,
+        description: error.message || "Failed to upload profile picture",
         variant: "destructive",
       });
     } finally {
@@ -146,6 +166,8 @@ export default function VendorSettings() {
     
     setIsVerifying(true);
     try {
+      console.log("Verifying with code:", verificationCode);
+      
       if (verificationCode.toUpperCase() !== VERIFICATION_CODE) {
         throw new Error("Invalid verification code");
       }
@@ -155,7 +177,10 @@ export default function VendorSettings() {
         .update({ is_verified: true })
         .eq("id", user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Verification update error:", error);
+        throw error;
+      }
 
       setIsVerified(true);
       setShowVerifyDialog(false);
@@ -166,9 +191,10 @@ export default function VendorSettings() {
         description: "Your account is now verified. A badge will appear on your profile.",
       });
     } catch (error: any) {
+      console.error("Verification failed:", error);
       toast({
         title: "Verification failed",
-        description: error.message,
+        description: error.message || "Invalid verification code",
         variant: "destructive",
       });
     } finally {
@@ -213,7 +239,7 @@ export default function VendorSettings() {
 
   if (isLoading) {
     return (
-      <VendorLayout title="Store Settings">
+      <VendorLayout title="Settings">
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
@@ -222,37 +248,30 @@ export default function VendorSettings() {
   }
 
   return (
-    <VendorLayout title="Store Settings">
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Store Settings</h1>
-          <p className="text-muted-foreground">Manage your store profile and payout information</p>
-        </div>
-
-        {/* Profile Picture & Verification */}
+    <VendorLayout title="Settings">
+      <div className="space-y-4 md:space-y-6">
+        {/* Profile Picture & Verification - First and prominent */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Camera className="h-5 w-5" />
+          <CardHeader className="pb-3 md:pb-6">
+            <CardTitle className="text-base md:text-lg flex items-center gap-2">
+              <Camera className="h-4 w-4 md:h-5 md:w-5" />
               Profile & Verification
             </CardTitle>
-            <CardDescription>
-              Your profile picture and verification status
-            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center gap-6">
+          <CardContent className="space-y-4">
+            {/* Avatar Section */}
+            <div className="flex items-center gap-4">
               <div className="relative">
-                <Avatar className="h-24 w-24">
+                <Avatar className="h-20 w-20 md:h-24 md:w-24">
                   <AvatarImage src={avatarUrl || undefined} />
-                  <AvatarFallback className="text-2xl">
+                  <AvatarFallback className="text-xl md:text-2xl bg-muted">
                     {form.watch("store_name")?.charAt(0) || "V"}
                   </AvatarFallback>
                 </Avatar>
                 <Button
                   size="icon"
                   variant="secondary"
-                  className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full"
+                  className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full shadow-md"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploadingAvatar}
                 >
@@ -270,38 +289,41 @@ export default function VendorSettings() {
                   onChange={handleAvatarUpload}
                 />
               </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold">{form.watch("store_name") || "Your Store"}</h3>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-semibold truncate">
+                    {form.watch("store_name") || "Your Store"}
+                  </h3>
                   {isVerified && (
-                    <Badge className="bg-blue-500 hover:bg-blue-600">
+                    <Badge className="bg-blue-500 hover:bg-blue-600 flex-shrink-0">
                       <BadgeCheck className="h-3 w-3 mr-1" />
                       Verified
                     </Badge>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Click the camera icon to update your profile picture
+                <p className="text-xs md:text-sm text-muted-foreground mt-1">
+                  Tap camera to update photo
                 </p>
               </div>
             </div>
 
+            {/* Verification Section */}
             {!isVerified && (
-              <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
+              <div className="p-3 md:p-4 rounded-lg bg-blue-50 border border-blue-200">
                 <div className="flex items-start gap-3">
-                  <ShieldCheck className="h-5 w-5 text-blue-600 mt-0.5" />
-                  <div className="flex-1">
-                    <h4 className="font-medium text-blue-900">Get Verified</h4>
-                    <p className="text-sm text-blue-700 mt-1">
-                      Verified vendors get a badge on their profile and listings, building trust with customers.
+                  <ShieldCheck className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-blue-900 text-sm md:text-base">Get Verified</h4>
+                    <p className="text-xs md:text-sm text-blue-700 mt-1">
+                      Get a verified badge on your profile and listings.
                     </p>
                     <Button 
                       size="sm" 
                       className="mt-3"
                       onClick={() => setShowVerifyDialog(true)}
                     >
-                      <BadgeCheck className="h-4 w-4 mr-2" />
-                      Enter Verification Code
+                      <BadgeCheck className="h-4 w-4 mr-1.5" />
+                      Enter Code
                     </Button>
                   </div>
                 </div>
@@ -310,45 +332,45 @@ export default function VendorSettings() {
           </CardContent>
         </Card>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
           {/* Store Information */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Store className="h-5 w-5" />
+            <CardHeader className="pb-3 md:pb-6">
+              <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                <Store className="h-4 w-4 md:h-5 md:w-5" />
                 Store Information
               </CardTitle>
-              <CardDescription>
-                This information will be displayed to customers
+              <CardDescription className="text-xs md:text-sm">
+                Displayed to customers
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="store_name">Store Name *</Label>
+                <Label htmlFor="store_name" className="text-sm">Store Name *</Label>
                 <Input
                   id="store_name"
                   {...form.register("store_name")}
                   placeholder="Enter your store name"
                 />
                 {form.formState.errors.store_name && (
-                  <p className="text-sm text-destructive">
+                  <p className="text-xs text-destructive">
                     {form.formState.errors.store_name.message}
                   </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="store_description">Store Description</Label>
+                <Label htmlFor="store_description" className="text-sm">Description</Label>
                 <Textarea
                   id="store_description"
                   {...form.register("store_description")}
                   placeholder="Tell customers about your store..."
-                  rows={4}
+                  rows={3}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
+                <Label htmlFor="phone" className="text-sm">Phone Number</Label>
                 <Input
                   id="phone"
                   {...form.register("phone")}
@@ -360,19 +382,19 @@ export default function VendorSettings() {
 
           {/* Bank Details */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
+            <CardHeader className="pb-3 md:pb-6">
+              <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                <CreditCard className="h-4 w-4 md:h-5 md:w-5" />
                 Payout Information
               </CardTitle>
-              <CardDescription>
-                Bank account details for receiving payments
+              <CardDescription className="text-xs md:text-sm">
+                Bank account for payments
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="bank_name">Bank Name</Label>
+                  <Label htmlFor="bank_name" className="text-sm">Bank Name</Label>
                   <Input
                     id="bank_name"
                     {...form.register("bank_name")}
@@ -381,17 +403,17 @@ export default function VendorSettings() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="account_number">Account Number</Label>
+                  <Label htmlFor="account_number" className="text-sm">Account Number</Label>
                   <Input
                     id="account_number"
                     {...form.register("account_number")}
-                    placeholder="10-digit account number"
+                    placeholder="10-digit number"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="account_name">Account Name</Label>
+                <Label htmlFor="account_name" className="text-sm">Account Name</Label>
                 <Input
                   id="account_name"
                   {...form.register("account_name")}
@@ -400,7 +422,7 @@ export default function VendorSettings() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="payout_preference">Payout Frequency</Label>
+                <Label htmlFor="payout_preference" className="text-sm">Payout Frequency</Label>
                 <Select
                   value={form.watch("payout_preference")}
                   onValueChange={(value) => form.setValue("payout_preference", value as "daily" | "weekly" | "monthly")}
@@ -418,7 +440,7 @@ export default function VendorSettings() {
             </CardContent>
           </Card>
 
-          <Button type="submit" disabled={isSaving} className="w-full sm:w-auto">
+          <Button type="submit" disabled={isSaving} className="w-full">
             {isSaving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -436,14 +458,14 @@ export default function VendorSettings() {
 
       {/* Verification Dialog */}
       <Dialog open={showVerifyDialog} onOpenChange={setShowVerifyDialog}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="max-w-[90vw] md:max-w-[400px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <BadgeCheck className="h-5 w-5 text-blue-600" />
               Get Verified
             </DialogTitle>
             <DialogDescription>
-              Enter your verification code to get a verified badge on your profile.
+              Enter your verification code to get a verified badge.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -453,10 +475,11 @@ export default function VendorSettings() {
               value={verificationCode}
               onChange={(e) => setVerificationCode(e.target.value.toUpperCase())}
               placeholder="Enter code"
-              className="mt-2"
+              className="mt-2 text-center text-lg tracking-widest"
+              autoComplete="off"
             />
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setShowVerifyDialog(false)}>
               Cancel
             </Button>
