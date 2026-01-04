@@ -71,6 +71,10 @@ export default function Checkout() {
 
     setIsSubmitting(true);
     try {
+      console.log("Starting order creation...");
+      console.log("Cart items count:", items.length);
+      console.log("Selected address:", selectedAddress);
+      
       // Create order first
       const order = await createOrder.mutateAsync({
         shipping_address: {
@@ -85,8 +89,10 @@ export default function Checkout() {
         shipping_fee: shippingFee,
       });
 
+      console.log("Order created successfully:", order.id);
+
       // Initialize Paystack payment
-      console.log("Initiating payment for order:", order.id);
+      console.log("Initiating payment for order:", order.id, "email:", user.email);
       const paymentResult = await initiatePayment(order.id, user.email);
       console.log("Payment result:", paymentResult);
 
@@ -101,6 +107,7 @@ export default function Checkout() {
         navigate(`/orders/${order.id}`);
       }
     } catch (error: unknown) {
+      console.error("Order creation error:", error);
       const message = error instanceof Error ? error.message : "Failed to place order";
       toast.error(message);
     } finally {
