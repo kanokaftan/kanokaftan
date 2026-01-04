@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, ShoppingCart, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Settings, LogOut, User, ArrowLeftRight } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -14,6 +14,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 const menuItems = [
   { title: "Dashboard", url: "/vendor/dashboard", icon: LayoutDashboard },
@@ -57,10 +58,18 @@ export function VendorSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-4 border-t">
+      <SidebarFooter className="p-4 border-t space-y-2">
+        <Button
+          variant="outline"
+          className="w-full justify-start gap-3"
+          onClick={() => navigate("/account")}
+        >
+          <ArrowLeftRight className="h-4 w-4" />
+          <span>Switch to Shopper</span>
+        </Button>
         <Button
           variant="ghost"
-          className="w-full justify-start gap-3"
+          className="w-full justify-start gap-3 text-muted-foreground"
           onClick={handleLogout}
         >
           <LogOut className="h-5 w-5" />
