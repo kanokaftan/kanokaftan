@@ -2,12 +2,15 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, X, ShoppingCart, Heart, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { useCart } from "@/hooks/useCart";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
+  const { count: cartCount } = useCart();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -76,9 +79,14 @@ export function Navbar() {
               <span className="sr-only">Wishlist</span>
             </Link>
           </Button>
-          <Button variant="ghost" size="icon" asChild>
+          <Button variant="ghost" size="icon" asChild className="relative">
             <Link to="/cart">
               <ShoppingCart className="h-5 w-5" />
+              {cartCount > 0 && (
+                <Badge className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center">
+                  {cartCount > 9 ? "9+" : cartCount}
+                </Badge>
+              )}
               <span className="sr-only">Cart</span>
             </Link>
           </Button>

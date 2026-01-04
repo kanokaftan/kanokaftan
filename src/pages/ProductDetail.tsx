@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProduct } from "@/hooks/useProduct";
+import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
 
 function formatPrice(amount: number): string {
@@ -72,10 +73,22 @@ export default function ProductDetail() {
   const sizes = [...new Set(variants.filter(v => v.size).map(v => v.size))];
   const colors = [...new Set(variants.filter(v => v.color).map(v => v.color))];
 
+  const { addToCart } = useCart();
+
   const handleAddToCart = () => {
-    toast.success("Added to cart", {
-      description: `${product.name} x ${quantity}`,
-    });
+    addToCart.mutate(
+      { productId: product.id, quantity },
+      {
+        onSuccess: () => {
+          toast.success("Added to cart", {
+            description: `${product.name} x ${quantity}`,
+          });
+        },
+        onError: () => {
+          toast.error("Failed to add to cart");
+        },
+      }
+    );
   };
 
   const handleAddToWishlist = () => {
