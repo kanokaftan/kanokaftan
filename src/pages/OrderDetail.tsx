@@ -18,6 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrders, Order } from "@/hooks/useOrders";
 import { usePayment } from "@/hooks/usePayment";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 function formatPrice(amount: number): string {
@@ -43,9 +44,19 @@ export default function OrderDetail() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const { orders, isLoading, confirmDelivery } = useOrders();
-  const { verifyPayment } = usePayment();
+  const { initiatePayment, verifyPayment, isProcessing } = usePayment();
   const [order, setOrder] = useState<Order | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [userEmail, setUserEmail] = useState<string>("");
+
+  // Get user email for payment
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.email) {
+        setUserEmail(session.user.email);
+      }
+    });
+  }, []);
 
   // Handle payment verification on return from Paystack
   useEffect(() => {
@@ -88,6 +99,25 @@ export default function OrderDetail() {
     }
   };
 
+  const handleRetryPayment = async () => {
+    if (!order || !userEmail) {
+      toast.error("Unable to process payment");
+      return;
+    }
+
+    console.log("Retrying payment for order:", order.id);
+    const paymentResult = await initiatePayment(order.id, userEmail);
+    console.log("Payment result:", paymentResult);
+
+    if (paymentResult.success && paymentResult.authorization_url) {
+      toast.success("Redirecting to payment...");
+      window.location.href = paymentResult.authorization_url;
+    } else {
+      console.error("Payment failed:", paymentResult.error);
+      toast.error(paymentResult.error || "Failed to initialize payment");
+    }
+  };
+
   if (isLoading || isVerifying) {
     return (
       <MobileLayout>
@@ -123,6 +153,7 @@ export default function OrderDetail() {
 
   const status = statusConfig[order.status] || statusConfig.processing;
   const StatusIcon = status.icon;
+  const showPayButton = order.status === "pending_payment" && order.payment_status === "pending";
 
   return (
     <MobileLayout>
@@ -141,6 +172,36 @@ export default function OrderDetail() {
             </p>
           </div>
         </div>
+
+        {/* Payment Required Banner */}
+        {showPayButton && (
+          <div className="mb-4 rounded-xl bg-yellow-50 border border-yellow-200 p-4">
+            <div className="flex items-center gap-2 text-yellow-800 mb-3">
+              <CreditCard className="h-5 w-5" />
+              <span className="font-medium">Payment Required</span>
+            </div>
+            <p className="text-sm text-yellow-700 mb-3">
+              Complete your payment to confirm this order.
+            </p>
+            <Button 
+              className="w-full" 
+              onClick={handleRetryPayment}
+              disabled={isProcessing}
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Pay {formatPrice(order.total)}
+                </>
+              )}
+            </Button>
+          </div>
+        )}
 
         {/* Status Card */}
         <div className="rounded-xl bg-card p-4 shadow-sm">

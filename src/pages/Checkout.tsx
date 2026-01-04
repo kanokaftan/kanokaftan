@@ -86,13 +86,17 @@ export default function Checkout() {
       });
 
       // Initialize Paystack payment
+      console.log("Initiating payment for order:", order.id);
       const paymentResult = await initiatePayment(order.id, user.email);
+      console.log("Payment result:", paymentResult);
 
       if (paymentResult.success && paymentResult.authorization_url) {
         // Redirect to Paystack checkout
+        toast.success("Redirecting to payment...");
         window.location.href = paymentResult.authorization_url;
       } else {
-        toast.error(paymentResult.error || "Failed to initialize payment");
+        console.error("Payment failed:", paymentResult.error);
+        toast.error(paymentResult.error || "Failed to initialize payment. Please try again.");
         // Navigate to order detail so user can retry payment
         navigate(`/orders/${order.id}`);
       }
