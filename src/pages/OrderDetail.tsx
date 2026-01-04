@@ -1,24 +1,23 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import {
   Package,
   MapPin,
-  Clock,
   CheckCircle2,
   Truck,
   CreditCard,
   ArrowLeft,
   Phone,
   MessageSquare,
+  Loader2,
 } from "lucide-react";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrders, Order } from "@/hooks/useOrders";
-import { supabase } from "@/integrations/supabase/client";
+import { usePayment } from "@/hooks/usePayment";
 import { toast } from "sonner";
 
 function formatPrice(amount: number): string {
@@ -29,7 +28,7 @@ function formatPrice(amount: number): string {
   }).format(amount);
 }
 
-const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
+const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   pending_payment: { label: "Pending Payment", color: "bg-yellow-500", icon: CreditCard },
   payment_confirmed: { label: "Payment Confirmed", color: "bg-blue-500", icon: CheckCircle2 },
   processing: { label: "Processing", color: "bg-blue-500", icon: Package },
@@ -42,8 +41,34 @@ const statusConfig: Record<string, { label: string; color: string; icon: any }> 
 
 export default function OrderDetail() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const { orders, isLoading, confirmDelivery } = useOrders();
+  const { verifyPayment } = usePayment();
   const [order, setOrder] = useState<Order | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  // Handle payment verification on return from Paystack
+  useEffect(() => {
+    const shouldVerify = searchParams.get("verify") === "true";
+    const reference = searchParams.get("reference") || searchParams.get("trxref");
+
+    if (shouldVerify && reference && id) {
+      setIsVerifying(true);
+      verifyPayment(reference, id)
+        .then((result) => {
+          if (result.success) {
+            toast.success("Payment verified successfully!");
+          } else {
+            toast.error(result.error || "Payment verification failed");
+          }
+        })
+        .finally(() => {
+          setIsVerifying(false);
+          // Clean up URL params
+          window.history.replaceState({}, "", `/orders/${id}`);
+        });
+    }
+  }, [searchParams, id, verifyPayment]);
 
   useEffect(() => {
     if (!isLoading && orders.length > 0) {
@@ -57,15 +82,22 @@ export default function OrderDetail() {
     try {
       await confirmDelivery.mutateAsync(order.id);
       toast.success("Delivery confirmed! Payment released to seller.");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to confirm delivery");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to confirm delivery";
+      toast.error(message);
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isVerifying) {
     return (
       <MobileLayout>
         <div className="px-4 py-6">
+          {isVerifying && (
+            <div className="mb-4 flex items-center justify-center gap-2 rounded-lg bg-primary/10 p-4 text-primary">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span className="font-medium">Verifying payment...</span>
+            </div>
+          )}
           <Skeleton className="mb-6 h-8 w-48" />
           <Skeleton className="mb-4 h-32 w-full rounded-xl" />
           <Skeleton className="mb-4 h-48 w-full rounded-xl" />
