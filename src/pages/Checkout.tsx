@@ -14,7 +14,7 @@ import { useAddresses } from "@/hooks/useAddresses";
 import { useOrders } from "@/hooks/useOrders";
 import { usePayment } from "@/hooks/usePayment";
 import { AddressForm } from "@/components/checkout/AddressForm";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 function formatPrice(amount: number): string {
@@ -27,6 +27,7 @@ function formatPrice(amount: number): string {
 
 export default function Checkout() {
   const navigate = useNavigate();
+  const { user, isLoading: authLoading } = useAuth();
   const { items, isLoading: cartLoading, total } = useCart();
   const { addresses, isLoading: addressesLoading, defaultAddress } = useAddresses();
   const { createOrder } = useOrders();
@@ -36,17 +37,13 @@ export default function Checkout() {
   const [notes, setNotes] = useState("");
   const [isAddressSheetOpen, setIsAddressSheetOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [user, setUser] = useState<{ id: string; email: string } | null>(null);
 
+  // Redirect if not authenticated
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        navigate("/auth?redirect=/checkout");
-      } else {
-        setUser({ id: session.user.id, email: session.user.email || "" });
-      }
-    });
-  }, [navigate]);
+    if (!authLoading && !user) {
+      navigate("/auth?redirect=/checkout");
+    }
+  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     if (defaultAddress && !selectedAddressId) {

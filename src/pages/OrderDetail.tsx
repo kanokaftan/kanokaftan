@@ -18,7 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrders, Order } from "@/hooks/useOrders";
 import { usePayment } from "@/hooks/usePayment";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 function formatPrice(amount: number): string {
@@ -45,18 +45,9 @@ export default function OrderDetail() {
   const [searchParams] = useSearchParams();
   const { orders, isLoading, confirmDelivery } = useOrders();
   const { initiatePayment, verifyPayment, isProcessing } = usePayment();
+  const { user } = useAuth();
   const [order, setOrder] = useState<Order | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [userEmail, setUserEmail] = useState<string>("");
-
-  // Get user email for payment
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user?.email) {
-        setUserEmail(session.user.email);
-      }
-    });
-  }, []);
 
   // Handle payment verification on return from Paystack
   useEffect(() => {
@@ -100,13 +91,13 @@ export default function OrderDetail() {
   };
 
   const handleRetryPayment = async () => {
-    if (!order || !userEmail) {
+    if (!order || !user?.email) {
       toast.error("Unable to process payment");
       return;
     }
 
     console.log("Retrying payment for order:", order.id);
-    const paymentResult = await initiatePayment(order.id, userEmail);
+    const paymentResult = await initiatePayment(order.id, user.email);
     console.log("Payment result:", paymentResult);
 
     if (paymentResult.success && paymentResult.authorization_url) {

@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { MobileHeader } from "./MobileHeader";
 import { BottomNav } from "./BottomNav";
+import { cn } from "@/lib/utils";
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -18,8 +19,4 @@ export function MobileLayout({ children, hideHeader = false, hideBottomNav = fal
       {!hideBottomNav && <BottomNav />}
     </div>
   );
-}
-
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(" ");
 }

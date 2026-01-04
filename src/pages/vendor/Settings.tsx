@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Store, Building, CreditCard, Save, Loader2 } from "lucide-react";
+import { Store, CreditCard, Save, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { VendorLayout } from "@/components/vendor/VendorLayout";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const settingsSchema = z.object({
   store_name: z.string().min(2, "Store name must be at least 2 characters"),
@@ -27,6 +28,7 @@ type SettingsFormData = z.infer<typeof settingsSchema>;
 
 export default function VendorSettings() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -44,10 +46,9 @@ export default function VendorSettings() {
   });
 
   useEffect(() => {
-    const loadProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+    if (!user) return;
 
+    const loadProfile = async () => {
       const { data: profile } = await supabase
         .from("profiles")
         .select("*")
@@ -69,14 +70,13 @@ export default function VendorSettings() {
     };
 
     loadProfile();
-  }, [form]);
+  }, [user, form]);
 
   const onSubmit = async (data: SettingsFormData) => {
+    if (!user) return;
+    
     setIsSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
       const { error } = await supabase
         .from("profiles")
         .update({

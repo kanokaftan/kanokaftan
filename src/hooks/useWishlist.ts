@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface WishlistItem {
   id: string;
@@ -17,20 +17,8 @@ export interface WishlistItem {
 
 export function useWishlist() {
   const queryClient = useQueryClient();
-  const [userId, setUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUserId(data.user?.id || null);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      setUserId(session?.user?.id || null);
-      queryClient.invalidateQueries({ queryKey: ["wishlist"] });
-    });
-
-    return () => subscription.unsubscribe();
-  }, [queryClient]);
+  const { user } = useAuth();
+  const userId = user?.id || null;
 
   const wishlistQuery = useQuery({
     queryKey: ["wishlist", userId],

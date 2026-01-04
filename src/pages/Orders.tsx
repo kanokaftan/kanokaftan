@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { Package, ChevronRight, ShoppingBag, Clock, CheckCircle2, Truck, CreditCard } from "lucide-react";
+import { Package, ChevronRight, CreditCard, CheckCircle2, Truck } from "lucide-react";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrders } from "@/hooks/useOrders";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 function formatPrice(amount: number): string {
   return new Intl.NumberFormat("en-NG", {
@@ -31,17 +31,13 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
 export default function Orders() {
   const navigate = useNavigate();
   const { orders, isLoading } = useOrders();
-  const [user, setUser] = useState<any>(null);
+  const { user, isLoading: authLoading } = useAuth();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        navigate("/auth?redirect=/orders");
-      } else {
-        setUser(session.user);
-      }
-    });
-  }, [navigate]);
+    if (!authLoading && !user) {
+      navigate("/auth?redirect=/orders");
+    }
+  }, [user, authLoading, navigate]);
 
   if (isLoading) {
     return (
