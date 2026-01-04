@@ -1,9 +1,7 @@
 import { useSearchParams } from "react-router-dom";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
+import { MobileLayout } from "@/components/layout/MobileLayout";
 import { ProductGrid } from "@/components/products/ProductGrid";
 import { ProductFilters } from "@/components/products/ProductFilters";
-import { ProductSearch } from "@/components/products/ProductSearch";
 import { ProductPagination } from "@/components/products/ProductPagination";
 import { useProducts, useCategories } from "@/hooks/useProducts";
 
@@ -27,55 +25,44 @@ export default function Products() {
   const total = productsData?.total || 0;
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <Navbar />
-      
-      <main className="flex-1">
-        {/* Header */}
-        <section className="border-b bg-muted/30 py-8">
-          <div className="container">
-            <h1 className="font-display text-3xl font-bold text-foreground md:text-4xl">
-              Shop Traditional Attire
-            </h1>
-            <p className="mt-2 text-muted-foreground">
-              Discover authentic Nigerian fashion from trusted vendors
+    <MobileLayout>
+      {/* Header */}
+      <section className="border-b bg-muted/30 py-6">
+        <div className="px-4">
+          <h1 className="font-display text-xl font-bold text-foreground">
+            {categorySlug ? categories.find(c => c.slug === categorySlug)?.name || 'Products' : 'All Products'}
+          </h1>
+          {search && (
+            <p className="mt-1 text-sm text-muted-foreground">
+              Results for "{search}"
             </p>
-          </div>
-        </section>
+          )}
+        </div>
+      </section>
 
-        {/* Filters & Search */}
-        <section className="border-b py-4">
-          <div className="container flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      {/* Category Filters */}
+      <section className="border-b">
+        <div className="overflow-x-auto scrollbar-hide">
+          <div className="px-4 py-3">
             <ProductFilters categories={categories} isLoading={categoriesLoading} />
-            <ProductSearch />
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Products Grid */}
-        <section className="py-8">
-          <div className="container">
-            {search && (
-              <p className="mb-6 text-muted-foreground">
-                Showing results for "<span className="font-medium text-foreground">{search}</span>"
-              </p>
-            )}
-            
-            <ProductGrid products={products} isLoading={productsLoading} />
-            
-            {!productsLoading && products.length > 0 && (
-              <div className="mt-8">
-                <ProductPagination
-                  currentPage={page}
-                  totalPages={totalPages}
-                  total={total}
-                />
-              </div>
-            )}
+      {/* Products Grid */}
+      <section className="px-4 py-6">
+        <ProductGrid products={products} isLoading={productsLoading} />
+        
+        {!productsLoading && products.length > 0 && (
+          <div className="mt-6">
+            <ProductPagination
+              currentPage={page}
+              totalPages={totalPages}
+              total={total}
+            />
           </div>
-        </section>
-      </main>
-
-      <Footer />
-    </div>
+        )}
+      </section>
+    </MobileLayout>
   );
 }
