@@ -28,6 +28,9 @@ export interface Product {
   vendor?: {
     id: string;
     full_name: string | null;
+    avatar_url: string | null;
+    is_verified: boolean;
+    store_name: string | null;
   } | null;
 }
 
@@ -57,7 +60,7 @@ export function useProducts({ categorySlug, search, page = 1, limit = 12, featur
           *,
           category:categories(id, name, slug),
           product_images(id, url, is_primary),
-          vendor:profiles!products_vendor_id_fkey(id, full_name)
+          vendor:profiles!products_vendor_id_fkey(id, full_name, avatar_url, is_verified, store_name)
         `, { count: "exact" })
         .eq("is_active", true)
         .order("created_at", { ascending: false });

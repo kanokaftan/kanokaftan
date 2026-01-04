@@ -1,8 +1,9 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Heart, ShoppingCart } from "lucide-react";
+import { Heart, ShoppingCart, BadgeCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
@@ -33,6 +34,10 @@ export function ProductCard({ product }: ProductCardProps) {
   const discount = hasDiscount 
     ? Math.round(((product.compare_at_price! - product.price) / product.compare_at_price!) * 100)
     : null;
+
+  const vendorName = product.vendor?.store_name || product.vendor?.full_name;
+  const vendorAvatar = product.vendor?.avatar_url;
+  const isVendorVerified = product.vendor?.is_verified;
 
   const handleWishlistClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -91,7 +96,14 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
           )}
           
-          {discount && (
+          {/* Featured badge */}
+          {product.featured && (
+            <Badge className="absolute left-3 top-3 bg-amber-500 hover:bg-amber-600">
+              ⭐ Featured
+            </Badge>
+          )}
+          
+          {discount && !product.featured && (
             <Badge className="absolute left-3 top-3 bg-destructive text-destructive-foreground">
               {discount}% OFF
             </Badge>
@@ -127,9 +139,25 @@ export function ProductCard({ product }: ProductCardProps) {
           <p className="mt-1 font-medium text-foreground line-clamp-2">
             {product.name}
           </p>
-          {product.vendor?.full_name && (
-            <p className="mt-1 text-xs text-muted-foreground">by {product.vendor.full_name}</p>
+          
+          {/* Vendor info with avatar and verification */}
+          {vendorName && (
+            <div className="mt-2 flex items-center gap-2">
+              <Avatar className="h-5 w-5">
+                <AvatarImage src={vendorAvatar || undefined} />
+                <AvatarFallback className="text-[10px]">
+                  {vendorName.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-xs text-muted-foreground truncate">
+                {vendorName}
+              </span>
+              {isVendorVerified && (
+                <BadgeCheck className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
+              )}
+            </div>
           )}
+          
           <div className="mt-2 flex items-center gap-2">
             <p className="font-display text-lg font-bold text-foreground">
               {formatPrice(product.price)}

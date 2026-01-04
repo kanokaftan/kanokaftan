@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.verify-payment]
 verify_jwt = false
+
+[functions.process-featured-payment]
+verify_jwt = false
+
+[functions.verify-featured-payment]
+verify_jwt = false
