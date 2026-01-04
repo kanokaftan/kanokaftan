@@ -4,6 +4,8 @@ import { VendorLayout, useVendorAuth } from "@/components/vendor/VendorLayout";
 import { useVendorProduct } from "@/hooks/useVendorProducts";
 import { useProductMutations } from "@/hooks/useProductMutations";
 import { useCategories } from "@/hooks/useProducts";
+import { useFeaturedListing } from "@/hooks/useFeaturedListing";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,14 +18,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Upload, X, Loader2 } from "lucide-react";
+import { Upload, X, Loader2, Star } from "lucide-react";
 
 export default function ProductForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { userId } = useVendorAuth();
+  const { user } = useAuth();
   const { data: existingProduct, isLoading: productLoading } = useVendorProduct(id || null);
   const { data: categories, isLoading: categoriesLoading } = useCategories();
   const { createProduct, updateProduct, uploadImage } = useProductMutations(userId);
@@ -44,6 +56,21 @@ export default function ProductForm() {
   const [images, setImages] = useState<{ url: string; is_primary: boolean }[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  
+  // Featured listing state
+  const [showFeaturedDialog, setShowFeaturedDialog] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"payment" | "promo">("payment");
+  const [pendingProductId, setPendingProductId] = useState<string | null>(null);
+
+  const { isProcessing, applyPromoCode, initPayment } = useFeaturedListing({
+    onSuccess: () => {
+      setShowFeaturedDialog(false);
+      setPromoCode("");
+      setFormData((prev) => ({ ...prev, featured: true }));
+    },
+  });
+
 
   useEffect(() => {
     if (existingProduct && isEditing) {
@@ -378,7 +405,10 @@ export default function ProductForm() {
 
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="featured">Featured</Label>
+                <Label htmlFor="featured" className="flex items-center gap-2">
+                  <Star className="h-4 w-4 text-amber-500" />
+                  Featured (₦1,000)
+                </Label>
                 <p className="text-sm text-muted-foreground">
                   Show in featured products section
                 </p>
@@ -386,9 +416,13 @@ export default function ProductForm() {
               <Switch
                 id="featured"
                 checked={formData.featured}
-                onCheckedChange={(checked) =>
-                  setFormData((prev) => ({ ...prev, featured: checked }))
-                }
+                disabled={formData.featured} // Can't toggle off if already featured
+                onCheckedChange={(checked) => {
+                  if (checked && !formData.featured) {
+                    // If turning on and not already featured, show payment dialog
+                    setShowFeaturedDialog(true);
+                  }
+                }}
               />
             </div>
           </CardContent>
@@ -409,6 +443,103 @@ export default function ProductForm() {
           </Button>
         </div>
       </form>
+
+      {/* Featured Listing Payment Dialog */}
+      <Dialog open={showFeaturedDialog} onOpenChange={setShowFeaturedDialog}>
+        <DialogContent className="max-w-[90vw] md:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Star className="h-5 w-5 text-amber-500" />
+              Feature Your Listing
+            </DialogTitle>
+            <DialogDescription>
+              Featured products appear at the top of search results and homepage.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="p-3 mb-4 rounded-lg bg-muted">
+              <p className="font-medium text-sm truncate">{formData.name || "New Product"}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Cost: <span className="font-semibold text-foreground">₦1,000</span>
+              </p>
+            </div>
+            
+            <Tabs value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as "payment" | "promo")}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="payment" className="text-xs">Pay with Paystack</TabsTrigger>
+                <TabsTrigger value="promo" className="text-xs">Use Promo Code</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="payment" className="mt-4">
+                <p className="text-sm text-muted-foreground">
+                  {isEditing 
+                    ? "You'll be redirected to Paystack to complete the payment securely."
+                    : "Save the product first, then you can feature it from the Products page."
+                  }
+                </p>
+              </TabsContent>
+              
+              <TabsContent value="promo" className="mt-4">
+                <Label htmlFor="promoCode">Promo Code</Label>
+                <Input
+                  id="promoCode"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                  placeholder="Enter promo code"
+                  className="mt-2"
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
+          
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowFeaturedDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={async () => {
+                if (!isEditing) {
+                  // For new products, just close dialog - they need to save first
+                  setShowFeaturedDialog(false);
+                  return;
+                }
+                
+                if (paymentMethod === "promo" && id) {
+                  const success = await applyPromoCode(id, promoCode);
+                  if (success) {
+                    setFormData((prev) => ({ ...prev, featured: true }));
+                  }
+                } else if (id) {
+                  const email = user?.email;
+                  if (email) {
+                    const callbackUrl = `${window.location.origin}/vendor/products?reference=`;
+                    const authUrl = await initPayment(id, email, callbackUrl);
+                    if (authUrl) {
+                      window.location.href = authUrl;
+                    }
+                  }
+                }
+              }}
+              disabled={isProcessing || (paymentMethod === "promo" && !promoCode) || !isEditing}
+              className="bg-amber-500 hover:bg-amber-600"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : !isEditing ? (
+                "Save Product First"
+              ) : paymentMethod === "promo" ? (
+                "Apply Code"
+              ) : (
+                "Pay ₦1,000"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </VendorLayout>
   );
 }
