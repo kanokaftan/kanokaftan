@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const accountSchema = z.object({
   full_name: z.string().min(2, "Name must be at least 2 characters"),
@@ -23,9 +24,9 @@ type AccountFormData = z.infer<typeof accountSchema>;
 export default function Account() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, isLoading: authLoading, signOut } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [email, setEmail] = useState("");
 
   const form = useForm<AccountFormData>({
     resolver: zodResolver(accountSchema),
@@ -36,15 +37,14 @@ export default function Account() {
   });
 
   useEffect(() => {
+    if (authLoading) return;
+    
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+
     const loadProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate("/auth");
-        return;
-      }
-
-      setEmail(user.email || "");
-
       const { data: profile } = await supabase
         .from("profiles")
         .select("*")
@@ -61,14 +61,13 @@ export default function Account() {
     };
 
     loadProfile();
-  }, [form, navigate]);
+  }, [user, authLoading, form, navigate]);
 
   const onSubmit = async (data: AccountFormData) => {
+    if (!user) return;
+    
     setIsSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
       const { error } = await supabase
         .from("profiles")
         .update({
@@ -95,7 +94,7 @@ export default function Account() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     navigate("/");
   };
 
@@ -133,7 +132,7 @@ export default function Account() {
                 <Label htmlFor="email">Email</Label>
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">{email}</span>
+                  <span className="text-muted-foreground">{user?.email}</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Email cannot be changed

@@ -1,50 +1,35 @@
-import { useState, useEffect } from "react";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { User, Settings, HelpCircle, LogOut, ChevronRight, Store } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import type { User as SupabaseUser } from "@supabase/supabase-js";
+import { useAuth } from "@/contexts/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Profile() {
-  const [user, setUser] = useState<SupabaseUser | null>(null);
-  const [isVendor, setIsVendor] = useState(false);
+  const { user, isVendor, isLoading, signOut } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        checkVendorStatus(session.user.id);
-      }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          checkVendorStatus(session.user.id);
-        } else {
-          setIsVendor(false);
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const checkVendorStatus = async (userId: string) => {
-    const { data } = await supabase.rpc("has_role", {
-      _role: "vendor",
-      _user_id: userId,
-    });
-    setIsVendor(!!data);
-  };
-
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     navigate("/");
   };
+
+  if (isLoading) {
+    return (
+      <MobileLayout>
+        <div className="px-4 py-6">
+          <Skeleton className="h-7 w-24" />
+          <div className="mt-6 flex items-center gap-4 rounded-xl bg-muted/50 p-4">
+            <Skeleton className="h-14 w-14 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          </div>
+        </div>
+      </MobileLayout>
+    );
+  }
 
   if (!user) {
     return (

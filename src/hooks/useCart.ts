@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useMemo } from "react";
 
 export interface CartItem {
   id: string;
@@ -28,21 +29,9 @@ function getSessionId() {
 
 export function useCart() {
   const queryClient = useQueryClient();
-  const [userId, setUserId] = useState<string | null>(null);
-  const sessionId = getSessionId();
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUserId(data.user?.id || null);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      setUserId(session?.user?.id || null);
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
-    });
-
-    return () => subscription.unsubscribe();
-  }, [queryClient]);
+  const { user } = useAuth();
+  const userId = user?.id || null;
+  const sessionId = useMemo(() => getSessionId(), []);
 
   const cartQuery = useQuery({
     queryKey: ["cart", userId, sessionId],

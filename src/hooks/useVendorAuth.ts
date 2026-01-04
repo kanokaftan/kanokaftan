@@ -1,62 +1,35 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 export function useVendorAuth() {
-  const [isVendor, setIsVendor] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
+  const { user, isVendor, isLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    async function checkVendorStatus() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session?.user) {
-          toast({
-            title: "Authentication required",
-            description: "Please log in to access the vendor dashboard",
-            variant: "destructive",
-          });
-          navigate("/auth?mode=login");
-          return;
-        }
+    if (isLoading) return;
 
-        setUserId(session.user.id);
-
-        // Check if user has vendor role using the has_role function
-        const { data, error } = await supabase.rpc("has_role", {
-          _user_id: session.user.id,
-          _role: "vendor",
-        });
-
-        if (error) throw error;
-
-        if (!data) {
-          toast({
-            title: "Access denied",
-            description: "You need a vendor account to access this area",
-            variant: "destructive",
-          });
-          navigate("/");
-          return;
-        }
-
-        setIsVendor(true);
-      } catch (error) {
-        console.error("Error checking vendor status:", error);
-        setIsVendor(false);
-        navigate("/");
-      } finally {
-        setIsLoading(false);
-      }
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to access the vendor dashboard",
+        variant: "destructive",
+      });
+      navigate("/auth?mode=login");
+      return;
     }
 
-    checkVendorStatus();
-  }, [navigate, toast]);
+    if (!isVendor) {
+      toast({
+        title: "Access denied",
+        description: "You need a vendor account to access this area",
+        variant: "destructive",
+      });
+      navigate("/");
+    }
+  }, [user, isVendor, isLoading, navigate, toast]);
 
-  return { isVendor, isLoading, userId };
+  return { isVendor, isLoading, userId: user?.id || null };
 }
