@@ -10,8 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useCart } from "@/hooks/useCart";
-import { useAddresses, DeliveryAddress } from "@/hooks/useAddresses";
+import { useAddresses } from "@/hooks/useAddresses";
 import { useOrders } from "@/hooks/useOrders";
+import { usePayment } from "@/hooks/usePayment";
 import { AddressForm } from "@/components/checkout/AddressForm";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -29,19 +30,20 @@ export default function Checkout() {
   const { items, isLoading: cartLoading, total } = useCart();
   const { addresses, isLoading: addressesLoading, defaultAddress } = useAddresses();
   const { createOrder } = useOrders();
+  const { initiatePayment, isProcessing } = usePayment();
 
   const [selectedAddressId, setSelectedAddressId] = useState<string>("");
   const [notes, setNotes] = useState("");
   const [isAddressSheetOpen, setIsAddressSheetOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ id: string; email: string } | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         navigate("/auth?redirect=/checkout");
       } else {
-        setUser(session.user);
+        setUser({ id: session.user.id, email: session.user.email || "" });
       }
     });
   }, [navigate]);
@@ -62,8 +64,14 @@ export default function Checkout() {
       return;
     }
 
+    if (!user?.email) {
+      toast.error("User email not found");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
+      // Create order first
       const order = await createOrder.mutateAsync({
         shipping_address: {
           full_name: selectedAddress.full_name,
@@ -77,10 +85,20 @@ export default function Checkout() {
         shipping_fee: shippingFee,
       });
 
-      toast.success("Order placed successfully!");
-      navigate(`/orders/${order.id}`);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to place order");
+      // Initialize Paystack payment
+      const paymentResult = await initiatePayment(order.id, user.email);
+
+      if (paymentResult.success && paymentResult.authorization_url) {
+        // Redirect to Paystack checkout
+        window.location.href = paymentResult.authorization_url;
+      } else {
+        toast.error(paymentResult.error || "Failed to initialize payment");
+        // Navigate to order detail so user can retry payment
+        navigate(`/orders/${order.id}`);
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to place order";
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -271,10 +289,10 @@ export default function Checkout() {
           className="mt-6 w-full"
           size="lg"
           onClick={handlePlaceOrder}
-          disabled={isSubmitting || !selectedAddress}
+          disabled={isSubmitting || isProcessing || !selectedAddress}
         >
           <CreditCard className="mr-2 h-4 w-4" />
-          {isSubmitting ? "Processing..." : `Pay ${formatPrice(grandTotal)}`}
+          {isSubmitting || isProcessing ? "Processing..." : `Pay ${formatPrice(grandTotal)}`}
         </Button>
       </div>
     </MobileLayout>
