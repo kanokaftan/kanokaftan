@@ -182,6 +182,67 @@ export function useCart() {
     },
   });
 
+  // Merge session cart into user cart on login
+  const mergeSessionCart = async (newUserId: string) => {
+    const sessionId = getSessionId();
+    
+    // Get session cart items
+    const { data: sessionItems } = await supabase
+      .from("cart_items")
+      .select("product_id, variant_id, quantity")
+      .eq("session_id", sessionId)
+      .is("user_id", null);
+
+    if (!sessionItems || sessionItems.length === 0) return;
+
+    // For each session item, add to user's cart or update quantity
+    for (const item of sessionItems) {
+      // Check if user already has this product
+      let existingQuery = supabase
+        .from("cart_items")
+        .select("id, quantity")
+        .eq("user_id", newUserId)
+        .eq("product_id", item.product_id);
+
+      if (item.variant_id) {
+        existingQuery = existingQuery.eq("variant_id", item.variant_id);
+      } else {
+        existingQuery = existingQuery.is("variant_id", null);
+      }
+
+      const { data: existing } = await existingQuery.maybeSingle();
+
+      if (existing) {
+        // Update quantity
+        await supabase
+          .from("cart_items")
+          .update({ quantity: existing.quantity + item.quantity })
+          .eq("id", existing.id);
+      } else {
+        // Insert new item for user
+        await supabase
+          .from("cart_items")
+          .insert({
+            product_id: item.product_id,
+            variant_id: item.variant_id,
+            quantity: item.quantity,
+            user_id: newUserId,
+            session_id: null,
+          });
+      }
+    }
+
+    // Delete session cart items
+    await supabase
+      .from("cart_items")
+      .delete()
+      .eq("session_id", sessionId)
+      .is("user_id", null);
+
+    // Refresh cart
+    queryClient.invalidateQueries({ queryKey: ["cart"] });
+  };
+
   const cartItems = cartQuery.data || [];
   const cartTotal = cartItems.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
@@ -198,5 +259,6 @@ export function useCart() {
     updateQuantity,
     removeItem,
     clearCart,
+    mergeSessionCart,
   };
 }
