@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ChevronLeft, Heart, Minus, Plus, ShoppingCart, Truck, Shield, RotateCcw } from "lucide-react";
+import { ChevronLeft, Heart, Minus, Plus, ShoppingCart, Truck, Shield, RotateCcw, BadgeCheck, Store, MessageCircle } from "lucide-react";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProduct } from "@/hooks/useProduct";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
@@ -184,12 +185,37 @@ export default function ProductDetail() {
           <h1 className="mt-1 font-display text-xl font-bold text-foreground">
             {product.name}
           </h1>
-          {product.vendor?.full_name && (
-            <p className="mt-1 text-sm text-muted-foreground">
-              by <span className="font-medium">{product.vendor.full_name}</span>
-            </p>
-          )}
         </div>
+
+        {/* Seller Card */}
+        {product.vendor && (
+          <div className="flex items-center gap-3 rounded-xl bg-muted/50 p-3 border">
+            <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+              <AvatarImage src={product.vendor.avatar_url || undefined} alt={product.vendor.full_name || "Seller"} />
+              <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                {product.vendor.full_name?.charAt(0) || product.vendor.store_name?.charAt(0) || "V"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold text-sm truncate">
+                  {product.vendor.store_name || product.vendor.full_name}
+                </span>
+                {product.vendor.is_verified && (
+                  <BadgeCheck className="h-4 w-4 text-primary flex-shrink-0" />
+                )}
+              </div>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Store className="h-3 w-3" />
+                <span>Verified Seller</span>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" className="rounded-full gap-1.5 text-xs h-8">
+              <MessageCircle className="h-3.5 w-3.5" />
+              Contact
+            </Button>
+          </div>
+        )}
 
         {/* Price */}
         <div className="flex items-center gap-3">
