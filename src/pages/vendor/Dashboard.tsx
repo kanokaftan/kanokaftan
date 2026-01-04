@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 export default function VendorDashboard() {
   const { userId } = useVendorAuth();
   const { data: products, isLoading: productsLoading } = useVendorProducts(userId);
-  const { data: orders, isLoading: ordersLoading } = useVendorOrders(userId);
+  const { orders, isLoading: ordersLoading } = useVendorOrders(userId);
 
   const totalProducts = products?.length || 0;
   const activeProducts = products?.filter((p) => p.is_active).length || 0;
