@@ -89,6 +89,51 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_addresses: {
+        Row: {
+          city: string
+          created_at: string
+          full_name: string
+          id: string
+          is_default: boolean
+          label: string
+          landmark: string | null
+          phone: string
+          state: string
+          street_address: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          full_name: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          landmark?: string | null
+          phone: string
+          state: string
+          street_address: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          full_name?: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          landmark?: string | null
+          phone?: string
+          state?: string
+          street_address?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -162,7 +207,12 @@ export type Database = {
       }
       orders: {
         Row: {
+          auto_release_at: string | null
+          confirmed_at: string | null
           created_at: string
+          delivery_type: string | null
+          escrow_status: string | null
+          estimated_delivery_date: string | null
           id: string
           notes: string | null
           payment_reference: string | null
@@ -172,11 +222,17 @@ export type Database = {
           status: string
           subtotal: number
           total: number
+          tracking_updates: Json | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          auto_release_at?: string | null
+          confirmed_at?: string | null
           created_at?: string
+          delivery_type?: string | null
+          escrow_status?: string | null
+          estimated_delivery_date?: string | null
           id?: string
           notes?: string | null
           payment_reference?: string | null
@@ -186,11 +242,17 @@ export type Database = {
           status?: string
           subtotal: number
           total: number
+          tracking_updates?: Json | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          auto_release_at?: string | null
+          confirmed_at?: string | null
           created_at?: string
+          delivery_type?: string | null
+          escrow_status?: string | null
+          estimated_delivery_date?: string | null
           id?: string
           notes?: string | null
           payment_reference?: string | null
@@ -200,6 +262,7 @@ export type Database = {
           status?: string
           subtotal?: number
           total?: number
+          tracking_updates?: Json | null
           updated_at?: string
           user_id?: string
         }
@@ -349,33 +412,120 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_name: string | null
+          account_number: string | null
           avatar_url: string | null
+          bank_name: string | null
           created_at: string
           email: string
           full_name: string | null
           id: string
+          payout_preference: string | null
           phone: string | null
+          store_address: Json | null
+          store_description: string | null
+          store_name: string | null
           updated_at: string
         }
         Insert: {
+          account_name?: string | null
+          account_number?: string | null
           avatar_url?: string | null
+          bank_name?: string | null
           created_at?: string
           email: string
           full_name?: string | null
           id: string
+          payout_preference?: string | null
           phone?: string | null
+          store_address?: Json | null
+          store_description?: string | null
+          store_name?: string | null
           updated_at?: string
         }
         Update: {
+          account_name?: string | null
+          account_number?: string | null
           avatar_url?: string | null
+          bank_name?: string | null
           created_at?: string
           email?: string
           full_name?: string | null
           id?: string
+          payout_preference?: string | null
           phone?: string | null
+          store_address?: Json | null
+          store_description?: string | null
+          store_name?: string | null
           updated_at?: string
         }
         Relationships: []
+      }
+      reviews: {
+        Row: {
+          created_at: string
+          fit_feedback: string | null
+          id: string
+          is_approved: boolean
+          order_item_id: string | null
+          photos: Json | null
+          product_id: string
+          rating: number
+          review_text: string | null
+          seller_replied_at: string | null
+          seller_reply: string | null
+          updated_at: string
+          user_id: string
+          would_recommend: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          fit_feedback?: string | null
+          id?: string
+          is_approved?: boolean
+          order_item_id?: string | null
+          photos?: Json | null
+          product_id: string
+          rating: number
+          review_text?: string | null
+          seller_replied_at?: string | null
+          seller_reply?: string | null
+          updated_at?: string
+          user_id: string
+          would_recommend?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          fit_feedback?: string | null
+          id?: string
+          is_approved?: boolean
+          order_item_id?: string | null
+          photos?: Json | null
+          product_id?: string
+          rating?: number
+          review_text?: string | null
+          seller_replied_at?: string | null
+          seller_reply?: string | null
+          updated_at?: string
+          user_id?: string
+          would_recommend?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

@@ -5,9 +5,11 @@ import { MobileLayout } from "@/components/layout/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 import { useProduct } from "@/hooks/useProduct";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
+import { ReviewsList } from "@/components/reviews/ReviewsList";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -306,6 +308,10 @@ export default function ProductDetail() {
           <ShoppingCart className="h-5 w-5" />
           Add to Cart
         </Button>
+
+        {/* Reviews Section */}
+        <Separator className="my-6" />
+        <ReviewsList productId={product.id} />
       </div>
     </MobileLayout>
   );
