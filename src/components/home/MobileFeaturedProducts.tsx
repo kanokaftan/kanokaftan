@@ -2,7 +2,11 @@ import { Link } from "react-router-dom";
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProducts } from "@/hooks/useProducts";
+import { useWishlist } from "@/hooks/useWishlist";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 function formatPrice(amount: number): string {
   return new Intl.NumberFormat("en-NG", {
@@ -19,6 +23,30 @@ function calculateDiscount(price: number, compareAtPrice: number | null): number
 
 export function MobileFeaturedProducts() {
   const { data, isLoading } = useProducts({ featured: true, limit: 6 });
+  const { userId, addToWishlist, isInWishlist } = useWishlist();
+  const navigate = useNavigate();
+
+  const handleWishlistClick = async (e: React.MouseEvent, productId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!userId) {
+      toast.info("Please sign in to save favorites");
+      navigate("/auth");
+      return;
+    }
+
+    try {
+      const result = await addToWishlist.mutateAsync(productId);
+      if (result.action === "added") {
+        toast.success("Added to favorites");
+      } else {
+        toast.success("Removed from favorites");
+      }
+    } catch (error) {
+      toast.error("Failed to update favorites");
+    }
+  };
 
   return (
     <section className="px-4 py-6">
@@ -52,6 +80,7 @@ export function MobileFeaturedProducts() {
             const discount = calculateDiscount(product.price, product.compare_at_price);
             const primaryImage = product.product_images?.find(img => img.is_primary)?.url 
               || product.product_images?.[0]?.url;
+            const inWishlist = isInWishlist(product.id);
 
             return (
               <Link
@@ -83,13 +112,13 @@ export function MobileFeaturedProducts() {
                   <Button
                     size="icon"
                     variant="secondary"
-                    className="absolute right-2 top-2 h-8 w-8 rounded-full opacity-90"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      // TODO: Add to wishlist
-                    }}
+                    className={cn(
+                      "absolute right-2 top-2 h-8 w-8 rounded-full opacity-90",
+                      inWishlist && "bg-primary text-primary-foreground hover:bg-primary/90"
+                    )}
+                    onClick={(e) => handleWishlistClick(e, product.id)}
                   >
-                    <Heart className="h-4 w-4" />
+                    <Heart className={cn("h-4 w-4", inWishlist && "fill-current")} />
                   </Button>
                 </div>
                 

@@ -1,8 +1,12 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Heart, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useWishlist } from "@/hooks/useWishlist";
+import { useCart } from "@/hooks/useCart";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import type { Product } from "@/hooks/useProducts";
 
 interface ProductCardProps {
@@ -18,65 +22,126 @@ function formatPrice(amount: number): string {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const navigate = useNavigate();
+  const { userId, addToWishlist, isInWishlist } = useWishlist();
+  const { addToCart } = useCart();
+  
   const primaryImage = product.product_images?.find((img) => img.is_primary);
   const imageUrl = primaryImage?.url || product.product_images?.[0]?.url;
   const hasDiscount = product.compare_at_price && product.compare_at_price > product.price;
+  const inWishlist = isInWishlist(product.id);
+  const discount = hasDiscount 
+    ? Math.round(((product.compare_at_price! - product.price) / product.compare_at_price!) * 100)
+    : null;
+
+  const handleWishlistClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!userId) {
+      toast.info("Please sign in to save favorites");
+      navigate("/auth");
+      return;
+    }
+
+    try {
+      const result = await addToWishlist.mutateAsync(product.id);
+      if (result.action === "added") {
+        toast.success("Added to favorites");
+      } else {
+        toast.success("Removed from favorites");
+      }
+    } catch (error) {
+      toast.error("Failed to update favorites");
+    }
+  };
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    addToCart.mutate(
+      { productId: product.id, quantity: 1 },
+      {
+        onSuccess: () => {
+          toast.success("Added to cart", {
+            description: product.name,
+          });
+        },
+        onError: () => {
+          toast.error("Failed to add to cart");
+        },
+      }
+    );
+  };
 
   return (
     <Card className="group overflow-hidden border-0 shadow-sm transition-shadow hover:shadow-md">
-      <div className="relative aspect-[3/4] overflow-hidden bg-muted">
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={product.name}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
-            No Image
-          </div>
-        )}
-        
-        {hasDiscount && (
-          <Badge className="absolute left-3 top-3 bg-destructive text-destructive-foreground">
-            Sale
-          </Badge>
-        )}
-
-        <div className="absolute right-3 top-3 flex flex-col gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-          <Button size="icon" variant="secondary" className="h-9 w-9">
-            <Heart className="h-4 w-4" />
-          </Button>
-          <Button size="icon" variant="secondary" className="h-9 w-9">
-            <ShoppingCart className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      <CardContent className="p-4">
-        {product.category && (
-          <p className="text-xs text-muted-foreground">{product.category.name}</p>
-        )}
-        <Link
-          to={`/products/${product.slug}`}
-          className="mt-1 block font-medium text-foreground hover:underline line-clamp-2"
-        >
-          {product.name}
-        </Link>
-        {product.vendor?.full_name && (
-          <p className="mt-1 text-xs text-muted-foreground">by {product.vendor.full_name}</p>
-        )}
-        <div className="mt-2 flex items-center gap-2">
-          <p className="font-display text-lg font-bold text-foreground">
-            {formatPrice(product.price)}
-          </p>
-          {hasDiscount && (
-            <p className="text-sm text-muted-foreground line-through">
-              {formatPrice(product.compare_at_price!)}
-            </p>
+      <Link to={`/products/${product.slug}`}>
+        <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={product.name}
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
+              No Image
+            </div>
           )}
+          
+          {discount && (
+            <Badge className="absolute left-3 top-3 bg-destructive text-destructive-foreground">
+              {discount}% OFF
+            </Badge>
+          )}
+
+          <div className="absolute right-3 top-3 flex flex-col gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+            <Button 
+              size="icon" 
+              variant="secondary" 
+              className={cn(
+                "h-9 w-9",
+                inWishlist && "bg-primary text-primary-foreground hover:bg-primary/90"
+              )}
+              onClick={handleWishlistClick}
+            >
+              <Heart className={cn("h-4 w-4", inWishlist && "fill-current")} />
+            </Button>
+            <Button 
+              size="icon" 
+              variant="secondary" 
+              className="h-9 w-9"
+              onClick={handleAddToCart}
+            >
+              <ShoppingCart className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-      </CardContent>
+
+        <CardContent className="p-4">
+          {product.category && (
+            <p className="text-xs text-muted-foreground">{product.category.name}</p>
+          )}
+          <p className="mt-1 font-medium text-foreground line-clamp-2">
+            {product.name}
+          </p>
+          {product.vendor?.full_name && (
+            <p className="mt-1 text-xs text-muted-foreground">by {product.vendor.full_name}</p>
+          )}
+          <div className="mt-2 flex items-center gap-2">
+            <p className="font-display text-lg font-bold text-foreground">
+              {formatPrice(product.price)}
+            </p>
+            {hasDiscount && (
+              <p className="text-sm text-muted-foreground line-through">
+                {formatPrice(product.compare_at_price!)}
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Link>
     </Card>
   );
 }

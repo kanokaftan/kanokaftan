@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { ChevronLeft, Heart, Minus, Plus, ShoppingCart, Truck, Shield, RotateCcw } from "lucide-react";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProduct } from "@/hooks/useProduct";
 import { useCart } from "@/hooks/useCart";
+import { useWishlist } from "@/hooks/useWishlist";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 function formatPrice(amount: number): string {
   return new Intl.NumberFormat("en-NG", {
@@ -19,8 +21,10 @@ function formatPrice(amount: number): string {
 
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const { data: product, isLoading, error } = useProduct(slug || "");
   const { addToCart } = useCart();
+  const { userId, addToWishlist, isInWishlist } = useWishlist();
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
 
@@ -60,6 +64,7 @@ export default function ProductDetail() {
   const variants = product.product_variants || [];
   const sizes = [...new Set(variants.filter(v => v.size).map(v => v.size))];
   const colors = [...new Set(variants.filter(v => v.color).map(v => v.color))];
+  const inWishlist = isInWishlist(product.id);
 
   const handleAddToCart = () => {
     addToCart.mutate(
@@ -75,6 +80,25 @@ export default function ProductDetail() {
         },
       }
     );
+  };
+
+  const handleWishlistClick = async () => {
+    if (!userId) {
+      toast.info("Please sign in to save favorites");
+      navigate("/auth");
+      return;
+    }
+
+    try {
+      const result = await addToWishlist.mutateAsync(product.id);
+      if (result.action === "added") {
+        toast.success("Added to favorites");
+      } else {
+        toast.success("Removed from favorites");
+      }
+    } catch (error) {
+      toast.error("Failed to update favorites");
+    }
   };
 
   return (
@@ -111,10 +135,13 @@ export default function ProductDetail() {
         <Button
           variant="secondary"
           size="icon"
-          className="absolute right-4 top-4 h-10 w-10 rounded-full shadow-md"
-          onClick={() => toast.success("Added to wishlist")}
+          className={cn(
+            "absolute right-4 top-4 h-10 w-10 rounded-full shadow-md",
+            inWishlist && "bg-primary text-primary-foreground hover:bg-primary/90"
+          )}
+          onClick={handleWishlistClick}
         >
-          <Heart className="h-5 w-5" />
+          <Heart className={cn("h-5 w-5", inWishlist && "fill-current")} />
         </Button>
 
         {/* Discount Badge */}
