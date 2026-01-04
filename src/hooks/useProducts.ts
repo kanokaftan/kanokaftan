@@ -44,11 +44,12 @@ interface UseProductsOptions {
   search?: string;
   page?: number;
   limit?: number;
+  featured?: boolean;
 }
 
-export function useProducts({ categorySlug, search, page = 1, limit = 12 }: UseProductsOptions = {}) {
+export function useProducts({ categorySlug, search, page = 1, limit = 12, featured }: UseProductsOptions = {}) {
   return useQuery({
-    queryKey: ["products", { categorySlug, search, page, limit }],
+    queryKey: ["products", { categorySlug, search, page, limit, featured }],
     queryFn: async () => {
       let query = supabase
         .from("products")
@@ -60,6 +61,10 @@ export function useProducts({ categorySlug, search, page = 1, limit = 12 }: UseP
         `, { count: "exact" })
         .eq("is_active", true)
         .order("created_at", { ascending: false });
+
+      if (featured) {
+        query = query.eq("featured", true);
+      }
 
       if (categorySlug) {
         const { data: category } = await supabase

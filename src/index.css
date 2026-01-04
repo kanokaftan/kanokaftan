@@ -121,4 +121,19 @@
   .gradient-accent {
     background: linear-gradient(135deg, hsl(var(--kk-silver)), hsl(var(--kk-cloud)));
   }
+
+  /* Hide scrollbar for horizontal scroll */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Safe area for bottom navigation */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
