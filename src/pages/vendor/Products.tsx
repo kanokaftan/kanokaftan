@@ -1,6 +1,7 @@
 import { VendorLayout, useVendorAuth } from "@/components/vendor/VendorLayout";
 import { useVendorProducts } from "@/hooks/useVendorProducts";
 import { useProductMutations } from "@/hooks/useProductMutations";
+import { useFeaturedListing } from "@/hooks/useFeaturedListing";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -38,15 +39,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Package, Plus, MoreHorizontal, Pencil, Trash2, Eye, EyeOff, PackageX, CheckCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Package, Plus, MoreHorizontal, Pencil, Trash2, Eye, EyeOff, PackageX, CheckCircle, Star, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function VendorProducts() {
   const { userId } = useVendorAuth();
+  const { user } = useAuth();
   const { data: products, isLoading, refetch } = useVendorProducts(userId);
   const { deleteProduct, toggleProductStatus } = useProductMutations(userId);
   const { toast } = useToast();
@@ -54,6 +58,17 @@ export default function VendorProducts() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [stockEdit, setStockEdit] = useState<{ id: string; name: string; current: number } | null>(null);
   const [newStock, setNewStock] = useState<string>("");
+  const [featuredProduct, setFeaturedProduct] = useState<{ id: string; name: string } | null>(null);
+  const [promoCode, setPromoCode] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"payment" | "promo">("payment");
+
+  const { isProcessing, applyPromoCode, initPayment } = useFeaturedListing({
+    onSuccess: () => {
+      setFeaturedProduct(null);
+      setPromoCode("");
+      refetch();
+    },
+  });
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-NG", {
@@ -96,6 +111,35 @@ export default function VendorProducts() {
       updateStock(stockEdit.id, parseInt(newStock, 10));
       setStockEdit(null);
       setNewStock("");
+    }
+  };
+
+  const handleFeatureProduct = async () => {
+    if (!featuredProduct) return;
+
+    if (paymentMethod === "promo") {
+      const success = await applyPromoCode(featuredProduct.id, promoCode);
+      if (success) {
+        setFeaturedProduct(null);
+        setPromoCode("");
+      }
+    } else {
+      const email = user?.email;
+      if (!email) {
+        toast({
+          title: "Email required",
+          description: "Please ensure you have an email associated with your account.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const callbackUrl = `${window.location.origin}/vendor/products?featured_ref=`;
+      const authUrl = await initPayment(featuredProduct.id, email, callbackUrl);
+      
+      if (authUrl) {
+        window.location.href = authUrl;
+      }
     }
   };
 
@@ -164,19 +208,29 @@ export default function VendorProducts() {
                   <TableRow key={product.id} className="group">
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        {product.product_images?.[0] ? (
-                          <img
-                            src={product.product_images[0].url}
-                            alt={product.name}
-                            className="h-12 w-12 rounded-md object-cover"
-                          />
-                        ) : (
-                          <div className="h-12 w-12 rounded-md bg-muted flex items-center justify-center">
-                            <Package className="h-6 w-6 text-muted-foreground" />
-                          </div>
-                        )}
+                        <div className="relative">
+                          {product.product_images?.[0] ? (
+                            <img
+                              src={product.product_images[0].url}
+                              alt={product.name}
+                              className="h-12 w-12 rounded-md object-cover"
+                            />
+                          ) : (
+                            <div className="h-12 w-12 rounded-md bg-muted flex items-center justify-center">
+                              <Package className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                          )}
+                          {product.featured && (
+                            <Star className="absolute -top-1 -right-1 h-4 w-4 text-amber-500 fill-amber-500" />
+                          )}
+                        </div>
                         <div>
-                          <p className="font-medium">{product.name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{product.name}</p>
+                            {product.featured && (
+                              <Badge className="bg-amber-500 hover:bg-amber-600 text-xs">Featured</Badge>
+                            )}
+                          </div>
                           <p className="text-sm text-muted-foreground truncate max-w-[200px]">
                             {product.description || "No description"}
                           </p>
@@ -228,6 +282,16 @@ export default function VendorProducts() {
                           </DropdownMenuItem>
                           
                           <DropdownMenuSeparator />
+                          
+                          {!product.featured && (
+                            <DropdownMenuItem
+                              onClick={() => setFeaturedProduct({ id: product.id, name: product.name })}
+                              className="text-amber-600"
+                            >
+                              <Star className="h-4 w-4 mr-2" />
+                              Make Featured (₦1,000)
+                            </DropdownMenuItem>
+                          )}
                           
                           {product.stock_quantity > 0 ? (
                             <DropdownMenuItem
@@ -341,6 +405,76 @@ export default function VendorProducts() {
             </Button>
             <Button onClick={handleStockUpdate}>
               Update Stock
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Featured Listing Dialog */}
+      <Dialog open={!!featuredProduct} onOpenChange={() => setFeaturedProduct(null)}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Star className="h-5 w-5 text-amber-500" />
+              Feature Your Listing
+            </DialogTitle>
+            <DialogDescription>
+              Featured products appear at the top of search results and homepage.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="p-3 mb-4 rounded-lg bg-muted">
+              <p className="font-medium">{featuredProduct?.name}</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Cost: <span className="font-semibold text-foreground">₦1,000</span>
+              </p>
+            </div>
+            
+            <Tabs value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as "payment" | "promo")}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="payment">Pay with Paystack</TabsTrigger>
+                <TabsTrigger value="promo">Use Promo Code</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="payment" className="mt-4">
+                <p className="text-sm text-muted-foreground">
+                  You'll be redirected to Paystack to complete the payment securely.
+                </p>
+              </TabsContent>
+              
+              <TabsContent value="promo" className="mt-4">
+                <Label htmlFor="promoCode">Promo Code</Label>
+                <Input
+                  id="promoCode"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                  placeholder="Enter promo code"
+                  className="mt-2"
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFeaturedProduct(null)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleFeatureProduct}
+              disabled={isProcessing || (paymentMethod === "promo" && !promoCode)}
+              className="bg-amber-500 hover:bg-amber-600"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : paymentMethod === "promo" ? (
+                "Apply Code"
+              ) : (
+                "Pay ₦1,000"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

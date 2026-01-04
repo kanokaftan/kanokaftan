@@ -13,7 +13,7 @@ export function useProduct(slug: string) {
           category:categories(id, name, slug),
           product_images(id, url, is_primary, alt_text, display_order),
           product_variants(id, name, size, color, price_adjustment, stock_quantity),
-          vendor:profiles!products_vendor_id_fkey(id, full_name, avatar_url)
+          vendor:profiles!products_vendor_id_fkey(id, full_name, avatar_url, is_verified, store_name)
         `)
         .eq("slug", slug)
         .eq("is_active", true)

@@ -420,6 +420,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          is_verified: boolean
           payout_preference: string | null
           phone: string | null
           store_address: Json | null
@@ -436,6 +437,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          is_verified?: boolean
           payout_preference?: string | null
           phone?: string | null
           store_address?: Json | null
@@ -452,6 +454,7 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          is_verified?: boolean
           payout_preference?: string | null
           phone?: string | null
           store_address?: Json | null
