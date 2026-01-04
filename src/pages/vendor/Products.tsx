@@ -5,14 +5,7 @@ import { useFeaturedListing } from "@/hooks/useFeaturedListing";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Card } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,7 +33,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Plus, MoreHorizontal, Pencil, Trash2, Eye, EyeOff, PackageX, CheckCircle, Star, Loader2 } from "lucide-react";
+import { Package, Plus, MoreVertical, Pencil, Trash2, Eye, EyeOff, PackageX, CheckCircle, Star, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
 import { useState } from "react";
@@ -145,118 +138,89 @@ export default function VendorProducts() {
 
   const getStockBadge = (quantity: number) => {
     if (quantity === 0) {
-      return <Badge variant="destructive" className="text-xs">Sold Out</Badge>;
+      return <Badge variant="destructive" className="text-[10px] px-1.5">Sold Out</Badge>;
     }
     if (quantity < 5) {
-      return <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">{quantity} left</Badge>;
+      return <Badge variant="outline" className="text-[10px] px-1.5 border-amber-500 text-amber-600">{quantity} left</Badge>;
     }
-    return <span className="text-sm">{quantity}</span>;
+    return <Badge variant="secondary" className="text-[10px] px-1.5">{quantity}</Badge>;
   };
 
   return (
     <VendorLayout title="Products">
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Header */}
-        <div className="flex justify-between items-center">
-          <p className="text-muted-foreground">
+        <div className="flex justify-between items-center gap-4">
+          <p className="text-sm text-muted-foreground hidden md:block">
             Manage your product listings
           </p>
-          <Button asChild>
+          <Button asChild size="sm" className="ml-auto">
             <Link to="/vendor/products/new">
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4 mr-1.5" />
               Add Product
             </Link>
           </Button>
         </div>
 
-        {/* Products Table */}
+        {/* Products List - Mobile Card Layout */}
         {isLoading ? (
-          <div className="space-y-2">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Skeleton key={i} className="h-16 w-full" />
+          <div className="space-y-3">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-20 w-full" />
             ))}
           </div>
         ) : products?.length === 0 ? (
-          <div className="text-center py-16 border rounded-lg bg-background">
-            <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <h3 className="text-lg font-semibold mb-2">No products yet</h3>
-            <p className="text-muted-foreground mb-6">
+          <Card className="text-center py-12 px-4">
+            <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <h3 className="font-semibold mb-2">No products yet</h3>
+            <p className="text-sm text-muted-foreground mb-4">
               Start by adding your first product listing
             </p>
-            <Button asChild>
+            <Button asChild size="sm">
               <Link to="/vendor/products/new">
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="h-4 w-4 mr-1.5" />
                 Add Your First Product
               </Link>
             </Button>
-          </div>
+          </Card>
         ) : (
-          <div className="border rounded-lg bg-background overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Stock</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-[70px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {products?.map((product) => (
-                  <TableRow key={product.id} className="group">
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="relative">
-                          {product.product_images?.[0] ? (
-                            <img
-                              src={product.product_images[0].url}
-                              alt={product.name}
-                              className="h-12 w-12 rounded-md object-cover"
-                            />
-                          ) : (
-                            <div className="h-12 w-12 rounded-md bg-muted flex items-center justify-center">
-                              <Package className="h-6 w-6 text-muted-foreground" />
-                            </div>
-                          )}
-                          {product.featured && (
-                            <Star className="absolute -top-1 -right-1 h-4 w-4 text-amber-500 fill-amber-500" />
-                          )}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium">{product.name}</p>
-                            {product.featured && (
-                              <Badge className="bg-amber-500 hover:bg-amber-600 text-xs">Featured</Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground truncate max-w-[200px]">
-                            {product.description || "No description"}
-                          </p>
-                        </div>
+          <div className="space-y-2">
+            {products?.map((product) => (
+              <Card key={product.id} className="p-3">
+                <div className="flex items-start gap-3">
+                  {/* Product Image */}
+                  <div className="relative flex-shrink-0">
+                    {product.product_images?.[0] ? (
+                      <img
+                        src={product.product_images[0].url}
+                        alt={product.name}
+                        className="h-16 w-16 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="h-16 w-16 rounded-lg bg-muted flex items-center justify-center">
+                        <Package className="h-6 w-6 text-muted-foreground" />
                       </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {product.category?.name || "Uncategorized"}
-                    </TableCell>
-                    <TableCell>{formatCurrency(product.price)}</TableCell>
-                    <TableCell>
-                      {getStockBadge(product.stock_quantity)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={product.is_active ? "default" : "secondary"}
-                        className={product.is_active ? "bg-green-600 hover:bg-green-700" : ""}
-                      >
-                        {product.is_active ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
+                    )}
+                    {product.featured && (
+                      <Star className="absolute -top-1 -right-1 h-4 w-4 text-amber-500 fill-amber-500" />
+                    )}
+                  </div>
+                  
+                  {/* Product Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{product.name}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {product.category?.name || "Uncategorized"}
+                        </p>
+                      </div>
+                      
+                      {/* Actions */}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
+                          <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0 -mt-1 -mr-1">
+                            <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48">
@@ -348,18 +312,33 @@ export default function VendorProducts() {
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    </div>
+                    
+                    {/* Price & Status Row */}
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      <span className="font-semibold text-sm">{formatCurrency(product.price)}</span>
+                      {getStockBadge(product.stock_quantity)}
+                      <Badge
+                        variant={product.is_active ? "default" : "secondary"}
+                        className={`text-[10px] px-1.5 ${product.is_active ? "bg-green-600" : ""}`}
+                      >
+                        {product.is_active ? "Active" : "Inactive"}
+                      </Badge>
+                      {product.featured && (
+                        <Badge className="bg-amber-500 text-[10px] px-1.5">Featured</Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
         )}
       </div>
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-[90vw] md:max-w-lg">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Product</AlertDialogTitle>
             <AlertDialogDescription>
@@ -380,10 +359,10 @@ export default function VendorProducts() {
 
       {/* Stock Update Dialog */}
       <Dialog open={!!stockEdit} onOpenChange={() => setStockEdit(null)}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="max-w-[90vw] md:max-w-[400px]">
           <DialogHeader>
             <DialogTitle>Update Stock</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="truncate">
               {stockEdit?.name}
             </DialogDescription>
           </DialogHeader>
@@ -399,7 +378,7 @@ export default function VendorProducts() {
               placeholder="Enter new stock quantity"
             />
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setStockEdit(null)}>
               Cancel
             </Button>
@@ -412,7 +391,7 @@ export default function VendorProducts() {
 
       {/* Featured Listing Dialog */}
       <Dialog open={!!featuredProduct} onOpenChange={() => setFeaturedProduct(null)}>
-        <DialogContent className="sm:max-w-[450px]">
+        <DialogContent className="max-w-[90vw] md:max-w-[450px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Star className="h-5 w-5 text-amber-500" />
@@ -425,16 +404,16 @@ export default function VendorProducts() {
           
           <div className="py-4">
             <div className="p-3 mb-4 rounded-lg bg-muted">
-              <p className="font-medium">{featuredProduct?.name}</p>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="font-medium text-sm truncate">{featuredProduct?.name}</p>
+              <p className="text-xs text-muted-foreground mt-1">
                 Cost: <span className="font-semibold text-foreground">₦1,000</span>
               </p>
             </div>
             
             <Tabs value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as "payment" | "promo")}>
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="payment">Pay with Paystack</TabsTrigger>
-                <TabsTrigger value="promo">Use Promo Code</TabsTrigger>
+                <TabsTrigger value="payment" className="text-xs">Pay with Paystack</TabsTrigger>
+                <TabsTrigger value="promo" className="text-xs">Use Promo Code</TabsTrigger>
               </TabsList>
               
               <TabsContent value="payment" className="mt-4">
@@ -456,7 +435,7 @@ export default function VendorProducts() {
             </Tabs>
           </div>
           
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setFeaturedProduct(null)}>
               Cancel
             </Button>
