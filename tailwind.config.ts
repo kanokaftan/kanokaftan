@@ -57,13 +57,13 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        // K² Brand Colors
+        // K² Brand Colors - Sophisticated Neutral
         kk: {
-          "deep-brown": "hsl(var(--kk-deep-brown))",
-          "warm-mocha": "hsl(var(--kk-warm-mocha))",
-          "dusty-rose": "hsl(var(--kk-dusty-rose))",
-          "soft-mauve": "hsl(var(--kk-soft-mauve))",
-          "blush-pink": "hsl(var(--kk-blush-pink))",
+          charcoal: "hsl(var(--kk-charcoal))",
+          slate: "hsl(var(--kk-slate))",
+          silver: "hsl(var(--kk-silver))",
+          mist: "hsl(var(--kk-mist))",
+          cloud: "hsl(var(--kk-cloud))",
         },
       },
       borderRadius: {
