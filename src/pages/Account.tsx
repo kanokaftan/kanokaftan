@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { User, Mail, Phone, Save, Loader2, LogOut, ShieldCheck, Key } from "lucide-react";
+import { User, Mail, Phone, Save, Loader2, LogOut, ShieldCheck, Key, Store } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ type AccountFormData = z.infer<typeof accountSchema>;
 export default function Account() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, isLoading: authLoading, signOut } = useAuth();
+  const { user, isLoading: authLoading, signOut, isVendor } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -180,6 +180,29 @@ export default function Account() {
         </form>
 
         <Separator />
+
+        {isVendor && (
+          <Card className="border-primary/30 bg-primary/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Store className="h-5 w-5" />
+                Vendor Account
+              </CardTitle>
+              <CardDescription>
+                Manage your store and products
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                className="w-full" 
+                onClick={() => navigate("/vendor/dashboard")}
+              >
+                <Store className="mr-2 h-4 w-4" />
+                Go to Vendor Dashboard
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
