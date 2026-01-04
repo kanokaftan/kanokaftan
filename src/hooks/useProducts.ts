@@ -23,6 +23,7 @@ export interface Product {
     id: string;
     url: string;
     is_primary: boolean;
+    alt_text?: string | null;
   }[];
   vendor?: {
     id: string;
