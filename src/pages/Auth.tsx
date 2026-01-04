@@ -47,12 +47,25 @@ export default function AuthPage() {
 
   const selectedRole = watch("role");
 
+  // Check vendor role and redirect appropriately
+  const checkVendorAndRedirect = async (userId: string) => {
+    const { data } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "vendor",
+    });
+    if (data) {
+      navigate("/vendor/dashboard");
+    } else {
+      navigate("/");
+    }
+  };
+
   // Check if user is already logged in
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/");
+        await checkVendorAndRedirect(session.user.id);
       }
     };
     checkAuth();
@@ -60,7 +73,9 @@ export default function AuthPage() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (session) {
-          navigate("/");
+          setTimeout(() => {
+            checkVendorAndRedirect(session.user.id);
+          }, 0);
         }
       }
     );
@@ -103,7 +118,12 @@ export default function AuthPage() {
             title: "Account created!",
             description: "Welcome to K² - you're now signed in.",
           });
-          navigate("/");
+          // Redirect based on selected role
+          if (data.role === "vendor") {
+            navigate("/vendor/dashboard");
+          } else {
+            navigate("/");
+          }
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -126,7 +146,7 @@ export default function AuthPage() {
             title: "Welcome back!",
             description: "You've successfully signed in.",
           });
-          navigate("/");
+          // Auth state change listener will handle the redirect
         }
       }
     } catch (error: any) {
