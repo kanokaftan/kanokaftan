@@ -3,39 +3,43 @@ import { Heart, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
+import kaftanBlue from "@/assets/products/kaftan-blue.jpg";
+import kaftanWhite from "@/assets/products/kaftan-white.jpg";
+import kaftanGrey from "@/assets/products/kaftan-grey.jpg";
+
 // Placeholder products - will be fetched from database later
 const featuredProducts = [
   {
     id: "1",
-    name: "Royal Blue Agbada Set",
-    slug: "royal-blue-agbada-set",
-    price: 85000,
-    image: "https://images.unsplash.com/photo-1590735213920-68192a487bc2?w=400&q=80",
+    name: "Sky Blue Embroidered Kaftan",
+    slug: "sky-blue-embroidered-kaftan",
+    price: 65000,
+    image: kaftanBlue,
     vendor: "Kano Tailors",
   },
   {
     id: "2",
-    name: "Embroidered White Kaftan",
-    slug: "embroidered-white-kaftan",
-    price: 45000,
-    image: "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=400&q=80",
-    vendor: "Heritage Clothiers",
+    name: "Premium White Senator",
+    slug: "premium-white-senator",
+    price: 55000,
+    image: kaftanWhite,
+    vendor: "L&K Fashion",
   },
   {
     id: "3",
-    name: "Gold Dashiki Shirt",
-    slug: "gold-dashiki-shirt",
-    price: 25000,
-    image: "https://images.unsplash.com/photo-1580618432485-38f3aa97a913?w=400&q=80",
-    vendor: "Afro Styles",
+    name: "Grey Patterned Kaftan",
+    slug: "grey-patterned-kaftan",
+    price: 48000,
+    image: kaftanGrey,
+    vendor: "Heritage Clothiers",
   },
   {
     id: "4",
-    name: "Traditional Cap Set",
-    slug: "traditional-cap-set",
-    price: 15000,
-    image: "https://images.unsplash.com/photo-1611312449412-6cefac5dc3e4?w=400&q=80",
-    vendor: "Kano Caps",
+    name: "Sky Blue Embroidered Kaftan",
+    slug: "sky-blue-embroidered-kaftan-2",
+    price: 62000,
+    image: kaftanBlue,
+    vendor: "Afro Styles",
   },
 ];
 
