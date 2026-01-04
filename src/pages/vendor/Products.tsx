@@ -35,8 +35,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Package, Plus, MoreVertical, Pencil, Trash2, Eye, EyeOff, PackageX, CheckCircle, Star, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Link } from "react-router-dom";
-import { useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -47,6 +47,7 @@ export default function VendorProducts() {
   const { data: products, isLoading, refetch } = useVendorProducts(userId);
   const { deleteProduct, toggleProductStatus } = useProductMutations(userId);
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [stockEdit, setStockEdit] = useState<{ id: string; name: string; current: number } | null>(null);
@@ -55,13 +56,34 @@ export default function VendorProducts() {
   const [promoCode, setPromoCode] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"payment" | "promo">("payment");
 
-  const { isProcessing, applyPromoCode, initPayment } = useFeaturedListing({
+  const { isProcessing, applyPromoCode, initPayment, verifyPayment } = useFeaturedListing({
     onSuccess: () => {
       setFeaturedProduct(null);
       setPromoCode("");
       refetch();
     },
   });
+
+  // Handle payment callback verification
+  const verificationAttempted = useRef(false);
+  
+  useEffect(() => {
+    const reference = searchParams.get("reference");
+    const trxref = searchParams.get("trxref");
+    const paymentRef = reference || trxref;
+    
+    if (paymentRef && !verificationAttempted.current) {
+      verificationAttempted.current = true;
+      console.log("Verifying featured payment:", paymentRef);
+      verifyPayment(paymentRef).then((success) => {
+        if (success) {
+          refetch();
+        }
+        // Clear the URL params
+        setSearchParams({});
+      });
+    }
+  }, [searchParams]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-NG", {
