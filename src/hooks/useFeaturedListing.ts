@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -81,7 +81,7 @@ export function useFeaturedListing({ onSuccess }: UseFeaturedListingOptions = {}
     }
   };
 
-  const verifyPayment = async (reference: string): Promise<boolean> => {
+  const verifyPayment = useCallback(async (reference: string): Promise<boolean> => {
     try {
       const { data, error } = await supabase.functions.invoke("verify-featured-payment", {
         body: { reference },
@@ -107,7 +107,7 @@ export function useFeaturedListing({ onSuccess }: UseFeaturedListingOptions = {}
       });
       return false;
     }
-  };
+  }, [toast, queryClient]);
 
   return {
     isProcessing,
