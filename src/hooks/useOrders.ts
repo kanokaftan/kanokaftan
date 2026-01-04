@@ -100,6 +100,8 @@ export function useOrders() {
     mutationFn: async (orderData: CreateOrderData) => {
       if (!userId) throw new Error("Must be logged in");
 
+      console.log("Creating order for user:", userId);
+
       // Get cart items
       const { data: cartItems, error: cartError } = await supabase
         .from("cart_items")
@@ -120,7 +122,9 @@ export function useOrders() {
         `)
         .eq("user_id", userId);
 
-      if (cartError) throw cartError;
+      console.log("Cart items fetched:", cartItems?.length, "Error:", cartError);
+
+      if (cartError) throw new Error(`Cart fetch error: ${cartError.message}`);
       if (!cartItems || cartItems.length === 0) throw new Error("Cart is empty");
 
       // Calculate totals
@@ -130,6 +134,8 @@ export function useOrders() {
       }, 0);
 
       const total = subtotal + orderData.shipping_fee;
+
+      console.log("Creating order with subtotal:", subtotal, "total:", total);
 
       // Create order
       const { data: order, error: orderError } = await supabase
@@ -147,7 +153,9 @@ export function useOrders() {
         .select()
         .single();
 
-      if (orderError) throw orderError;
+      console.log("Order created:", order?.id, "Error:", orderError);
+
+      if (orderError) throw new Error(`Order creation error: ${orderError.message}`);
 
       // Create order items
       const orderItems = cartItems.map((item) => ({
@@ -162,11 +170,15 @@ export function useOrders() {
         total_price: (item.product.price + (item.variant?.price_adjustment || 0)) * item.quantity,
       }));
 
+      console.log("Creating order items:", orderItems.length);
+
       const { error: itemsError } = await supabase
         .from("order_items")
         .insert(orderItems);
 
-      if (itemsError) throw itemsError;
+      console.log("Order items result, Error:", itemsError);
+
+      if (itemsError) throw new Error(`Order items error: ${itemsError.message}`);
 
       // Clear cart
       await supabase.from("cart_items").delete().eq("user_id", userId);
