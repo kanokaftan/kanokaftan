@@ -21,6 +21,7 @@ function formatPrice(amount: number): string {
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: product, isLoading, error } = useProduct(slug || "");
+  const { addToCart } = useCart();
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
@@ -73,7 +74,6 @@ export default function ProductDetail() {
   const sizes = [...new Set(variants.filter(v => v.size).map(v => v.size))];
   const colors = [...new Set(variants.filter(v => v.color).map(v => v.color))];
 
-  const { addToCart } = useCart();
 
   const handleAddToCart = () => {
     addToCart.mutate(
