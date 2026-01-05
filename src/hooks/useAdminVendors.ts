@@ -12,6 +12,17 @@ export interface AdminVendor {
   store_description: string | null;
   created_at: string;
   product_count: number;
+  bank_name: string | null;
+  account_number: string | null;
+  account_name: string | null;
+  payout_preference: string | null;
+  store_address: {
+    street?: string;
+    city?: string;
+    state?: string;
+  } | null;
+  total_sales: number;
+  pending_payout: number;
 }
 
 export function useAdminVendors() {
@@ -31,10 +42,10 @@ export function useAdminVendors() {
       const vendorIds = vendorRoles?.map(r => r.user_id) || [];
       if (vendorIds.length === 0) return [];
 
-      // Get vendor profiles
+      // Get vendor profiles with bank details
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select("*")
+        .select("id, email, full_name, phone, avatar_url, is_verified, store_name, store_description, created_at, bank_name, account_number, account_name, payout_preference, store_address")
         .in("id", vendorIds)
         .order("created_at", { ascending: false });
 
@@ -52,9 +63,38 @@ export function useAdminVendors() {
         return acc;
       }, {} as Record<string, number>) || {};
 
+      // Get sales data per vendor from order_items
+      const { data: orderItems, error: orderError } = await supabase
+        .from("order_items")
+        .select(`
+          vendor_id,
+          total_price,
+          order:orders!inner(payment_status, escrow_status)
+        `);
+
+      if (orderError) throw orderError;
+
+      const salesByVendor: Record<string, { total: number; pending: number }> = {};
+      orderItems?.forEach(item => {
+        const vendorId = item.vendor_id;
+        if (!salesByVendor[vendorId]) {
+          salesByVendor[vendorId] = { total: 0, pending: 0 };
+        }
+        const order = item.order as { payment_status: string; escrow_status: string } | null;
+        if (order?.payment_status === "paid") {
+          salesByVendor[vendorId].total += Number(item.total_price);
+          if (order?.escrow_status === "held") {
+            salesByVendor[vendorId].pending += Number(item.total_price);
+          }
+        }
+      });
+
       return profiles?.map(p => ({
         ...p,
+        store_address: p.store_address as AdminVendor["store_address"],
         product_count: countByVendor[p.id] || 0,
+        total_sales: salesByVendor[p.id]?.total || 0,
+        pending_payout: salesByVendor[p.id]?.pending || 0,
       })) || [];
     },
   });
