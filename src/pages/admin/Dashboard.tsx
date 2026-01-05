@@ -205,10 +205,44 @@ export default function AdminDashboard() {
                     <ShoppingCart className="h-5 w-5 text-yellow-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-yellow-600">{stats?.pendingOrders || 0}</p>
-                    <p className="text-xs text-muted-foreground">Pending Orders</p>
+                    <p className="text-2xl font-bold text-yellow-600">{stats?.pendingPayments || 0}</p>
+                    <p className="text-xs text-muted-foreground">Pending Payments</p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Order Funnel Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <Card className="border-green-200 dark:border-green-900">
+              <CardContent className="pt-4 text-center">
+                <p className="text-2xl font-bold text-green-600">{stats?.totalPaidOrders || 0}</p>
+                <p className="text-xs text-muted-foreground">Paid Orders</p>
+              </CardContent>
+            </Card>
+            <Card className="border-blue-200 dark:border-blue-900">
+              <CardContent className="pt-4 text-center">
+                <p className="text-2xl font-bold text-blue-600">{stats?.pendingFulfillment || 0}</p>
+                <p className="text-xs text-muted-foreground">Awaiting Shipment</p>
+              </CardContent>
+            </Card>
+            <Card className="border-purple-200 dark:border-purple-900">
+              <CardContent className="pt-4 text-center">
+                <p className="text-2xl font-bold text-purple-600">{stats?.inTransit || 0}</p>
+                <p className="text-xs text-muted-foreground">In Transit</p>
+              </CardContent>
+            </Card>
+            <Card className="border-emerald-200 dark:border-emerald-900">
+              <CardContent className="pt-4 text-center">
+                <p className="text-2xl font-bold text-emerald-600">{stats?.completedOrders || 0}</p>
+                <p className="text-xs text-muted-foreground">Completed</p>
+              </CardContent>
+            </Card>
+            <Card className="border-amber-200 dark:border-amber-900">
+              <CardContent className="pt-4 text-center">
+                <p className="text-2xl font-bold text-amber-600">{formatCompactCurrency(stats?.escrowHeld || 0)}</p>
+                <p className="text-xs text-muted-foreground">In Escrow</p>
               </CardContent>
             </Card>
           </div>
