@@ -33,10 +33,10 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Plus, MoreVertical, Pencil, Trash2, Eye, EyeOff, PackageX, CheckCircle, Star, Loader2 } from "lucide-react";
+import { Package, Plus, MoreVertical, Pencil, Trash2, Eye, EyeOff, PackageX, CheckCircle, Star, Loader2, TrendingUp, AlertTriangle, Search, Filter } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useSearchParams } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -55,6 +55,8 @@ export default function VendorProducts() {
   const [featuredProduct, setFeaturedProduct] = useState<{ id: string; name: string } | null>(null);
   const [promoCode, setPromoCode] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"payment" | "promo">("payment");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
 
   const { isProcessing, applyPromoCode, initPayment, verifyPayment } = useFeaturedListing({
     onSuccess: () => {
@@ -79,11 +81,55 @@ export default function VendorProducts() {
         if (success) {
           refetch();
         }
-        // Clear the URL params
         setSearchParams({});
       });
     }
   }, [searchParams]);
+
+  // Filter products
+  const filteredProducts = useMemo(() => {
+    if (!products) return [];
+    
+    let filtered = products;
+    
+    // Filter by search
+    if (searchQuery) {
+      filtered = filtered.filter(p => 
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.category?.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    // Filter by tab
+    switch (activeTab) {
+      case "active":
+        filtered = filtered.filter(p => p.is_active && p.stock_quantity > 0);
+        break;
+      case "soldout":
+        filtered = filtered.filter(p => p.stock_quantity === 0);
+        break;
+      case "inactive":
+        filtered = filtered.filter(p => !p.is_active);
+        break;
+      case "featured":
+        filtered = filtered.filter(p => p.featured);
+        break;
+    }
+    
+    return filtered;
+  }, [products, searchQuery, activeTab]);
+
+  // Stats
+  const stats = useMemo(() => {
+    if (!products) return { total: 0, active: 0, soldOut: 0, featured: 0, lowStock: 0 };
+    return {
+      total: products.length,
+      active: products.filter(p => p.is_active && p.stock_quantity > 0).length,
+      soldOut: products.filter(p => p.stock_quantity === 0).length,
+      featured: products.filter(p => p.featured).length,
+      lowStock: products.filter(p => p.stock_quantity > 0 && p.stock_quantity < 5).length,
+    };
+  }, [products]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-NG", {
@@ -158,198 +204,311 @@ export default function VendorProducts() {
     }
   };
 
-  const getStockBadge = (quantity: number) => {
-    if (quantity === 0) {
-      return <Badge variant="destructive" className="text-[10px] px-1.5">Sold Out</Badge>;
-    }
-    if (quantity < 5) {
-      return <Badge variant="outline" className="text-[10px] px-1.5 border-amber-500 text-amber-600">{quantity} left</Badge>;
-    }
-    return <Badge variant="secondary" className="text-[10px] px-1.5">{quantity}</Badge>;
-  };
-
   return (
     <VendorLayout title="Products">
-      <div className="space-y-4">
-        {/* Header */}
-        <div className="flex justify-between items-center gap-4">
-          <p className="text-sm text-muted-foreground hidden md:block">
-            Manage your product listings
-          </p>
-          <Button asChild size="sm" className="ml-auto">
+      <div className="space-y-6">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <Card className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-primary/20">
+                <Package className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{stats.total}</p>
+                <p className="text-xs text-muted-foreground">Total</p>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-4 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-green-500/20">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-green-600">{stats.active}</p>
+                <p className="text-xs text-muted-foreground">Active</p>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-4 bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-amber-500/20">
+                <Star className="h-4 w-4 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-amber-600">{stats.featured}</p>
+                <p className="text-xs text-muted-foreground">Featured</p>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-4 bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-red-500/20">
+                <PackageX className="h-4 w-4 text-red-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-red-600">{stats.soldOut}</p>
+                <p className="text-xs text-muted-foreground">Sold Out</p>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-4 bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20 hidden md:block">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-orange-500/20">
+                <AlertTriangle className="h-4 w-4 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-orange-600">{stats.lowStock}</p>
+                <p className="text-xs text-muted-foreground">Low Stock</p>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Header with Search and Add Button */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Button asChild className="gap-2">
             <Link to="/vendor/products/new">
-              <Plus className="h-4 w-4 mr-1.5" />
+              <Plus className="h-4 w-4" />
               Add Product
             </Link>
           </Button>
         </div>
 
-        {/* Products List - Mobile Card Layout */}
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="w-full grid grid-cols-5">
+            <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
+            <TabsTrigger value="active" className="text-xs">Active</TabsTrigger>
+            <TabsTrigger value="soldout" className="text-xs">Sold Out</TabsTrigger>
+            <TabsTrigger value="inactive" className="text-xs">Inactive</TabsTrigger>
+            <TabsTrigger value="featured" className="text-xs">Featured</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {/* Products List */}
         {isLoading ? (
-          <div className="space-y-3">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-20 w-full" />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Skeleton key={i} className="h-48 w-full rounded-xl" />
             ))}
           </div>
-        ) : products?.length === 0 ? (
-          <Card className="text-center py-12 px-4">
-            <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <h3 className="font-semibold mb-2">No products yet</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Start by adding your first product listing
+        ) : filteredProducts.length === 0 ? (
+          <Card className="text-center py-16 px-4">
+            <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+              <Package className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="font-semibold text-lg mb-2">
+              {searchQuery || activeTab !== "all" ? "No products found" : "No products yet"}
+            </h3>
+            <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
+              {searchQuery || activeTab !== "all" 
+                ? "Try adjusting your search or filters"
+                : "Start by adding your first product listing to reach customers"
+              }
             </p>
-            <Button asChild size="sm">
-              <Link to="/vendor/products/new">
-                <Plus className="h-4 w-4 mr-1.5" />
-                Add Your First Product
-              </Link>
-            </Button>
+            {!searchQuery && activeTab === "all" && (
+              <Button asChild>
+                <Link to="/vendor/products/new">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Your First Product
+                </Link>
+              </Button>
+            )}
           </Card>
         ) : (
-          <div className="space-y-2">
-            {products?.map((product) => (
-              <Card key={product.id} className="p-3">
-                <div className="flex items-start gap-3">
-                  {/* Product Image */}
-                  <div className="relative flex-shrink-0">
-                    {product.product_images?.[0] ? (
-                      <img
-                        src={product.product_images[0].url}
-                        alt={product.name}
-                        className="h-16 w-16 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <div className="h-16 w-16 rounded-lg bg-muted flex items-center justify-center">
-                        <Package className="h-6 w-6 text-muted-foreground" />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredProducts.map((product) => (
+              <Card 
+                key={product.id} 
+                className={`overflow-hidden group transition-all hover:shadow-lg ${
+                  product.stock_quantity === 0 ? "opacity-75" : ""
+                }`}
+              >
+                {/* Product Image */}
+                <div className="relative aspect-square bg-muted">
+                  {product.product_images?.[0] ? (
+                    <img
+                      src={product.product_images[0].url}
+                      alt={product.name}
+                      className={`h-full w-full object-cover transition-transform group-hover:scale-105 ${
+                        product.stock_quantity === 0 ? "grayscale" : ""
+                      }`}
+                    />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center">
+                      <Package className="h-12 w-12 text-muted-foreground/50" />
+                    </div>
+                  )}
+                  
+                  {/* Sold Out Overlay */}
+                  {product.stock_quantity === 0 && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                      <div className="bg-red-600 text-white px-6 py-2 rounded-full font-bold text-lg shadow-lg">
+                        SOLD OUT
                       </div>
-                    )}
+                    </div>
+                  )}
+                  
+                  {/* Status Badges */}
+                  <div className="absolute top-2 left-2 flex flex-col gap-1.5">
                     {product.featured && (
-                      <Star className="absolute -top-1 -right-1 h-4 w-4 text-amber-500 fill-amber-500" />
+                      <Badge className="bg-amber-500 hover:bg-amber-600 gap-1 shadow-md">
+                        <Star className="h-3 w-3" />
+                        Featured
+                      </Badge>
+                    )}
+                    {!product.is_active && product.stock_quantity > 0 && (
+                      <Badge variant="secondary" className="shadow-md">
+                        <EyeOff className="h-3 w-3 mr-1" />
+                        Hidden
+                      </Badge>
+                    )}
+                    {product.stock_quantity > 0 && product.stock_quantity < 5 && (
+                      <Badge variant="outline" className="bg-orange-100 text-orange-700 border-orange-300 shadow-md">
+                        <AlertTriangle className="h-3 w-3 mr-1" />
+                        {product.stock_quantity} left
+                      </Badge>
                     )}
                   </div>
                   
-                  {/* Product Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="font-medium text-sm truncate">{product.name}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {product.category?.name || "Uncategorized"}
-                        </p>
-                      </div>
-                      
-                      {/* Actions */}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0 -mt-1 -mr-1">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem asChild>
-                            <Link to={`/vendor/products/${product.id}`}>
-                              <Pencil className="h-4 w-4 mr-2" />
-                              Edit Product
-                            </Link>
+                  {/* Actions Menu */}
+                  <div className="absolute top-2 right-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="secondary" size="icon" className="h-8 w-8 shadow-md">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem asChild>
+                          <Link to={`/vendor/products/${product.id}`}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Edit Product
+                          </Link>
+                        </DropdownMenuItem>
+                        
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setStockEdit({
+                              id: product.id,
+                              name: product.name,
+                              current: product.stock_quantity,
+                            });
+                            setNewStock(product.stock_quantity.toString());
+                          }}
+                        >
+                          <Package className="h-4 w-4 mr-2" />
+                          Update Stock
+                        </DropdownMenuItem>
+                        
+                        <DropdownMenuSeparator />
+                        
+                        {!product.featured && (
+                          <DropdownMenuItem
+                            onClick={() => setFeaturedProduct({ id: product.id, name: product.name })}
+                            className="text-amber-600"
+                          >
+                            <Star className="h-4 w-4 mr-2" />
+                            Make Featured (₦1,000)
                           </DropdownMenuItem>
-                          
+                        )}
+                        
+                        {product.stock_quantity > 0 ? (
+                          <DropdownMenuItem onClick={() => updateStock(product.id, 0)}>
+                            <PackageX className="h-4 w-4 mr-2" />
+                            Mark Sold Out
+                          </DropdownMenuItem>
+                        ) : (
                           <DropdownMenuItem
                             onClick={() => {
                               setStockEdit({
                                 id: product.id,
                                 name: product.name,
-                                current: product.stock_quantity,
+                                current: 0,
                               });
-                              setNewStock(product.stock_quantity.toString());
+                              setNewStock("10");
                             }}
                           >
-                            <Package className="h-4 w-4 mr-2" />
-                            Update Stock
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Restock
                           </DropdownMenuItem>
-                          
-                          <DropdownMenuSeparator />
-                          
-                          {!product.featured && (
-                            <DropdownMenuItem
-                              onClick={() => setFeaturedProduct({ id: product.id, name: product.name })}
-                              className="text-amber-600"
-                            >
-                              <Star className="h-4 w-4 mr-2" />
-                              Make Featured (₦1,000)
-                            </DropdownMenuItem>
-                          )}
-                          
-                          {product.stock_quantity > 0 ? (
-                            <DropdownMenuItem
-                              onClick={() => updateStock(product.id, 0)}
-                            >
-                              <PackageX className="h-4 w-4 mr-2" />
-                              Mark Sold Out
-                            </DropdownMenuItem>
+                        )}
+                        
+                        <DropdownMenuItem
+                          onClick={() =>
+                            toggleProductStatus.mutate({
+                              productId: product.id,
+                              isActive: !product.is_active,
+                            })
+                          }
+                        >
+                          {product.is_active ? (
+                            <>
+                              <EyeOff className="h-4 w-4 mr-2" />
+                              Hide Listing
+                            </>
                           ) : (
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setStockEdit({
-                                  id: product.id,
-                                  name: product.name,
-                                  current: 0,
-                                });
-                                setNewStock("10");
-                              }}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Restock
-                            </DropdownMenuItem>
+                            <>
+                              <Eye className="h-4 w-4 mr-2" />
+                              Show Listing
+                            </>
                           )}
-                          
-                          <DropdownMenuItem
-                            onClick={() =>
-                              toggleProductStatus.mutate({
-                                productId: product.id,
-                                isActive: !product.is_active,
-                              })
-                            }
-                          >
-                            {product.is_active ? (
-                              <>
-                                <EyeOff className="h-4 w-4 mr-2" />
-                                Deactivate
-                              </>
-                            ) : (
-                              <>
-                                <Eye className="h-4 w-4 mr-2" />
-                                Activate
-                              </>
-                            )}
-                          </DropdownMenuItem>
-                          
-                          <DropdownMenuSeparator />
-                          
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => setDeleteId(product.id)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete Product
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                        </DropdownMenuItem>
+                        
+                        <DropdownMenuSeparator />
+                        
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => setDeleteId(product.id)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Product
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+                
+                {/* Product Info */}
+                <div className="p-4">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold truncate">{product.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {product.category?.name || "Uncategorized"}
+                      </p>
                     </div>
-                    
-                    {/* Price & Status Row */}
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <span className="font-semibold text-sm">{formatCurrency(product.price)}</span>
-                      {getStockBadge(product.stock_quantity)}
-                      <Badge
-                        variant={product.is_active ? "default" : "secondary"}
-                        className={`text-[10px] px-1.5 ${product.is_active ? "bg-green-600" : ""}`}
-                      >
-                        {product.is_active ? "Active" : "Inactive"}
-                      </Badge>
-                      {product.featured && (
-                        <Badge className="bg-amber-500 text-[10px] px-1.5">Featured</Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-lg font-bold">{formatCurrency(product.price)}</span>
+                      {product.compare_at_price && product.compare_at_price > product.price && (
+                        <span className="text-sm text-muted-foreground line-through ml-2">
+                          {formatCurrency(product.compare_at_price)}
+                        </span>
                       )}
                     </div>
+                    {product.stock_quantity > 4 && (
+                      <Badge variant="secondary" className="text-xs">
+                        {product.stock_quantity} in stock
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </Card>
@@ -425,10 +584,10 @@ export default function VendorProducts() {
           </DialogHeader>
           
           <div className="py-4">
-            <div className="p-3 mb-4 rounded-lg bg-muted">
-              <p className="font-medium text-sm truncate">{featuredProduct?.name}</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Cost: <span className="font-semibold text-foreground">₦1,000</span>
+            <div className="p-4 mb-4 rounded-xl bg-gradient-to-br from-amber-500/10 to-amber-500/5 border border-amber-500/20">
+              <p className="font-medium truncate">{featuredProduct?.name}</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Cost: <span className="font-bold text-amber-600">₦1,000</span> for 7 days
               </p>
             </div>
             
@@ -444,14 +603,13 @@ export default function VendorProducts() {
                 </p>
               </TabsContent>
               
-              <TabsContent value="promo" className="mt-4">
-                <Label htmlFor="promoCode">Promo Code</Label>
+              <TabsContent value="promo" className="mt-4 space-y-3">
+                <Label htmlFor="promo">Promo Code</Label>
                 <Input
-                  id="promoCode"
+                  id="promo"
                   value={promoCode}
                   onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                   placeholder="Enter promo code"
-                  className="mt-2"
                 />
               </TabsContent>
             </Tabs>

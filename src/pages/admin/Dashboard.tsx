@@ -5,14 +5,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdminStats } from "@/hooks/useAdminStats";
 import { useAdminAnalytics } from "@/hooks/useAdminAnalytics";
 import { useAdminOrders } from "@/hooks/useAdminOrders";
-import { Users, Store, Package, ShoppingCart, DollarSign, TrendingUp, TrendingDown, Percent, Activity, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { useAdminVendors } from "@/hooks/useAdminVendors";
+import { Users, Store, Package, ShoppingCart, DollarSign, TrendingUp, TrendingDown, Percent, Activity, ArrowUpRight, ArrowDownRight, BadgeCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from "date-fns";
+import { useState } from "react";
 import { 
   LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend 
 } from "recharts";
+import { PendingPaymentsSection } from "@/components/admin/PendingPaymentsSection";
+import { VendorDetailModal } from "@/components/admin/VendorDetailModal";
+import { toast } from "sonner";
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--secondary))", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
@@ -20,9 +25,21 @@ export default function AdminDashboard() {
   const { data: stats, isLoading: statsLoading } = useAdminStats();
   const { data: analytics, isLoading: analyticsLoading } = useAdminAnalytics(30);
   const { orders, isLoading: ordersLoading } = useAdminOrders();
+  const { vendors, verifyVendor } = useAdminVendors();
+  const [selectedVendor, setSelectedVendor] = useState<typeof vendors[0] | null>(null);
 
   const recentOrders = orders.slice(0, 5);
   const isLoading = statsLoading || analyticsLoading;
+  
+  const handleVerifyVendor = async (vendorId: string, currentStatus: boolean) => {
+    try {
+      await verifyVendor.mutateAsync({ vendorId, isVerified: !currentStatus });
+      toast.success(currentStatus ? "Vendor unverified" : "Vendor verified successfully");
+      setSelectedVendor(null);
+    } catch (error) {
+      toast.error("Failed to update vendor verification");
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-NG", {
@@ -298,40 +315,46 @@ export default function AdminDashboard() {
             </Card>
           </div>
 
-          {/* Recent Orders */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Recent Orders</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {ordersLoading ? (
-                <div className="space-y-3">
-                  {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
-                </div>
-              ) : recentOrders.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">No orders yet</p>
-              ) : (
-                <div className="space-y-3">
-                  {recentOrders.map((order) => (
-                    <div key={order.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">
-                          {order.customer?.full_name || order.customer?.email || "Customer"}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(order.created_at), "MMM dd, yyyy HH:mm")} • {order.order_items.length} items
-                        </p>
+          {/* Recent Orders + Pending Payments Grid */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Recent Orders */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Recent Orders</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {ordersLoading ? (
+                  <div className="space-y-3">
+                    {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+                  </div>
+                ) : recentOrders.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">No orders yet</p>
+                ) : (
+                  <div className="space-y-3">
+                    {recentOrders.map((order) => (
+                      <div key={order.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">
+                            {order.customer?.full_name || order.customer?.email || "Customer"}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {format(new Date(order.created_at), "MMM dd, yyyy HH:mm")} • {order.order_items.length} items
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Badge className={getStatusColor(order.status)}>{order.status}</Badge>
+                          <span className="font-semibold">{formatCurrency(Number(order.total))}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <Badge className={getStatusColor(order.status)}>{order.status}</Badge>
-                        <span className="font-semibold">{formatCurrency(Number(order.total))}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Pending Payments */}
+            <PendingPaymentsSection />
+          </div>
         </TabsContent>
 
         {/* ANALYTICS TAB */}
@@ -387,20 +410,32 @@ export default function AdminDashboard() {
                   <p className="text-muted-foreground text-center py-8">No vendor data yet</p>
                 ) : (
                   <div className="space-y-3">
-                    {analytics?.topVendors.slice(0, 5).map((vendor, i) => (
-                      <div key={vendor.id} className="flex items-center gap-3">
-                        <span className="text-sm font-medium text-muted-foreground w-5">{i + 1}</span>
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={vendor.avatar || undefined} />
-                          <AvatarFallback>{vendor.storeName?.charAt(0) || "V"}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate text-sm">{vendor.storeName}</p>
-                          <p className="text-xs text-muted-foreground">{vendor.orderCount} orders</p>
+                    {analytics?.topVendors.slice(0, 5).map((vendor, i) => {
+                      const fullVendor = vendors.find(v => v.id === vendor.id);
+                      return (
+                        <div 
+                          key={vendor.id} 
+                          className="flex items-center gap-3 p-2 -m-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                          onClick={() => fullVendor && setSelectedVendor(fullVendor)}
+                        >
+                          <span className="text-sm font-medium text-muted-foreground w-5">{i + 1}</span>
+                          <Avatar className="h-10 w-10 border">
+                            <AvatarImage src={vendor.avatar || undefined} />
+                            <AvatarFallback>{vendor.storeName?.charAt(0) || "V"}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <p className="font-medium truncate text-sm">{vendor.storeName}</p>
+                              {fullVendor?.is_verified && (
+                                <BadgeCheck className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">{vendor.orderCount} orders</p>
+                          </div>
+                          <span className="font-semibold text-sm">{formatCurrency(vendor.totalSales)}</span>
                         </div>
-                        <span className="font-semibold text-sm">{formatCurrency(vendor.totalSales)}</span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
@@ -585,6 +620,14 @@ export default function AdminDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Vendor Detail Modal */}
+      <VendorDetailModal
+        vendor={selectedVendor}
+        open={!!selectedVendor}
+        onOpenChange={(open) => !open && setSelectedVendor(null)}
+        onVerify={handleVerifyVendor}
+      />
     </AdminLayout>
   );
 }
