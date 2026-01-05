@@ -19,6 +19,13 @@ import VendorProducts from "./pages/vendor/Products";
 import VendorProductForm from "./pages/vendor/ProductForm";
 import VendorOrders from "./pages/vendor/Orders";
 import VendorSettings from "./pages/vendor/Settings";
+import AdminDashboard from "./pages/admin/Dashboard";
+import AdminUsers from "./pages/admin/Users";
+import AdminVendors from "./pages/admin/Vendors";
+import AdminProducts from "./pages/admin/Products";
+import AdminOrders from "./pages/admin/Orders";
+import AdminCategories from "./pages/admin/Categories";
+import AdminSettings from "./pages/admin/Settings";
 import Account from "./pages/Account";
 import Settings from "./pages/Settings";
 import Help from "./pages/Help";
@@ -58,6 +65,13 @@ const App = () => (
             <Route path="/vendor/products/:id" element={<VendorProductForm />} />
             <Route path="/vendor/orders" element={<VendorOrders />} />
             <Route path="/vendor/settings" element={<VendorSettings />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/vendors" element={<AdminVendors />} />
+            <Route path="/admin/products" element={<AdminProducts />} />
+            <Route path="/admin/orders" element={<AdminOrders />} />
+            <Route path="/admin/categories" element={<AdminCategories />} />
+            <Route path="/admin/settings" element={<AdminSettings />} />
             <Route path="/account" element={<Account />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/help" element={<Help />} />
