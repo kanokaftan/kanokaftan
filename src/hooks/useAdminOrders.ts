@@ -60,11 +60,53 @@ export function useAdminOrders() {
 
   const updateOrderStatus = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
+      // Get the order to find user_id and vendors
+      const { data: order, error: fetchError } = await supabase
+        .from("orders")
+        .select("user_id")
+        .eq("id", orderId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
       const { error } = await supabase
         .from("orders")
         .update({ status })
         .eq("id", orderId);
       if (error) throw error;
+
+      // Notify customer about admin status update
+      if (order?.user_id) {
+        await supabase.from("notifications").insert({
+          user_id: order.user_id,
+          title: "Order Status Updated",
+          message: `Your order status has been updated to: ${status.replace(/_/g, ' ')}`,
+          type: "order",
+          category: "order",
+          action_url: `/orders/${orderId}`,
+          metadata: { order_id: orderId, status }
+        });
+      }
+
+      // Get vendor IDs from order items and notify them
+      const { data: orderItems } = await supabase
+        .from("order_items")
+        .select("vendor_id")
+        .eq("order_id", orderId);
+
+      if (orderItems) {
+        const uniqueVendorIds = [...new Set(orderItems.map(item => item.vendor_id))];
+        const vendorNotifications = uniqueVendorIds.map(vendorId => ({
+          user_id: vendorId,
+          title: "Order Status Updated by Admin",
+          message: `Order #${orderId.slice(0, 8)} status changed to: ${status.replace(/_/g, ' ')}`,
+          type: "order" as const,
+          category: "order" as const,
+          action_url: "/vendor/orders",
+          metadata: { order_id: orderId, status }
+        }));
+        await supabase.from("notifications").insert(vendorNotifications);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });

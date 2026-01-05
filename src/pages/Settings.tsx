@@ -1,15 +1,31 @@
-import { useState } from "react";
-import { Moon, Sun, Bell, Globe } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Bell, Globe, Trash2 } from "lucide-react";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { useNotifications } from "@/hooks/useNotifications";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Settings() {
   const [notifications, setNotifications] = useState(true);
   const [orderUpdates, setOrderUpdates] = useState(true);
   const [promotions, setPromotions] = useState(false);
+  const { clearAll, unreadCount } = useNotifications();
+  const { toast } = useToast();
+
+  const handleClearNotifications = () => {
+    clearAll.mutate(undefined, {
+      onSuccess: () => {
+        toast({
+          title: "Notifications cleared",
+          description: "All notifications have been removed.",
+        });
+      },
+    });
+  };
 
   return (
     <MobileLayout>
@@ -18,37 +34,6 @@ export default function Settings() {
           <h1 className="text-2xl font-bold">Preferences</h1>
           <p className="text-muted-foreground">Customize your app experience</p>
         </div>
-
-        {/* Appearance */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sun className="h-5 w-5" />
-              Appearance
-            </CardTitle>
-            <CardDescription>
-              Customize how the app looks
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Theme</Label>
-                <p className="text-sm text-muted-foreground">Choose your preferred theme</p>
-              </div>
-              <Select defaultValue="system">
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue placeholder="Theme" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="light">Light</SelectItem>
-                  <SelectItem value="dark">Dark</SelectItem>
-                  <SelectItem value="system">System</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Notifications */}
         <Card>
@@ -65,7 +50,7 @@ export default function Settings() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="notifications">Push Notifications</Label>
-                <p className="text-sm text-muted-foreground">Receive push notifications</p>
+                <p className="text-sm text-muted-foreground">Receive in-app notifications</p>
               </div>
               <Switch
                 id="notifications"
@@ -88,7 +73,7 @@ export default function Settings() {
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="promotions">Promotional Emails</Label>
+                <Label htmlFor="promotions">Promotional Notifications</Label>
                 <p className="text-sm text-muted-foreground">Receive deals and offers</p>
               </div>
               <Switch
@@ -96,6 +81,26 @@ export default function Settings() {
                 checked={promotions}
                 onCheckedChange={setPromotions}
               />
+            </div>
+
+            <div className="pt-2 border-t">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Clear All Notifications</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {unreadCount > 0 ? `${unreadCount} unread` : "No notifications"}
+                  </p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleClearNotifications}
+                  disabled={clearAll.isPending}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Clear All
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

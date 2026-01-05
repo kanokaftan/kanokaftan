@@ -5,9 +5,12 @@ import { Input } from "@/components/ui/input";
 import { useCart } from "@/hooks/useCart";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function MobileHeader() {
   const { count: cartCount } = useCart();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
@@ -42,7 +45,9 @@ export function MobileHeader() {
           </div>
         </form>
 
-        {/* Cart */}
+        {/* Notifications & Cart */}
+        {user && <NotificationBell />}
+        
         <Link to="/cart" className="relative flex-shrink-0">
           <ShoppingCart className="h-6 w-6 text-foreground" />
           {cartCount > 0 && (
