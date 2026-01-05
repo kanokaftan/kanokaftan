@@ -1,12 +1,12 @@
 import { MobileLayout } from "@/components/layout/MobileLayout";
-import { User, Settings, HelpCircle, LogOut, ChevronRight, Store } from "lucide-react";
+import { User, Settings, HelpCircle, LogOut, ChevronRight, Store, Shield } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Profile() {
-  const { user, isVendor, isLoading, signOut } = useAuth();
+  const { user, isVendor, isAdmin, isLoading, signOut } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -64,6 +64,10 @@ export default function Profile() {
     { icon: Settings, label: "Preferences", href: "/settings" },
     { icon: HelpCircle, label: "Help & Support", href: "/help" },
   ];
+
+  if (isAdmin) {
+    menuItems.unshift({ icon: Shield, label: "Admin Dashboard", href: "/admin/dashboard" });
+  }
 
   if (isVendor) {
     menuItems.unshift({ icon: Store, label: "Vendor Dashboard", href: "/vendor/dashboard" });
