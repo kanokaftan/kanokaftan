@@ -1,6 +1,6 @@
 import { ReactNode, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Menu, X, LayoutDashboard, Users, Store, Package, ShoppingCart, FolderTree, Settings, LogOut, ArrowLeftRight, Shield } from "lucide-react";
+import { Menu, X, LayoutDashboard, Users, Store, Package, ShoppingCart, FolderTree, Settings, LogOut, ArrowLeftRight, Shield, DollarSign, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -21,6 +21,8 @@ const navItems = [
   { title: "Products", url: "/admin/products", icon: Package },
   { title: "Orders", url: "/admin/orders", icon: ShoppingCart },
   { title: "Categories", url: "/admin/categories", icon: FolderTree },
+  { title: "Finance", url: "/admin/finance", icon: DollarSign },
+  { title: "Reports", url: "/admin/reports", icon: FileText },
   { title: "Settings", url: "/admin/settings", icon: Settings },
 ];
 
