@@ -7,6 +7,7 @@ interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
   isVendor: boolean;
+  isAdmin: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -17,6 +18,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isVendor, setIsVendor] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -26,13 +28,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         setIsLoading(false);
 
-        // Defer vendor check to avoid deadlock
+        // Defer role checks to avoid deadlock
         if (session?.user) {
           setTimeout(() => {
             checkVendorStatus(session.user.id);
+            checkAdminStatus(session.user.id);
           }, 0);
         } else {
           setIsVendor(false);
+          setIsAdmin(false);
         }
       }
     );
@@ -45,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (session?.user) {
         checkVendorStatus(session.user.id);
+        checkAdminStatus(session.user.id);
       }
     });
 
@@ -64,12 +69,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const checkAdminStatus = async (userId: string) => {
+    try {
+      const { data } = await supabase.rpc("has_role", {
+        _role: "admin",
+        _user_id: userId,
+      });
+      setIsAdmin(!!data);
+    } catch (error) {
+      console.error("Error checking admin status:", error);
+      setIsAdmin(false);
+    }
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isLoading, isVendor, signOut }}>
+    <AuthContext.Provider value={{ user, session, isLoading, isVendor, isAdmin, signOut }}>
       {children}
     </AuthContext.Provider>
   );
