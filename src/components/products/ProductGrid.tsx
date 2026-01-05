@@ -5,6 +5,7 @@ import type { Product } from "@/hooks/useProducts";
 interface ProductGridProps {
   products: Product[];
   isLoading?: boolean;
+  onQuickView?: (product: Product) => void;
 }
 
 function ProductSkeleton() {
@@ -20,7 +21,7 @@ function ProductSkeleton() {
   );
 }
 
-export function ProductGrid({ products, isLoading }: ProductGridProps) {
+export function ProductGrid({ products, isLoading, onQuickView }: ProductGridProps) {
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -45,7 +46,11 @@ export function ProductGrid({ products, isLoading }: ProductGridProps) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
       {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
+        <ProductCard 
+          key={product.id} 
+          product={product} 
+          onQuickView={onQuickView}
+        />
       ))}
     </div>
   );

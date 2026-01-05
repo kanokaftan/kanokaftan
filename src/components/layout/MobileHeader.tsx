@@ -1,25 +1,14 @@
 import { Link } from "react-router-dom";
-import { ShoppingCart, Search } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { useCart } from "@/hooks/useCart";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { LiveSearch } from "@/components/search/LiveSearch";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function MobileHeader() {
   const { count: cartCount } = useCart();
   const { user } = useAuth();
-  const [searchQuery, setSearchQuery] = useState("");
-  const navigate = useNavigate();
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
-    }
-  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -31,19 +20,8 @@ export function MobileHeader() {
           </span>
         </Link>
 
-        {/* Search Bar */}
-        <form onSubmit={handleSearch} className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search products..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-9 w-full rounded-full bg-muted/50 pl-9 pr-4 text-sm border-0"
-            />
-          </div>
-        </form>
+        {/* Live Search */}
+        <LiveSearch className="flex-1" placeholder="Search products..." />
 
         {/* Notifications & Cart */}
         {user && <NotificationBell />}

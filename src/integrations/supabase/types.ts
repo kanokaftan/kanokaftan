@@ -134,6 +134,56 @@ export type Database = {
         }
         Relationships: []
       }
+      flash_sales: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          ends_at: string
+          id: string
+          is_active: boolean
+          max_quantity: number | null
+          original_price: number
+          product_id: string
+          sale_price: number
+          sold_quantity: number
+          starts_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          ends_at: string
+          id?: string
+          is_active?: boolean
+          max_quantity?: number | null
+          original_price: number
+          product_id: string
+          sale_price: number
+          sold_quantity?: number
+          starts_at: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string
+          id?: string
+          is_active?: boolean
+          max_quantity?: number | null
+          original_price?: number
+          product_id?: string
+          sale_price?: number
+          sold_quantity?: number
+          starts_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flash_sales_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           action_url: string | null

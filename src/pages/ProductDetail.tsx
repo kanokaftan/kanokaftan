@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ChevronLeft, Heart, Minus, Plus, ShoppingCart, Truck, Shield, RotateCcw, BadgeCheck, Store, MessageCircle } from "lucide-react";
 import { MobileLayout } from "@/components/layout/MobileLayout";
@@ -10,7 +10,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProduct } from "@/hooks/useProduct";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
+import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { ReviewsList } from "@/components/reviews/ReviewsList";
+import { RecentlyViewed } from "@/components/products/RecentlyViewed";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -28,8 +30,23 @@ export default function ProductDetail() {
   const { data: product, isLoading, error } = useProduct(slug || "");
   const { addToCart } = useCart();
   const { userId, addToWishlist, isInWishlist } = useWishlist();
+  const { addProduct: addToRecentlyViewed } = useRecentlyViewed();
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+
+  // Track product view
+  useEffect(() => {
+    if (product) {
+      const primaryImage = product.product_images?.find(img => img.is_primary);
+      addToRecentlyViewed({
+        id: product.id,
+        slug: product.slug,
+        name: product.name,
+        price: product.price,
+        imageUrl: primaryImage?.url || product.product_images?.[0]?.url,
+      });
+    }
+  }, [product, addToRecentlyViewed]);
 
   if (isLoading) {
     return (
@@ -338,6 +355,9 @@ export default function ProductDetail() {
         {/* Reviews Section */}
         <Separator className="my-6" />
         <ReviewsList productId={product.id} />
+
+        {/* Recently Viewed */}
+        <RecentlyViewed excludeProductId={product.id} />
       </div>
     </MobileLayout>
   );
