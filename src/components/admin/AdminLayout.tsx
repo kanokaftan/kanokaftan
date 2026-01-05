@@ -8,6 +8,7 @@ import { AdminSidebar } from "./AdminSidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Skeleton } from "@/components/ui/skeleton";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -54,11 +55,13 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
             <Shield className="h-6 w-6 text-primary" />
             <span className="font-semibold">Admin</span>
           </div>
-          <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </Button>
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <Sheet open={isOpen} onOpenChange={setIsOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-72 p-0">
               <div className="flex flex-col h-full">
@@ -102,6 +105,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
               </div>
             </SheetContent>
           </Sheet>
+          </div>
         </div>
       </div>
 

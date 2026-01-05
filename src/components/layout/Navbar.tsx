@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/hooks/useCart";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 export function Navbar() {
@@ -92,7 +93,8 @@ export function Navbar() {
           </Button>
           
           {user ? (
-            <div className="hidden items-center gap-2 sm:flex">
+            <div className="hidden items-center gap-1 sm:flex">
+              <NotificationBell />
               <Button variant="ghost" size="icon" asChild>
                 <Link to="/account">
                   <User className="h-5 w-5" />

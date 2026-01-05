@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import {
   Sheet,
   SheetContent,
@@ -107,14 +108,17 @@ export function VendorLayout({ children, title }: VendorLayoutProps) {
           </Sheet>
           <h1 className="font-semibold">{title}</h1>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9"
-          onClick={() => navigate("/account")}
-        >
-          <User className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <NotificationBell />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9"
+            onClick={() => navigate("/account")}
+          >
+            <User className="h-5 w-5" />
+          </Button>
+        </div>
       </header>
 
       {/* Desktop Layout */}

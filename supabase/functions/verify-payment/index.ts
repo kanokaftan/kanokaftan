@@ -48,6 +48,13 @@ serve(async (req) => {
     console.log(`Payment verification result: ${transaction.status}`);
 
     if (isSuccessful && orderId) {
+      // Get order details first
+      const { data: order, error: orderFetchError } = await supabase
+        .from('orders')
+        .select('user_id, total')
+        .eq('id', orderId)
+        .single();
+
       // Update order if payment is successful
       const { error: updateError } = await supabase
         .from('orders')
@@ -70,18 +77,41 @@ serve(async (req) => {
       if (updateError) {
         console.error('Failed to update order:', updateError);
       } else {
-        // Reduce stock for each order item
+        // Send notification to customer
+        if (order?.user_id) {
+          await supabase.from('notifications').insert({
+            user_id: order.user_id,
+            title: 'Payment Confirmed!',
+            message: `Your payment of ₦${(transaction.amount / 100).toLocaleString()} has been received. Your order is being processed.`,
+            type: 'success',
+            category: 'payment',
+            action_url: `/orders/${orderId}`,
+            metadata: { order_id: orderId, amount: transaction.amount / 100 }
+          });
+        }
+
+        // Reduce stock and notify vendors
         console.log('Payment confirmed, reducing stock for order:', orderId);
         
         const { data: orderItems, error: itemsError } = await supabase
           .from('order_items')
-          .select('product_id, quantity, variant_id')
+          .select('product_id, quantity, variant_id, vendor_id, product_name, total_price')
           .eq('order_id', orderId);
 
         if (itemsError) {
           console.error('Failed to fetch order items:', itemsError);
         } else if (orderItems) {
+          // Group items by vendor for notifications
+          const vendorOrders: Record<string, { items: typeof orderItems; total: number }> = {};
+
           for (const item of orderItems) {
+            // Track vendor orders
+            if (!vendorOrders[item.vendor_id]) {
+              vendorOrders[item.vendor_id] = { items: [], total: 0 };
+            }
+            vendorOrders[item.vendor_id].items.push(item);
+            vendorOrders[item.vendor_id].total += item.total_price;
+
             // Get current stock
             const { data: product, error: productError } = await supabase
               .from('products')
@@ -124,6 +154,39 @@ serve(async (req) => {
                   .eq('id', item.variant_id);
               }
             }
+          }
+
+          // Notify each vendor about their new order
+          for (const [vendorId, vendorOrder] of Object.entries(vendorOrders)) {
+            const itemNames = vendorOrder.items.map(i => i.product_name).join(', ');
+            await supabase.from('notifications').insert({
+              user_id: vendorId,
+              title: 'New Order Received!',
+              message: `You have a new order for ${itemNames}. Total: ₦${vendorOrder.total.toLocaleString()}`,
+              type: 'order',
+              category: 'order',
+              action_url: '/vendor/orders',
+              metadata: { order_id: orderId, total: vendorOrder.total }
+            });
+          }
+
+          // Notify admins
+          const { data: adminUsers } = await supabase
+            .from('user_roles')
+            .select('user_id')
+            .eq('role', 'admin');
+
+          if (adminUsers && adminUsers.length > 0) {
+            const adminNotifications = adminUsers.map(admin => ({
+              user_id: admin.user_id,
+              title: 'New Paid Order',
+              message: `Order #${orderId.slice(0, 8)} has been paid. Amount: ₦${(transaction.amount / 100).toLocaleString()}`,
+              type: 'payment' as const,
+              category: 'payment' as const,
+              action_url: '/admin/orders',
+              metadata: { order_id: orderId, amount: transaction.amount / 100 }
+            }));
+            await supabase.from('notifications').insert(adminNotifications);
           }
         }
       }

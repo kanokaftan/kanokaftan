@@ -142,7 +142,7 @@ export function useVendorOrders(vendorId: string | null) {
       // Get current order to append tracking update
       const { data: currentOrder, error: fetchError } = await supabase
         .from("orders")
-        .select("tracking_updates")
+        .select("tracking_updates, user_id")
         .eq("id", orderId)
         .single();
 
@@ -174,6 +174,32 @@ export function useVendorOrders(vendorId: string | null) {
         .eq("id", orderId);
 
       if (error) throw error;
+
+      // Send notification to customer about status update
+      if (currentOrder.user_id) {
+        const statusMessages: Record<string, { title: string; message: string }> = {
+          processing: { title: "Order Processing", message: "Your order is now being prepared." },
+          ready_for_pickup: { title: "Ready for Pickup", message: "Your order is ready and waiting for courier pickup." },
+          shipped: { title: "Order Shipped!", message: "Your order is on its way! Track it in your orders page." },
+          out_for_delivery: { title: "Out for Delivery", message: "Your order is out for delivery. It should arrive soon!" },
+          delivered: { title: "Order Delivered", message: "Your order has been delivered. Enjoy your purchase!" },
+          completed: { title: "Order Completed", message: "Thank you for shopping with us! We hope you love your items." },
+          cancelled: { title: "Order Cancelled", message: "Your order has been cancelled. Contact support if you have questions." },
+        };
+
+        const notificationInfo = statusMessages[status];
+        if (notificationInfo) {
+          await supabase.from("notifications").insert({
+            user_id: currentOrder.user_id,
+            title: notificationInfo.title,
+            message: notificationInfo.message,
+            type: status === "cancelled" ? "warning" : status === "delivered" || status === "completed" ? "success" : "order",
+            category: "order",
+            action_url: `/orders/${orderId}`,
+            metadata: { order_id: orderId, status }
+          });
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vendor-orders"] });
