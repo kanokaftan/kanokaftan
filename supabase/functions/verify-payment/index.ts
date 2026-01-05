@@ -69,6 +69,63 @@ serve(async (req) => {
 
       if (updateError) {
         console.error('Failed to update order:', updateError);
+      } else {
+        // Reduce stock for each order item
+        console.log('Payment confirmed, reducing stock for order:', orderId);
+        
+        const { data: orderItems, error: itemsError } = await supabase
+          .from('order_items')
+          .select('product_id, quantity, variant_id')
+          .eq('order_id', orderId);
+
+        if (itemsError) {
+          console.error('Failed to fetch order items:', itemsError);
+        } else if (orderItems) {
+          for (const item of orderItems) {
+            // Get current stock
+            const { data: product, error: productError } = await supabase
+              .from('products')
+              .select('stock_quantity')
+              .eq('id', item.product_id)
+              .single();
+
+            if (productError) {
+              console.error(`Failed to fetch product ${item.product_id}:`, productError);
+              continue;
+            }
+
+            const newStock = Math.max(0, (product?.stock_quantity || 0) - item.quantity);
+            
+            // Update product stock
+            const { error: stockError } = await supabase
+              .from('products')
+              .update({ stock_quantity: newStock })
+              .eq('id', item.product_id);
+
+            if (stockError) {
+              console.error(`Failed to update stock for product ${item.product_id}:`, stockError);
+            } else {
+              console.log(`Reduced stock for product ${item.product_id}: ${product?.stock_quantity} -> ${newStock}`);
+            }
+
+            // Also update variant stock if applicable
+            if (item.variant_id) {
+              const { data: variant, error: variantFetchError } = await supabase
+                .from('product_variants')
+                .select('stock_quantity')
+                .eq('id', item.variant_id)
+                .single();
+
+              if (!variantFetchError && variant) {
+                const newVariantStock = Math.max(0, (variant.stock_quantity || 0) - item.quantity);
+                await supabase
+                  .from('product_variants')
+                  .update({ stock_quantity: newVariantStock })
+                  .eq('id', item.variant_id);
+              }
+            }
+          }
+        }
       }
     }
 

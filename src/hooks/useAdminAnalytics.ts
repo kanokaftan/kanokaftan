@@ -118,10 +118,13 @@ export function useAdminAnalytics(days: number = 30) {
         orders: data.orders,
       }));
 
-      // Calculate top products
+      // Calculate top products (only from paid orders)
       const productSalesMap = new Map<string, { name: string; totalSold: number; revenue: number; image: string | null }>();
       
-      orderItems?.forEach(item => {
+      // Filter to only paid order items
+      const paidOrderItems = orderItems?.filter(item => (item.order as any)?.payment_status === "paid") || [];
+      
+      paidOrderItems.forEach(item => {
         const existing = productSalesMap.get(item.product_id) || { 
           name: item.product_name, 
           totalSold: 0, 
@@ -142,10 +145,10 @@ export function useAdminAnalytics(days: number = 30) {
         .sort((a, b) => b.revenue - a.revenue)
         .slice(0, 10);
 
-      // Calculate top vendors
+      // Calculate top vendors (only from paid orders)
       const vendorSalesMap = new Map<string, { storeName: string; totalSales: number; orderCount: number; avatar: string | null }>();
       
-      orderItems?.forEach(item => {
+      paidOrderItems.forEach(item => {
         const vendor = vendorProfiles?.find(v => v.id === item.vendor_id);
         const existing = vendorSalesMap.get(item.vendor_id) || { 
           storeName: vendor?.store_name || "Unknown Store", 
