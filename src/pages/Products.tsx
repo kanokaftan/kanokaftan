@@ -1,15 +1,19 @@
+import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { ProductGrid } from "@/components/products/ProductGrid";
 import { ProductFilters } from "@/components/products/ProductFilters";
 import { ProductPagination } from "@/components/products/ProductPagination";
-import { useProducts, useCategories } from "@/hooks/useProducts";
+import { QuickViewModal } from "@/components/products/QuickViewModal";
+import { RecentlyViewed } from "@/components/products/RecentlyViewed";
+import { useProducts, useCategories, type Product } from "@/hooks/useProducts";
 
 export default function Products() {
   const [searchParams] = useSearchParams();
   const categorySlug = searchParams.get("category") || undefined;
   const search = searchParams.get("search") || undefined;
   const page = parseInt(searchParams.get("page") || "1", 10);
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
 
   const { data: categoriesData, isLoading: categoriesLoading } = useCategories();
   const { data: productsData, isLoading: productsLoading } = useProducts({
@@ -51,7 +55,11 @@ export default function Products() {
 
       {/* Products Grid */}
       <section className="px-4 py-6">
-        <ProductGrid products={products} isLoading={productsLoading} />
+        <ProductGrid 
+          products={products} 
+          isLoading={productsLoading}
+          onQuickView={setQuickViewProduct}
+        />
         
         {!productsLoading && products.length > 0 && (
           <div className="mt-6">
@@ -63,6 +71,16 @@ export default function Products() {
           </div>
         )}
       </section>
+
+      {/* Recently Viewed */}
+      <RecentlyViewed />
+
+      {/* Quick View Modal */}
+      <QuickViewModal
+        product={quickViewProduct}
+        open={!!quickViewProduct}
+        onOpenChange={(open) => !open && setQuickViewProduct(null)}
+      />
     </MobileLayout>
   );
 }

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Heart, ShoppingCart, BadgeCheck } from "lucide-react";
+import { Heart, ShoppingCart, BadgeCheck, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import type { Product } from "@/hooks/useProducts";
 
 interface ProductCardProps {
   product: Product;
+  onQuickView?: (product: Product) => void;
 }
 
 function formatPrice(amount: number): string {
@@ -22,7 +23,7 @@ function formatPrice(amount: number): string {
   }).format(amount);
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, onQuickView }: ProductCardProps) {
   const navigate = useNavigate();
   const { userId, addToWishlist, isInWishlist } = useWishlist();
   const { addToCart } = useCart();
@@ -79,6 +80,11 @@ export function ProductCard({ product }: ProductCardProps) {
       }
     );
   };
+  const handleQuickView = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onQuickView?.(product);
+  };
 
   return (
     <Card className="group overflow-hidden border-0 shadow-sm transition-shadow hover:shadow-md">
@@ -121,6 +127,16 @@ export function ProductCard({ product }: ProductCardProps) {
             >
               <Heart className={cn("h-4 w-4", inWishlist && "fill-current")} />
             </Button>
+            {onQuickView && (
+              <Button 
+                size="icon" 
+                variant="secondary" 
+                className="h-9 w-9"
+                onClick={handleQuickView}
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+            )}
             <Button 
               size="icon" 
               variant="secondary" 
