@@ -98,6 +98,8 @@ export type Database = {
           is_default: boolean
           label: string
           landmark: string | null
+          latitude: number | null
+          longitude: number | null
           phone: string
           state: string
           street_address: string
@@ -112,6 +114,8 @@ export type Database = {
           is_default?: boolean
           label?: string
           landmark?: string | null
+          latitude?: number | null
+          longitude?: number | null
           phone: string
           state: string
           street_address: string
@@ -126,6 +130,8 @@ export type Database = {
           is_default?: boolean
           label?: string
           landmark?: string | null
+          latitude?: number | null
+          longitude?: number | null
           phone?: string
           state?: string
           street_address?: string
