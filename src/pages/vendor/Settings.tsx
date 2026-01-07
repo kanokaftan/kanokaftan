@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { 
   Store, CreditCard, Save, Loader2, Camera, BadgeCheck, 
-  ShieldCheck
+  ShieldCheck, MapPin
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { VendorLayout } from "@/components/vendor/VendorLayout";
@@ -33,11 +33,22 @@ const settingsSchema = z.object({
   store_name: z.string().min(2, "Store name must be at least 2 characters"),
   store_description: z.string().optional(),
   phone: z.string().optional(),
+  store_street: z.string().optional(),
+  store_city: z.string().optional(),
+  store_state: z.string().optional(),
   bank_name: z.string().optional(),
   account_number: z.string().optional(),
   account_name: z.string().optional(),
   payout_preference: z.enum(["daily", "weekly", "monthly"]).optional(),
 });
+
+const NIGERIAN_STATES = [
+  "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue",
+  "Borno", "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu",
+  "FCT", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi",
+  "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun",
+  "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara",
+];
 
 type SettingsFormData = z.infer<typeof settingsSchema>;
 
@@ -54,6 +65,7 @@ export default function VendorSettings() {
   const [showVerifyDialog, setShowVerifyDialog] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isGeocodingStore, setIsGeocodingStore] = useState(false);
 
   const form = useForm<SettingsFormData>({
     resolver: zodResolver(settingsSchema),
@@ -61,6 +73,9 @@ export default function VendorSettings() {
       store_name: "",
       store_description: "",
       phone: "",
+      store_street: "",
+      store_city: "",
+      store_state: "",
       bank_name: "",
       account_number: "",
       account_name: "",
@@ -85,10 +100,22 @@ export default function VendorSettings() {
         }
 
         if (profile) {
+          // Parse store_address JSON if it exists
+          const storeAddress = profile.store_address as { 
+            street?: string; 
+            city?: string; 
+            state?: string; 
+            latitude?: number; 
+            longitude?: number;
+          } | null;
+          
           form.reset({
             store_name: profile.store_name || "",
             store_description: profile.store_description || "",
             phone: profile.phone || "",
+            store_street: storeAddress?.street || "",
+            store_city: storeAddress?.city || "",
+            store_state: storeAddress?.state || "",
             bank_name: profile.bank_name || "",
             account_number: profile.account_number || "",
             account_name: profile.account_name || "",
@@ -207,12 +234,44 @@ export default function VendorSettings() {
     
     setIsSaving(true);
     try {
+      // Geocode store address if provided
+      let storeAddress = null;
+      if (data.store_street && data.store_city && data.store_state) {
+        setIsGeocodingStore(true);
+        try {
+          const { data: geoData } = await supabase.functions.invoke('geocode-address', {
+            body: { 
+              street_address: data.store_street, 
+              city: data.store_city, 
+              state: data.store_state 
+            }
+          });
+          storeAddress = {
+            street: data.store_street,
+            city: data.store_city,
+            state: data.store_state,
+            latitude: geoData?.latitude || null,
+            longitude: geoData?.longitude || null,
+          } as unknown as Record<string, unknown>;
+        } catch (geoError) {
+          console.error('Geocoding failed:', geoError);
+          storeAddress = {
+            street: data.store_street,
+            city: data.store_city,
+            state: data.store_state,
+          } as unknown as Record<string, unknown>;
+        } finally {
+          setIsGeocodingStore(false);
+        }
+      }
+
       const { error } = await supabase
         .from("profiles")
         .update({
           store_name: data.store_name,
           store_description: data.store_description,
           phone: data.phone,
+          store_address: storeAddress,
           bank_name: data.bank_name,
           account_number: data.account_number,
           account_name: data.account_name,

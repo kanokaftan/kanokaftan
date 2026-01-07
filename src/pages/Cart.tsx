@@ -1,11 +1,17 @@
 import { Link } from "react-router-dom";
-import { Minus, Plus, Trash2, ShoppingBag, ArrowRight } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Truck, Percent } from "lucide-react";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
+import { 
+  formatShippingRange, 
+  getNextDiscountTier, 
+  getDiscountTierDescription 
+} from "@/lib/shipping";
 
 function formatPrice(amount: number): string {
   return new Intl.NumberFormat("en-NG", {
@@ -71,8 +77,8 @@ export default function Cart() {
     );
   }
 
-  const shippingFee = total >= 50000 ? 0 : 3500;
-  const grandTotal = total + shippingFee;
+  const nextTier = getNextDiscountTier(total);
+  const currentDiscount = getDiscountTierDescription(total);
 
   return (
     <MobileLayout>
@@ -166,6 +172,28 @@ export default function Cart() {
           })}
         </div>
 
+        {/* Shipping Discount Progress */}
+        {nextTier && (
+          <div className="mt-4 rounded-xl bg-primary/5 p-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-primary">
+              <Truck className="h-4 w-4" />
+              <span>Spend {formatPrice(nextTier.amountNeeded)} more for {Math.round(nextTier.nextDiscount * 100)}% off shipping!</span>
+            </div>
+            <Progress 
+              value={(total / nextTier.nextThreshold) * 100} 
+              className="mt-2 h-2"
+            />
+          </div>
+        )}
+
+        {/* Current discount badge */}
+        {currentDiscount && (
+          <div className="mt-4 flex items-center justify-center gap-2 rounded-full bg-green-100 px-4 py-2 text-sm font-medium text-green-700">
+            <Percent className="h-4 w-4" />
+            <span>You're getting {currentDiscount}!</span>
+          </div>
+        )}
+
         {/* Order Summary */}
         <div className="mt-6 rounded-xl bg-muted/50 p-4">
           <div className="space-y-2">
@@ -175,26 +203,20 @@ export default function Cart() {
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Shipping</span>
-              <span>
-                {shippingFee === 0 ? (
-                  <span className="text-green-600">Free</span>
-                ) : (
-                  formatPrice(shippingFee)
-                )}
+              <span className="text-muted-foreground">
+                {formatShippingRange()}
               </span>
             </div>
-            {shippingFee > 0 && (
-              <p className="text-xs text-muted-foreground">
-                Free shipping on orders over ₦50,000
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground">
+              Calculated at checkout based on your location
+            </p>
           </div>
 
           <Separator className="my-3" />
 
           <div className="flex justify-between font-display font-bold">
-            <span>Total</span>
-            <span>{formatPrice(grandTotal)}</span>
+            <span>Subtotal</span>
+            <span>{formatPrice(total)}</span>
           </div>
         </div>
 

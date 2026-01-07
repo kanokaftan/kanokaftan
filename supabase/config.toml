@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.verify-featured-payment]
 verify_jwt = false
+
+[functions.geocode-address]
+verify_jwt = false

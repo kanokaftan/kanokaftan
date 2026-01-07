@@ -13,6 +13,8 @@ export interface DeliveryAddress {
   state: string;
   landmark: string | null;
   is_default: boolean;
+  latitude: number | null;
+  longitude: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -26,6 +28,8 @@ export interface AddressFormData {
   state: string;
   landmark?: string;
   is_default?: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export function useAddresses() {

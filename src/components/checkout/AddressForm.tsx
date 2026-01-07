@@ -1,12 +1,15 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { MapPin, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAddresses, AddressFormData } from "@/hooks/useAddresses";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const addressSchema = z.object({
@@ -35,6 +38,7 @@ interface AddressFormProps {
 
 export function AddressForm({ onSuccess, editAddress }: AddressFormProps) {
   const { addAddress, updateAddress } = useAddresses();
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   const {
     register,
@@ -58,18 +62,53 @@ export function AddressForm({ onSuccess, editAddress }: AddressFormProps) {
 
   const selectedState = watch("state");
 
+  const geocodeAddress = async (street_address: string, city: string, state: string) => {
+    try {
+      setIsGeocoding(true);
+      const { data, error } = await supabase.functions.invoke('geocode-address', {
+        body: { street_address, city, state }
+      });
+
+      if (error) {
+        console.error('Geocoding error:', error);
+        return null;
+      }
+
+      if (data?.success && data.latitude && data.longitude) {
+        return { latitude: data.latitude, longitude: data.longitude };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Geocoding failed:', error);
+      return null;
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
+
   const onSubmit = async (data: AddressFormData) => {
     try {
+      // Geocode the address to get coordinates
+      const coords = await geocodeAddress(data.street_address, data.city, data.state);
+      
+      const addressData: AddressFormData = {
+        ...data,
+        latitude: coords?.latitude ?? null,
+        longitude: coords?.longitude ?? null,
+      };
+
       if (editAddress) {
-        await updateAddress.mutateAsync({ id: editAddress.id, ...data });
+        await updateAddress.mutateAsync({ id: editAddress.id, ...addressData });
         toast.success("Address updated");
       } else {
-        await addAddress.mutateAsync(data);
+        await addAddress.mutateAsync(addressData);
         toast.success("Address added");
       }
       onSuccess();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to save address");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to save address";
+      toast.error(message);
     }
   };
 
@@ -169,8 +208,23 @@ export function AddressForm({ onSuccess, editAddress }: AddressFormProps) {
         />
       </div>
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? "Saving..." : editAddress ? "Update Address" : "Save Address"}
+      <Button type="submit" className="w-full" disabled={isSubmitting || isGeocoding}>
+        {isSubmitting || isGeocoding ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            {isGeocoding ? "Getting location..." : "Saving..."}
+          </>
+        ) : editAddress ? (
+          <>
+            <MapPin className="mr-2 h-4 w-4" />
+            Update Address
+          </>
+        ) : (
+          <>
+            <MapPin className="mr-2 h-4 w-4" />
+            Save Address
+          </>
+        )}
       </Button>
     </form>
   );
