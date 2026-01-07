@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { MapPin, Plus, ChevronRight, CreditCard, ShieldCheck, Truck } from "lucide-react";
+import { MapPin, Plus, ChevronRight, CreditCard, ShieldCheck, Truck, Percent } from "lucide-react";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -16,6 +16,12 @@ import { usePayment } from "@/hooks/usePayment";
 import { AddressForm } from "@/components/checkout/AddressForm";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { 
+  calculateShippingFee, 
+  calculateDistance, 
+  DEFAULT_SHIPPING_FEE,
+  getDiscountTierDescription 
+} from "@/lib/shipping";
 
 function formatPrice(amount: number): string {
   return new Intl.NumberFormat("en-NG", {
@@ -24,6 +30,9 @@ function formatPrice(amount: number): string {
     minimumFractionDigits: 0,
   }).format(amount);
 }
+
+// Default vendor location (Kano city center)
+const DEFAULT_VENDOR_COORDS = { lat: 12.0000, lng: 8.5167 };
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -52,8 +61,30 @@ export default function Checkout() {
   }, [defaultAddress, selectedAddressId]);
 
   const selectedAddress = addresses.find((a) => a.id === selectedAddressId);
-  const shippingFee = total >= 50000 ? 0 : 3500;
-  const grandTotal = total + shippingFee;
+
+  // Calculate shipping based on distance
+  const shippingInfo = useMemo(() => {
+    if (!selectedAddress) {
+      return calculateShippingFee(null, total);
+    }
+
+    let distanceKm: number | null = null;
+
+    if (selectedAddress.latitude && selectedAddress.longitude) {
+      // Use default vendor location for now (could be enhanced to use actual vendor coords)
+      distanceKm = calculateDistance(
+        selectedAddress.latitude,
+        selectedAddress.longitude,
+        DEFAULT_VENDOR_COORDS.lat,
+        DEFAULT_VENDOR_COORDS.lng
+      );
+    }
+
+    return calculateShippingFee(distanceKm, total);
+  }, [selectedAddress, total]);
+
+  const grandTotal = total + shippingInfo.finalFee;
+  const discountDescription = getDiscountTierDescription(total);
 
   const handlePlaceOrder = async () => {
     if (!selectedAddress) {
@@ -71,6 +102,7 @@ export default function Checkout() {
       console.log("Starting order creation...");
       console.log("Cart items count:", items.length);
       console.log("Selected address:", selectedAddress);
+      console.log("Shipping fee:", shippingInfo.finalFee);
       
       // Create order first
       const order = await createOrder.mutateAsync({
@@ -83,7 +115,7 @@ export default function Checkout() {
           landmark: selectedAddress.landmark || undefined,
         },
         notes: notes || undefined,
-        shipping_fee: shippingFee,
+        shipping_fee: shippingInfo.finalFee,
       });
 
       console.log("Order created successfully:", order.id);
@@ -260,16 +292,40 @@ export default function Checkout() {
               <span className="text-muted-foreground">Subtotal</span>
               <span>{formatPrice(total)}</span>
             </div>
+            
+            {/* Shipping with distance info */}
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Shipping</span>
-              <span>
-                {shippingFee === 0 ? (
-                  <span className="text-green-600">Free</span>
-                ) : (
-                  formatPrice(shippingFee)
+              <div className="flex items-center gap-1">
+                <span className="text-muted-foreground">Shipping</span>
+                {shippingInfo.distanceKm && (
+                  <span className="text-xs text-muted-foreground">
+                    (~{Math.round(shippingInfo.distanceKm)} km)
+                  </span>
                 )}
-              </span>
+              </div>
+              <div className="text-right">
+                {shippingInfo.discount > 0 ? (
+                  <div className="flex flex-col items-end">
+                    <span className="line-through text-xs text-muted-foreground">
+                      {formatPrice(shippingInfo.baseFee)}
+                    </span>
+                    <span className="text-green-600 font-medium">
+                      {formatPrice(shippingInfo.finalFee)}
+                    </span>
+                  </div>
+                ) : (
+                  <span>{formatPrice(shippingInfo.finalFee)}</span>
+                )}
+              </div>
             </div>
+
+            {/* Discount badge */}
+            {discountDescription && (
+              <div className="flex items-center gap-1.5 text-xs text-green-600">
+                <Percent className="h-3 w-3" />
+                <span>{discountDescription} applied!</span>
+              </div>
+            )}
           </div>
 
           <Separator className="my-3" />
