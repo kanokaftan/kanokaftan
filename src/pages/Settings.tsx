@@ -29,7 +29,7 @@ export default function Settings() {
 
   return (
     <MobileLayout>
-      <div className="container max-w-2xl py-6 space-y-6">
+      <div className="container max-w-2xl py-6 space-y-6 pb-24">
         <div>
           <h1 className="text-2xl font-bold">Preferences</h1>
           <p className="text-muted-foreground">Customize your app experience</p>

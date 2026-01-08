@@ -37,7 +37,7 @@ export default function Help() {
 
   return (
     <MobileLayout>
-      <div className="container max-w-2xl py-6 space-y-6">
+      <div className="container max-w-2xl py-6 space-y-6 pb-24">
         <div>
           <h1 className="text-2xl font-bold">Help & Support</h1>
           <p className="text-muted-foreground">Find answers or get in touch</p>
@@ -53,7 +53,7 @@ export default function Help() {
                 </div>
                 <div>
                   <h3 className="font-medium">Email Us</h3>
-                  <p className="text-sm text-muted-foreground">support@oja.ng</p>
+                  <p className="text-sm text-muted-foreground">support@k2kano.com</p>
                 </div>
               </div>
             </CardContent>
