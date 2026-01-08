@@ -439,6 +439,79 @@ export default function VendorSettings() {
             </CardContent>
           </Card>
 
+          {/* Store Location Card */}
+          <Card>
+            <CardHeader className="pb-3 md:pb-6">
+              <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                <MapPin className="h-4 w-4 md:h-5 md:w-5" />
+                Store Location (Pickup Point)
+              </CardTitle>
+              <CardDescription className="text-xs md:text-sm">
+                Set your store location for accurate shipping calculations
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Location Status Indicator */}
+              {form.watch("store_street") && form.watch("store_city") && form.watch("store_state") ? (
+                <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 p-2 rounded-lg">
+                  <ShieldCheck className="h-4 w-4" />
+                  <span>Location set - coordinates will be saved on submit</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 p-2 rounded-lg">
+                  <MapPin className="h-4 w-4" />
+                  <span>Location required for accurate shipping rates</span>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="store_street" className="text-sm">Street Address *</Label>
+                <Input
+                  id="store_street"
+                  {...form.register("store_street")}
+                  placeholder="e.g., 25 Ibrahim Taiwo Road"
+                />
+              </div>
+
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="store_city" className="text-sm">City *</Label>
+                  <Input
+                    id="store_city"
+                    {...form.register("store_city")}
+                    placeholder="e.g., Kano"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="store_state" className="text-sm">State *</Label>
+                  <Select
+                    value={form.watch("store_state")}
+                    onValueChange={(value) => form.setValue("store_state", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select state" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {NIGERIAN_STATES.map((state) => (
+                        <SelectItem key={state} value={state}>
+                          {state}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {isGeocodingStore && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Getting coordinates...</span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Bank Details */}
           <Card>
             <CardHeader className="pb-3 md:pb-6">

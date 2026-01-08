@@ -85,11 +85,12 @@ export function useVendorOrders(vendorId: string | null) {
       // Get unique order IDs
       const orderIds = [...new Set(orderItems.map((item) => item.order_id))];
 
-      // Get orders with full details
+      // Get orders with full details - ONLY paid orders
       const { data: orders, error: ordersError } = await supabase
         .from("orders")
         .select("*")
         .in("id", orderIds)
+        .eq("payment_status", "paid")
         .order("created_at", { ascending: false });
 
       if (ordersError) throw ordersError;
