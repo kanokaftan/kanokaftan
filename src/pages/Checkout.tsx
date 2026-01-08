@@ -16,6 +16,7 @@ import { usePayment } from "@/hooks/usePayment";
 import { AddressForm } from "@/components/checkout/AddressForm";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   calculateShippingFee, 
   calculateDistance, 
@@ -31,8 +32,11 @@ function formatPrice(amount: number): string {
   }).format(amount);
 }
 
-// Default vendor location (Kano city center)
-const DEFAULT_VENDOR_COORDS = { lat: 12.0000, lng: 8.5167 };
+interface VendorLocation {
+  id: string;
+  latitude: number | null;
+  longitude: number | null;
+}
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -46,6 +50,7 @@ export default function Checkout() {
   const [notes, setNotes] = useState("");
   const [isAddressSheetOpen, setIsAddressSheetOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [vendorLocations, setVendorLocations] = useState<VendorLocation[]>([]);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -60,9 +65,45 @@ export default function Checkout() {
     }
   }, [defaultAddress, selectedAddressId]);
 
+  // Fetch vendor locations for cart items
+  useEffect(() => {
+    const fetchVendorLocations = async () => {
+      if (!items.length) return;
+      
+      // First get product IDs from cart, then fetch their vendor info
+      const productIds = items.map(item => item.product_id);
+      const { data: products } = await supabase
+        .from("products")
+        .select("vendor_id")
+        .in("id", productIds);
+      
+      if (!products?.length) return;
+
+      const vendorIds = [...new Set(products.map(p => p.vendor_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, store_address")
+        .in("id", vendorIds);
+      
+      if (profiles) {
+        const locations = profiles.map(p => {
+          const storeAddress = p.store_address as { latitude?: number; longitude?: number } | null;
+          return {
+            id: p.id,
+            latitude: storeAddress?.latitude || null,
+            longitude: storeAddress?.longitude || null
+          };
+        });
+        setVendorLocations(locations);
+      }
+    };
+
+    fetchVendorLocations();
+  }, [items]);
+
   const selectedAddress = addresses.find((a) => a.id === selectedAddressId);
 
-  // Calculate shipping based on distance
+  // Calculate shipping based on distance to vendor
   const shippingInfo = useMemo(() => {
     if (!selectedAddress) {
       return calculateShippingFee(null, total);
@@ -70,18 +111,25 @@ export default function Checkout() {
 
     let distanceKm: number | null = null;
 
-    if (selectedAddress.latitude && selectedAddress.longitude) {
-      // Use default vendor location for now (could be enhanced to use actual vendor coords)
-      distanceKm = calculateDistance(
-        selectedAddress.latitude,
-        selectedAddress.longitude,
-        DEFAULT_VENDOR_COORDS.lat,
-        DEFAULT_VENDOR_COORDS.lng
+    // Find vendors with valid coordinates
+    const vendorsWithCoords = vendorLocations.filter(v => v.latitude && v.longitude);
+
+    if (selectedAddress.latitude && selectedAddress.longitude && vendorsWithCoords.length > 0) {
+      // Calculate distance to each vendor, use max distance for multi-vendor orders
+      const distances = vendorsWithCoords.map(vendor => 
+        calculateDistance(
+          selectedAddress.latitude!,
+          selectedAddress.longitude!,
+          vendor.latitude!,
+          vendor.longitude!
+        )
       );
+      // Use the maximum distance (furthest vendor)
+      distanceKm = Math.max(...distances);
     }
 
     return calculateShippingFee(distanceKm, total);
-  }, [selectedAddress, total]);
+  }, [selectedAddress, total, vendorLocations]);
 
   const grandTotal = total + shippingInfo.finalFee;
   const discountDescription = getDiscountTierDescription(total);

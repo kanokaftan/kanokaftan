@@ -67,14 +67,17 @@ export default function VendorDashboard() {
   const activeProducts = products?.filter((p) => p.is_active).length || 0;
   const soldOutProducts = products?.filter((p) => p.stock_quantity === 0).length || 0;
   const lowStock = products?.filter((p) => p.stock_quantity > 0 && p.stock_quantity < 5).length || 0;
-  const totalOrders = orders?.length || 0;
-  const totalRevenue = orders?.reduce((sum, order) => {
+  
+  // Only count paid orders for stats
+  const paidOrders = orders?.filter(o => o.payment_status === "paid") || [];
+  const totalOrders = paidOrders.length;
+  const totalRevenue = paidOrders.reduce((sum, order) => {
     const vendorItems = order.order_items.reduce(
       (itemSum, item) => itemSum + item.quantity * item.unit_price,
       0
     );
     return sum + vendorItems;
-  }, 0) || 0;
+  }, 0);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-NG", {

@@ -328,9 +328,9 @@ export default function VendorOrders() {
         ) : orders.length === 0 ? (
           <div className="rounded-lg border bg-background py-16 text-center">
             <ShoppingCart className="mx-auto mb-4 h-16 w-16 text-muted-foreground opacity-50" />
-            <h3 className="mb-2 text-lg font-semibold">No orders yet</h3>
+            <h3 className="mb-2 text-lg font-semibold">No paid orders yet</h3>
             <p className="text-muted-foreground">
-              Orders containing your products will appear here
+              Orders will appear here once customers complete payment
             </p>
           </div>
         ) : (

@@ -1,12 +1,31 @@
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Shield, Users, Database, Bell } from "lucide-react";
+import { Shield, Users, Database, Bell, Server } from "lucide-react";
 
 export default function AdminSettings() {
   return (
     <AdminLayout title="Settings">
       <div className="grid gap-6 md:grid-cols-2 mb-20 md:mb-0">
+        {/* Backend Access Card */}
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <Server className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg">Backend Access</CardTitle>
+            </div>
+            <CardDescription>View and manage your backend infrastructure</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Access database tables, storage buckets, authentication settings, and backend functions.
+            </p>
+            <Button variant="outline">
+              View Backend →
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -17,7 +36,7 @@ export default function AdminSettings() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              Configure authentication, password policies, and access controls.
+              Configure authentication rules, password policies, and access controls for the platform.
             </p>
             <Button variant="outline" disabled>Coming Soon</Button>
           </CardContent>
@@ -33,7 +52,7 @@ export default function AdminSettings() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              Set up verification requirements, registration rules, and user limits.
+              Set up verification requirements, registration rules, and user account limits.
             </p>
             <Button variant="outline" disabled>Coming Soon</Button>
           </CardContent>
@@ -49,7 +68,7 @@ export default function AdminSettings() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              Configure storage limits, data retention policies, and backups.
+              Configure storage limits, data retention policies, and manage backup settings.
             </p>
             <Button variant="outline" disabled>Coming Soon</Button>
           </CardContent>
@@ -65,7 +84,7 @@ export default function AdminSettings() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              Set up email templates, alerts, and notification preferences.
+              Set up email templates, push alerts, and notification preferences for users.
             </p>
             <Button variant="outline" disabled>Coming Soon</Button>
           </CardContent>
