@@ -148,7 +148,7 @@ export default function OrderDetail() {
 
   return (
     <MobileLayout>
-      <div className="px-4 py-6">
+      <div className="px-4 py-6 pb-24">
         {/* Header */}
         <div className="mb-6 flex items-center gap-3">
           <Button variant="ghost" size="icon" asChild>

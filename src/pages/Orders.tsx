@@ -56,7 +56,7 @@ export default function Orders() {
 
   return (
     <MobileLayout>
-      <div className="px-4 py-6">
+      <div className="px-4 py-6 pb-24">
         <h1 className="mb-6 font-display text-xl font-bold">My Orders</h1>
 
         {orders.length === 0 ? (
@@ -83,11 +83,11 @@ export default function Orders() {
                 <Link
                   key={order.id}
                   to={`/orders/${order.id}`}
-                  className="block rounded-xl bg-card p-4 shadow-sm transition-shadow hover:shadow-md"
+                  className="block rounded-xl bg-card p-4 shadow-sm border transition-all hover:shadow-md hover:border-primary/20"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-medium">
                           #{order.id.slice(0, 8).toUpperCase()}
                         </p>
@@ -99,11 +99,19 @@ export default function Orders() {
                       <p className="mt-1 text-xs text-muted-foreground">
                         {format(new Date(order.created_at), "MMM d, yyyy 'at' h:mm a")}
                       </p>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        {itemCount} {itemCount === 1 ? "item" : "items"}
-                      </p>
+                      <div className="mt-3 flex items-center gap-3">
+                        <p className="text-sm text-muted-foreground">
+                          {itemCount} {itemCount === 1 ? "item" : "items"}
+                        </p>
+                        {order.payment_status === "pending" && (
+                          <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">
+                            <CreditCard className="h-3 w-3 mr-1" />
+                            Awaiting Payment
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col items-end gap-1">
                       <p className="font-display font-bold">{formatPrice(order.total)}</p>
                       <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     </div>
