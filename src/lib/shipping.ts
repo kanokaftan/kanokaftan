@@ -112,6 +112,12 @@ export function getNextDiscountTier(subtotal: number): {
   return null; // Already at max discount
 }
 
+export interface PromoCode {
+  code: string;
+  discount_type: 'free' | 'percentage';
+  discount_value: number;
+}
+
 export interface PromoCodeResult {
   valid: boolean;
   code?: string;

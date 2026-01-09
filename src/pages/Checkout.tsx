@@ -1,14 +1,16 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { MapPin, Plus, ChevronRight, CreditCard, ShieldCheck, Truck, Percent } from "lucide-react";
+import { MapPin, Plus, ChevronRight, CreditCard, ShieldCheck, Truck, Percent, Tag, X, Check } from "lucide-react";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useCart } from "@/hooks/useCart";
 import { useAddresses } from "@/hooks/useAddresses";
 import { useOrders } from "@/hooks/useOrders";
@@ -20,8 +22,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   calculateShippingFee, 
   calculateDistance, 
-  DEFAULT_SHIPPING_FEE,
-  getDiscountTierDescription 
+  getDiscountTierDescription,
+  validatePromoCode,
+  type PromoCodeResult
 } from "@/lib/shipping";
 
 function formatPrice(amount: number): string {
@@ -49,8 +52,14 @@ export default function Checkout() {
   const [selectedAddressId, setSelectedAddressId] = useState<string>("");
   const [notes, setNotes] = useState("");
   const [isAddressSheetOpen, setIsAddressSheetOpen] = useState(false);
+  const [isAllAddressesOpen, setIsAllAddressesOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [vendorLocations, setVendorLocations] = useState<VendorLocation[]>([]);
+  
+  // Promo code state
+  const [promoCode, setPromoCode] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<PromoCodeResult | null>(null);
+  const [isValidatingPromo, setIsValidatingPromo] = useState(false);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -70,7 +79,6 @@ export default function Checkout() {
     const fetchVendorLocations = async () => {
       if (!items.length) return;
       
-      // First get product IDs from cart, then fetch their vendor info
       const productIds = items.map(item => item.product_id);
       const { data: products } = await supabase
         .from("products")
@@ -106,16 +114,14 @@ export default function Checkout() {
   // Calculate shipping based on distance to vendor
   const shippingInfo = useMemo(() => {
     if (!selectedAddress) {
-      return calculateShippingFee(null, total);
+      return calculateShippingFee(null, total, appliedPromo);
     }
 
     let distanceKm: number | null = null;
 
-    // Find vendors with valid coordinates
     const vendorsWithCoords = vendorLocations.filter(v => v.latitude && v.longitude);
 
     if (selectedAddress.latitude && selectedAddress.longitude && vendorsWithCoords.length > 0) {
-      // Calculate distance to each vendor, use max distance for multi-vendor orders
       const distances = vendorsWithCoords.map(vendor => 
         calculateDistance(
           selectedAddress.latitude!,
@@ -124,15 +130,38 @@ export default function Checkout() {
           vendor.longitude!
         )
       );
-      // Use the maximum distance (furthest vendor)
       distanceKm = Math.max(...distances);
     }
 
-    return calculateShippingFee(distanceKm, total);
-  }, [selectedAddress, total, vendorLocations]);
+    return calculateShippingFee(distanceKm, total, appliedPromo);
+  }, [selectedAddress, total, vendorLocations, appliedPromo]);
 
   const grandTotal = total + shippingInfo.finalFee;
   const discountDescription = getDiscountTierDescription(total);
+
+  const handleApplyPromoCode = async () => {
+    if (!promoCode.trim()) {
+      toast.error("Please enter a promo code");
+      return;
+    }
+
+    setIsValidatingPromo(true);
+    const result = await validatePromoCode(promoCode.trim().toUpperCase());
+    setIsValidatingPromo(false);
+
+    if (result) {
+      setAppliedPromo(result);
+      toast.success(`Promo code "${result.code}" applied!`);
+      setPromoCode("");
+    } else {
+      toast.error("Invalid or expired promo code");
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    toast.info("Promo code removed");
+  };
 
   const handlePlaceOrder = async () => {
     if (!selectedAddress) {
@@ -147,12 +176,6 @@ export default function Checkout() {
 
     setIsSubmitting(true);
     try {
-      console.log("Starting order creation...");
-      console.log("Cart items count:", items.length);
-      console.log("Selected address:", selectedAddress);
-      console.log("Shipping fee:", shippingInfo.finalFee);
-      
-      // Create order first
       const order = await createOrder.mutateAsync({
         shipping_address: {
           full_name: selectedAddress.full_name,
@@ -166,25 +189,16 @@ export default function Checkout() {
         shipping_fee: shippingInfo.finalFee,
       });
 
-      console.log("Order created successfully:", order.id);
-
-      // Initialize Paystack payment
-      console.log("Initiating payment for order:", order.id, "email:", user.email);
       const paymentResult = await initiatePayment(order.id, user.email);
-      console.log("Payment result:", paymentResult);
 
       if (paymentResult.success && paymentResult.authorization_url) {
-        // Redirect to Paystack checkout
         toast.success("Redirecting to payment...");
         window.location.href = paymentResult.authorization_url;
       } else {
-        console.error("Payment failed:", paymentResult.error);
         toast.error(paymentResult.error || "Failed to initialize payment. Please try again.");
-        // Navigate to order detail so user can retry payment
         navigate(`/orders/${order.id}`);
       }
     } catch (error: unknown) {
-      console.error("Order creation error:", error);
       const message = error instanceof Error ? error.message : "Failed to place order";
       toast.error(message);
     } finally {
@@ -223,7 +237,7 @@ export default function Checkout() {
 
   return (
     <MobileLayout>
-      <div className="px-4 py-6">
+      <div className="px-4 py-6 pb-24">
         <h1 className="mb-6 font-display text-xl font-bold">Checkout</h1>
 
         {/* Delivery Address Section */}
@@ -297,13 +311,98 @@ export default function Checkout() {
                   </SheetContent>
                 </Sheet>
                 {addresses.length > 2 && (
-                  <Button variant="ghost" size="sm">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setIsAllAddressesOpen(true)}
+                  >
                     View All ({addresses.length})
                     <ChevronRight className="ml-1 h-3 w-3" />
                   </Button>
                 )}
               </div>
             </>
+          )}
+        </div>
+
+        {/* All Addresses Dialog */}
+        <Dialog open={isAllAddressesOpen} onOpenChange={setIsAllAddressesOpen}>
+          <DialogContent className="max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Select Address</DialogTitle>
+            </DialogHeader>
+            <RadioGroup value={selectedAddressId} onValueChange={(v) => {
+              setSelectedAddressId(v);
+              setIsAllAddressesOpen(false);
+            }}>
+              {addresses.map((address) => (
+                <div
+                  key={address.id}
+                  className={`flex items-start gap-3 rounded-lg border p-3 transition-colors cursor-pointer ${
+                    selectedAddressId === address.id
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                >
+                  <RadioGroupItem value={address.id} id={`all-${address.id}`} className="mt-1" />
+                  <Label htmlFor={`all-${address.id}`} className="flex-1 cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{address.label}</span>
+                      {address.is_default && (
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                          Default
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {address.full_name} • {address.phone}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {address.street_address}, {address.city}, {address.state}
+                    </p>
+                  </Label>
+                </div>
+              ))}
+            </RadioGroup>
+          </DialogContent>
+        </Dialog>
+
+        {/* Promo Code Section */}
+        <div className="mt-4 rounded-xl bg-card p-4 shadow-sm">
+          <div className="mb-3 flex items-center gap-2">
+            <Tag className="h-5 w-5 text-primary" />
+            <h2 className="font-medium">Promo Code</h2>
+          </div>
+          
+          {appliedPromo ? (
+            <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+              <div className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-600" />
+                <span className="font-medium text-green-700 dark:text-green-400">{appliedPromo.code}</span>
+                <span className="text-sm text-green-600">
+                  {appliedPromo.discountType === "free" ? "Free Shipping" : `${appliedPromo.discountValue}% off shipping`}
+                </span>
+              </div>
+              <Button variant="ghost" size="sm" onClick={handleRemovePromo}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter promo code"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                className="flex-1"
+              />
+              <Button 
+                variant="outline" 
+                onClick={handleApplyPromoCode}
+                disabled={isValidatingPromo}
+              >
+                {isValidatingPromo ? "..." : "Apply"}
+              </Button>
+            </div>
           )}
         </div>
 
@@ -352,13 +451,13 @@ export default function Checkout() {
                 )}
               </div>
               <div className="text-right">
-                {shippingInfo.discount > 0 ? (
+                {shippingInfo.discount > 0 || appliedPromo ? (
                   <div className="flex flex-col items-end">
                     <span className="line-through text-xs text-muted-foreground">
                       {formatPrice(shippingInfo.baseFee)}
                     </span>
                     <span className="text-green-600 font-medium">
-                      {formatPrice(shippingInfo.finalFee)}
+                      {shippingInfo.finalFee === 0 ? "FREE" : formatPrice(shippingInfo.finalFee)}
                     </span>
                   </div>
                 ) : (
@@ -368,10 +467,15 @@ export default function Checkout() {
             </div>
 
             {/* Discount badge */}
-            {discountDescription && (
+            {(discountDescription || appliedPromo) && (
               <div className="flex items-center gap-1.5 text-xs text-green-600">
                 <Percent className="h-3 w-3" />
-                <span>{discountDescription} applied!</span>
+                <span>
+                  {appliedPromo 
+                    ? `Promo "${appliedPromo.code}" applied!`
+                    : `${discountDescription} applied!`
+                  }
+                </span>
               </div>
             )}
           </div>

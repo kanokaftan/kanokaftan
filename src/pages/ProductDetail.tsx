@@ -206,7 +206,10 @@ export default function ProductDetail() {
 
         {/* Seller Card */}
         {product.vendor && (
-          <div className="flex items-center gap-3 rounded-xl bg-muted/50 p-3 border">
+          <Link 
+            to={`/vendor/${product.vendor.id}`}
+            className="flex items-center gap-3 rounded-xl bg-muted/50 p-3 border hover:border-primary/50 transition-colors"
+          >
             <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
               <AvatarImage src={product.vendor.avatar_url || undefined} alt={product.vendor.full_name || "Seller"} />
               <AvatarFallback className="bg-primary/10 text-primary font-semibold">
@@ -228,10 +231,10 @@ export default function ProductDetail() {
               </div>
             </div>
             <Button variant="outline" size="sm" className="rounded-full gap-1.5 text-xs h-8">
-              <MessageCircle className="h-3.5 w-3.5" />
-              Contact
+              <Store className="h-3.5 w-3.5" />
+              View Shop
             </Button>
-          </div>
+          </Link>
         )}
 
         {/* Price */}
@@ -326,13 +329,13 @@ export default function ProductDetail() {
         <div className="grid grid-cols-3 gap-2 border-t pt-5">
           <div className="flex flex-col items-center gap-1 text-center">
             <Truck className="h-5 w-5 text-muted-foreground" />
-            <p className="text-[10px] font-medium">Free Shipping</p>
-            <p className="text-[10px] text-muted-foreground">Over ₦50k</p>
+            <p className="text-[10px] font-medium">Fast Delivery</p>
+            <p className="text-[10px] text-muted-foreground">2-5 days</p>
           </div>
           <div className="flex flex-col items-center gap-1 text-center">
             <Shield className="h-5 w-5 text-muted-foreground" />
-            <p className="text-[10px] font-medium">Secure</p>
-            <p className="text-[10px] text-muted-foreground">Payment</p>
+            <p className="text-[10px] font-medium">Escrow</p>
+            <p className="text-[10px] text-muted-foreground">Protected</p>
           </div>
           <div className="flex flex-col items-center gap-1 text-center">
             <RotateCcw className="h-5 w-5 text-muted-foreground" />
