@@ -69,6 +69,7 @@ export type Database = {
           id: string
           image_url: string | null
           name: string
+          parent_id: string | null
           slug: string
         }
         Insert: {
@@ -77,6 +78,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           name: string
+          parent_id?: string | null
           slug: string
         }
         Update: {
@@ -85,9 +87,18 @@ export type Database = {
           id?: string
           image_url?: string | null
           name?: string
+          parent_id?: string | null
           slug?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       delivery_addresses: {
         Row: {
@@ -516,8 +527,13 @@ export type Database = {
           full_name: string | null
           id: string
           is_verified: boolean
+          notification_orders: boolean | null
+          notification_promotions: boolean | null
+          notification_push: boolean | null
           payout_preference: string | null
           phone: string | null
+          preferred_currency: string | null
+          preferred_language: string | null
           store_address: Json | null
           store_description: string | null
           store_name: string | null
@@ -533,8 +549,13 @@ export type Database = {
           full_name?: string | null
           id: string
           is_verified?: boolean
+          notification_orders?: boolean | null
+          notification_promotions?: boolean | null
+          notification_push?: boolean | null
           payout_preference?: string | null
           phone?: string | null
+          preferred_currency?: string | null
+          preferred_language?: string | null
           store_address?: Json | null
           store_description?: string | null
           store_name?: string | null
@@ -550,8 +571,13 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_verified?: boolean
+          notification_orders?: boolean | null
+          notification_promotions?: boolean | null
+          notification_push?: boolean | null
           payout_preference?: string | null
           phone?: string | null
+          preferred_currency?: string | null
+          preferred_language?: string | null
           store_address?: Json | null
           store_description?: string | null
           store_name?: string | null
@@ -624,6 +650,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      shipping_promo_codes: {
+        Row: {
+          code: string
+          created_at: string
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          discount_type: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
