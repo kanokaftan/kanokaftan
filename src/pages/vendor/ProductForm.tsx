@@ -189,258 +189,323 @@ export default function ProductForm() {
 
   return (
     <VendorLayout title={isEditing ? "Edit Product" : "Add New Product"}>
-      <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
-        {/* Basic Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Product Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, name: e.target.value }))
-                }
-                placeholder="Enter product name"
-                required
-              />
+      <form onSubmit={handleSubmit} className="pb-24 md:pb-6">
+        <div className="max-w-2xl mx-auto space-y-4 md:space-y-6">
+          {/* Progress Header - Mobile */}
+          <div className="md:hidden sticky top-0 z-10 bg-background/95 backdrop-blur -mx-4 px-4 py-3 border-b">
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold">
+                {isEditing ? "Edit Product" : "New Product"}
+              </h2>
+              <Button type="submit" size="sm" disabled={submitting}>
+                {submitting && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+                {isEditing ? "Save" : "Create"}
+              </Button>
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, description: e.target.value }))
-                }
-                placeholder="Describe your product"
-                rows={4}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="category">Category *</Label>
-              {categoriesLoading ? (
-                <Skeleton className="h-10 w-full" />
-              ) : (
-                <Select
-                  value={formData.category_id}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({ ...prev, category_id: value }))
-                  }
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories?.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Pricing & Stock */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Pricing & Stock</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          {/* Basic Info */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">1</span>
+                Basic Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="price">Price (₦) *</Label>
+                <Label htmlFor="name" className="text-sm">Product Name *</Label>
                 <Input
-                  id="price"
-                  type="number"
-                  value={formData.price}
+                  id="name"
+                  value={formData.name}
                   onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, price: e.target.value }))
+                    setFormData((prev) => ({ ...prev, name: e.target.value }))
                   }
-                  placeholder="0"
-                  min="0"
-                  step="0.01"
+                  placeholder="e.g. Premium Kaftan Set"
                   required
+                  className="h-11"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="compare_at_price">Compare at Price (₦)</Label>
+                <Label htmlFor="description" className="text-sm">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, description: e.target.value }))
+                  }
+                  placeholder="Describe your product - materials, fit, care instructions..."
+                  rows={4}
+                  className="resize-none"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="category" className="text-sm">Category *</Label>
+                {categoriesLoading ? (
+                  <Skeleton className="h-11 w-full" />
+                ) : (
+                  <Select
+                    value={formData.category_id}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({ ...prev, category_id: value }))
+                    }
+                    required
+                  >
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories?.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Pricing & Stock */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">2</span>
+                Pricing & Stock
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="price" className="text-sm">Price (₦) *</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₦</span>
+                    <Input
+                      id="price"
+                      type="number"
+                      value={formData.price}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, price: e.target.value }))
+                      }
+                      placeholder="0"
+                      min="0"
+                      step="100"
+                      required
+                      className="h-11 pl-7"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="compare_at_price" className="text-sm">Compare Price</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₦</span>
+                    <Input
+                      id="compare_at_price"
+                      type="number"
+                      value={formData.compare_at_price}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          compare_at_price: e.target.value,
+                        }))
+                      }
+                      placeholder="0"
+                      min="0"
+                      step="100"
+                      className="h-11 pl-7"
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Original price for showing discount</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="stock" className="text-sm">Stock Quantity *</Label>
                 <Input
-                  id="compare_at_price"
+                  id="stock"
                   type="number"
-                  value={formData.compare_at_price}
+                  value={formData.stock_quantity}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      compare_at_price: e.target.value,
+                      stock_quantity: e.target.value,
                     }))
                   }
-                  placeholder="0"
+                  placeholder="How many do you have?"
                   min="0"
-                  step="0.01"
+                  required
+                  className="h-11"
                 />
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            <div className="space-y-2">
-              <Label htmlFor="stock">Stock Quantity *</Label>
-              <Input
-                id="stock"
-                type="number"
-                value={formData.stock_quantity}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    stock_quantity: e.target.value,
-                  }))
-                }
-                placeholder="0"
-                min="0"
-                required
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Images */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Product Images</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-4 gap-4">
-              {images.map((image, index) => (
-                <div
-                  key={index}
-                  className={`relative group rounded-lg overflow-hidden border-2 ${
-                    image.is_primary ? "border-primary" : "border-transparent"
-                  }`}
-                >
-                  <img
-                    src={image.url}
-                    alt={`Product ${index + 1}`}
-                    className="w-full aspect-square object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    {!image.is_primary && (
+          {/* Images */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">3</span>
+                Product Images
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-xs text-muted-foreground">
+                Add up to 6 images. First image will be the main product photo.
+              </p>
+              <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+                {images.map((image, index) => (
+                  <div
+                    key={index}
+                    className={`relative group rounded-xl overflow-hidden border-2 aspect-square ${
+                      image.is_primary ? "border-primary ring-2 ring-primary/20" : "border-border"
+                    }`}
+                  >
+                    <img
+                      src={image.url}
+                      alt={`Product ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
+                      {!image.is_primary && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setPrimaryImage(index)}
+                          className="w-full text-xs h-8"
+                        >
+                          Set Primary
+                        </Button>
+                      )}
                       <Button
                         type="button"
                         size="sm"
-                        variant="secondary"
-                        onClick={() => setPrimaryImage(index)}
+                        variant="destructive"
+                        onClick={() => removeImage(index)}
+                        className="w-full text-xs h-8"
                       >
-                        Primary
+                        <X className="h-3 w-3 mr-1" />
+                        Remove
                       </Button>
+                    </div>
+                    {image.is_primary && (
+                      <span className="absolute top-1 left-1 text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full font-medium">
+                        Main
+                      </span>
                     )}
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="destructive"
-                      onClick={() => removeImage(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
                   </div>
-                  {image.is_primary && (
-                    <span className="absolute top-2 left-2 text-xs bg-primary text-primary-foreground px-2 py-1 rounded">
-                      Primary
-                    </span>
-                  )}
-                </div>
-              ))}
+                ))}
 
-              <label className="flex flex-col items-center justify-center aspect-square border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                {uploading ? (
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                ) : (
-                  <>
-                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                    <span className="text-sm text-muted-foreground">Upload</span>
-                  </>
+                {images.length < 6 && (
+                  <label className="flex flex-col items-center justify-center aspect-square border-2 border-dashed rounded-xl cursor-pointer hover:bg-muted/50 hover:border-primary/50 transition-all">
+                    {uploading ? (
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    ) : (
+                      <>
+                        <Upload className="h-6 w-6 text-muted-foreground mb-1" />
+                        <span className="text-xs text-muted-foreground">Add Photo</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleImageUpload}
+                      disabled={uploading}
+                    />
+                  </label>
                 )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={handleImageUpload}
-                  disabled={uploading}
-                />
-              </label>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Visibility</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="is_active">Active</Label>
-                <p className="text-sm text-muted-foreground">
-                  Product is visible to customers
-                </p>
               </div>
-              <Switch
-                id="is_active"
-                checked={formData.is_active}
-                onCheckedChange={(checked) =>
-                  setFormData((prev) => ({ ...prev, is_active: checked }))
-                }
-              />
-            </div>
+            </CardContent>
+          </Card>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="featured" className="flex items-center gap-2">
-                  <Star className="h-4 w-4 text-amber-500" />
-                  Featured (₦1,000)
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Show in featured products section
-                </p>
-              </div>
-              <Switch
-                id="featured"
-                checked={formData.featured}
-                disabled={formData.featured} // Can't toggle off if already featured
-                onCheckedChange={(checked) => {
-                  if (checked && !formData.featured) {
-                    // If turning on and not already featured, show payment dialog
-                    setShowFeaturedDialog(true);
+          {/* Status */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">4</span>
+                Visibility & Features
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <div className="flex-1">
+                  <Label htmlFor="is_active" className="text-sm font-medium">Publish Product</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Make visible to customers
+                  </p>
+                </div>
+                <Switch
+                  id="is_active"
+                  checked={formData.is_active}
+                  onCheckedChange={(checked) =>
+                    setFormData((prev) => ({ ...prev, is_active: checked }))
                   }
-                }}
-              />
-            </div>
-          </CardContent>
-        </Card>
+                />
+              </div>
 
-        {/* Actions */}
-        <div className="flex gap-4">
-          <Button type="submit" disabled={submitting}>
-            {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            {isEditing ? "Save Changes" : "Create Product"}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => navigate("/vendor/products")}
-          >
-            Cancel
-          </Button>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                <div className="flex-1">
+                  <Label htmlFor="featured" className="text-sm font-medium flex items-center gap-2">
+                    <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+                    Featured Listing
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Boost visibility for ₦1,000
+                  </p>
+                </div>
+                <Switch
+                  id="featured"
+                  checked={formData.featured}
+                  disabled={formData.featured}
+                  onCheckedChange={(checked) => {
+                    if (checked && !formData.featured) {
+                      setShowFeaturedDialog(true);
+                    }
+                  }}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Desktop Actions */}
+          <div className="hidden md:flex gap-4 pt-2">
+            <Button type="submit" size="lg" disabled={submitting} className="gap-2">
+              {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isEditing ? "Save Changes" : "Create Product"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              onClick={() => navigate("/vendor/products")}
+            >
+              Cancel
+            </Button>
+          </div>
+
+          {/* Mobile Fixed Actions */}
+          <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t z-40">
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={() => navigate("/vendor/products")}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" className="flex-1 gap-2" disabled={submitting}>
+                {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isEditing ? "Save" : "Create"}
+              </Button>
+            </div>
+          </div>
         </div>
       </form>
 
