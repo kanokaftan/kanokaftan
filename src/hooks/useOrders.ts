@@ -204,6 +204,7 @@ export function useOrders() {
   return {
     orders: ordersQuery.data || [],
     isLoading: ordersQuery.isLoading,
+    refetch: ordersQuery.refetch,
     createOrder,
     confirmDelivery,
   };

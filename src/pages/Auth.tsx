@@ -171,14 +171,15 @@ export default function AuthPage() {
   return (
     <div className="flex min-h-screen">
       {/* Left Panel - Form */}
-      <div className="flex w-full flex-col justify-center px-8 py-12 lg:w-1/2 lg:px-16">
+      <div className="flex w-full flex-col justify-center px-6 py-12 lg:w-1/2 lg:px-16">
         <div className="mx-auto w-full max-w-md">
           {/* Logo */}
-          <Link to="/" className="mb-8 inline-flex items-center gap-2">
-            <span className="font-display text-3xl font-bold text-primary">
-              K<sup className="text-sm">2</sup>
-            </span>
-            <span className="font-display text-xl">Kano Kaftan</span>
+          <Link to="/" className="mb-8 flex items-center gap-3">
+            <img src="/logo.png" alt="K² Kano Kaftan" className="h-12 w-12 object-contain" />
+            <div>
+              <span className="font-display text-2xl font-bold text-primary">K²</span>
+              <span className="font-display text-lg ml-1">Kano Kaftan</span>
+            </div>
           </Link>
 
           <h1 className="font-display text-2xl font-bold text-primary">
