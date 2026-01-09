@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ProductCard } from "@/components/products/ProductCard";
 import { supabase } from "@/integrations/supabase/client";
+import type { Product } from "@/hooks/useProducts";
 
 function formatPrice(amount: number): string {
   return new Intl.NumberFormat("en-NG", {
@@ -47,15 +48,16 @@ export default function VendorProfile() {
         .from("products")
         .select(`
           *,
-          product_images (url, is_primary, display_order),
-          category:categories (name, slug)
+          product_images (id, url, is_primary, alt_text),
+          category:categories (id, name, slug),
+          vendor:profiles!products_vendor_id_fkey(id, full_name, avatar_url, is_verified, store_name)
         `)
         .eq("vendor_id", vendorId)
         .eq("is_active", true)
         .order("created_at", { ascending: false });
       
       if (error) throw error;
-      return data || [];
+      return data as Product[] || [];
     },
     enabled: !!vendorId,
   });
@@ -229,18 +231,7 @@ export default function VendorProfile() {
         ) : (
           <div className="grid grid-cols-2 gap-4">
             {products?.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={{
-                  id: product.id,
-                  name: product.name,
-                  price: product.price,
-                  compare_at_price: product.compare_at_price || undefined,
-                  slug: product.slug,
-                  product_images: product.product_images,
-                  category: product.category ? { id: product.category.slug, name: product.category.name, slug: product.category.slug } : undefined,
-                }}
-              />
+              <ProductCard key={product.id} product={product} />
             ))}
           </div>
         )}
