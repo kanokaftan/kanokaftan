@@ -48,16 +48,17 @@ serve(async (req) => {
     console.log(`Payment verification result: ${transaction.status}`);
 
     if (isSuccessful && orderId) {
-      // Get order details first
+      // Get order details first with FOR UPDATE to prevent race conditions
       const { data: order, error: orderFetchError } = await supabase
         .from('orders')
-        .select('user_id, total, payment_status')
+        .select('user_id, total, payment_status, payment_reference')
         .eq('id', orderId)
         .single();
 
       // Check if already processed to prevent duplicate notifications
-      if (order?.payment_status === 'paid') {
-        console.log('Order already processed, skipping notifications');
+      // Also check payment_reference as secondary guard
+      if (order?.payment_status === 'paid' || order?.payment_reference === reference) {
+        console.log('Order already processed, skipping all operations');
         return new Response(
           JSON.stringify({
             success: true,
@@ -69,13 +70,14 @@ serve(async (req) => {
         );
       }
 
-      // Update order if payment is successful
+      // Update order if payment is successful - use multiple guards for idempotency
       const { error: updateError, data: updateData } = await supabase
         .from('orders')
         .update({
           payment_status: 'paid',
           status: 'payment_confirmed',
           escrow_status: 'held',
+          payment_reference: reference, // Store reference to prevent duplicate processing
           tracking_updates: [
             {
               status: 'payment_confirmed',
@@ -87,6 +89,7 @@ serve(async (req) => {
         })
         .eq('id', orderId)
         .eq('payment_status', 'pending') // Only update if not already paid
+        .is('payment_reference', null) // Additional guard - only if no reference yet
         .select();
 
       if (updateError) {

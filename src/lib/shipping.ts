@@ -4,16 +4,17 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-// Shipping price tiers by distance (in km) - Rebalanced for better pricing
+// Shipping price tiers by distance (in km) - Progressive pricing
+// Close = cheap, Far = more expensive (fixed inversion issue)
 const DISTANCE_TIERS = [
-  { maxKm: 5, fee: 800 },
-  { maxKm: 10, fee: 1200 },
-  { maxKm: 20, fee: 1800 },
-  { maxKm: 50, fee: 2500 },
-  { maxKm: 100, fee: 3500 },
-  { maxKm: 200, fee: 5000 },
-  { maxKm: 300, fee: 6500 },
-  { maxKm: Infinity, fee: 8000 },
+  { maxKm: 5, fee: 500 },      // Very close: ₦500
+  { maxKm: 15, fee: 800 },     // Within city: ₦800
+  { maxKm: 30, fee: 1200 },    // Nearby areas: ₦1,200
+  { maxKm: 50, fee: 1800 },    // Inter-city short: ₦1,800
+  { maxKm: 100, fee: 2500 },   // Inter-city: ₦2,500
+  { maxKm: 200, fee: 3500 },   // Long distance: ₦3,500
+  { maxKm: 400, fee: 5000 },   // Very long: ₦5,000
+  { maxKm: Infinity, fee: 6500 }, // Cross-country: ₦6,500
 ];
 
 // Order value discount tiers
@@ -26,11 +27,11 @@ const VALUE_DISCOUNTS = [
 ];
 
 // Default shipping fee when distance can't be calculated
-export const DEFAULT_SHIPPING_FEE = 2500;
+export const DEFAULT_SHIPPING_FEE = 1500;
 
 // Min and max shipping fees for display
-export const MIN_SHIPPING_FEE = 800;
-export const MAX_SHIPPING_FEE = 8000;
+export const MIN_SHIPPING_FEE = 500;
+export const MAX_SHIPPING_FEE = 6500;
 
 /**
  * Calculate distance between two coordinates using Haversine formula

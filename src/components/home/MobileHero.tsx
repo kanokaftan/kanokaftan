@@ -126,16 +126,16 @@ export function MobileHero() {
         </CarouselContent>
       </Carousel>
       
-      {/* Carousel Indicators - Now Active */}
-      <div className="absolute bottom-24 left-6 flex gap-1.5">
+      {/* Carousel Indicators */}
+      <div className="absolute bottom-24 left-6 flex gap-2">
         {slides.map((_, index) => (
           <button
             key={index}
             onClick={() => scrollTo(index)}
-            className={`h-1 w-6 rounded-full transition-all duration-300 ${
+            className={`h-2 rounded-full transition-all duration-300 ${
               current === index 
-                ? "bg-white w-8" 
-                : "bg-white/40 hover:bg-white/60"
+                ? "bg-white w-6" 
+                : "bg-white/50 w-2 hover:bg-white/70"
             }`}
             aria-label={`Go to slide ${index + 1}`}
           />

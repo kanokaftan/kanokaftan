@@ -61,10 +61,22 @@ serve(async (req) => {
         return new Response('OK', { status: 200 });
       }
 
-      console.log(`Processing successful payment for order: ${orderId}`);
+      console.log(`Processing webhook for order: ${orderId}, reference: ${reference}`);
 
-      // Update order status
-      const { error: updateError } = await supabase
+      // Check if already processed - idempotency check
+      const { data: existingOrder } = await supabase
+        .from('orders')
+        .select('payment_status, payment_reference')
+        .eq('id', orderId)
+        .single();
+
+      if (existingOrder?.payment_status === 'paid' || existingOrder?.payment_reference === reference) {
+        console.log('Order already processed via verify-payment, skipping webhook update');
+        return new Response('OK', { status: 200, headers: corsHeaders });
+      }
+
+      // Update order status with idempotency guards
+      const { error: updateError, data: updateData } = await supabase
         .from('orders')
         .update({
           payment_status: 'paid',
@@ -80,14 +92,22 @@ serve(async (req) => {
           ],
           updated_at: new Date().toISOString()
         })
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .eq('payment_status', 'pending') // Only update if still pending
+        .is('payment_reference', null) // Only if not already processed
+        .select();
 
       if (updateError) {
         console.error('Failed to update order:', updateError);
         throw updateError;
       }
 
-      console.log(`Order ${orderId} updated successfully`);
+      if (!updateData || updateData.length === 0) {
+        console.log('Order was already updated by another process');
+        return new Response('OK', { status: 200, headers: corsHeaders });
+      }
+
+      console.log(`Order ${orderId} updated successfully via webhook`);
     }
 
     return new Response('OK', { 
