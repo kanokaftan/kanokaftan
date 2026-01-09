@@ -207,64 +207,64 @@ export default function VendorProducts() {
   return (
     <VendorLayout title="Products">
       <div className="space-y-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <Card className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-primary/20">
-                <Package className="h-4 w-4 text-primary" />
+        {/* Stats Cards - Scrollable on mobile */}
+        <div className="flex md:grid md:grid-cols-5 gap-2 md:gap-3 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
+          <Card className="flex-shrink-0 w-[140px] md:w-auto p-3 md:p-4 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="p-1.5 md:p-2 rounded-full bg-primary/20">
+                <Package className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats.total}</p>
-                <p className="text-xs text-muted-foreground">Total</p>
+                <p className="text-xl md:text-2xl font-bold">{stats.total}</p>
+                <p className="text-[10px] md:text-xs text-muted-foreground">Total</p>
               </div>
             </div>
           </Card>
           
-          <Card className="p-4 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-green-500/20">
-                <CheckCircle className="h-4 w-4 text-green-600" />
+          <Card className="flex-shrink-0 w-[140px] md:w-auto p-3 md:p-4 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="p-1.5 md:p-2 rounded-full bg-green-500/20">
+                <CheckCircle className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-green-600">{stats.active}</p>
-                <p className="text-xs text-muted-foreground">Active</p>
+                <p className="text-xl md:text-2xl font-bold text-green-600">{stats.active}</p>
+                <p className="text-[10px] md:text-xs text-muted-foreground">Active</p>
               </div>
             </div>
           </Card>
           
-          <Card className="p-4 bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-amber-500/20">
-                <Star className="h-4 w-4 text-amber-600" />
+          <Card className="flex-shrink-0 w-[140px] md:w-auto p-3 md:p-4 bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="p-1.5 md:p-2 rounded-full bg-amber-500/20">
+                <Star className="h-3.5 w-3.5 md:h-4 md:w-4 text-amber-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-amber-600">{stats.featured}</p>
-                <p className="text-xs text-muted-foreground">Featured</p>
+                <p className="text-xl md:text-2xl font-bold text-amber-600">{stats.featured}</p>
+                <p className="text-[10px] md:text-xs text-muted-foreground">Featured</p>
               </div>
             </div>
           </Card>
           
-          <Card className="p-4 bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-red-500/20">
-                <PackageX className="h-4 w-4 text-red-600" />
+          <Card className="flex-shrink-0 w-[140px] md:w-auto p-3 md:p-4 bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="p-1.5 md:p-2 rounded-full bg-red-500/20">
+                <PackageX className="h-3.5 w-3.5 md:h-4 md:w-4 text-red-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-red-600">{stats.soldOut}</p>
-                <p className="text-xs text-muted-foreground">Sold Out</p>
+                <p className="text-xl md:text-2xl font-bold text-red-600">{stats.soldOut}</p>
+                <p className="text-[10px] md:text-xs text-muted-foreground">Sold Out</p>
               </div>
             </div>
           </Card>
           
-          <Card className="p-4 bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20 hidden md:block">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-orange-500/20">
-                <AlertTriangle className="h-4 w-4 text-orange-600" />
+          <Card className="flex-shrink-0 w-[140px] md:w-auto p-3 md:p-4 bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="p-1.5 md:p-2 rounded-full bg-orange-500/20">
+                <AlertTriangle className="h-3.5 w-3.5 md:h-4 md:w-4 text-orange-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-orange-600">{stats.lowStock}</p>
-                <p className="text-xs text-muted-foreground">Low Stock</p>
+                <p className="text-xl md:text-2xl font-bold text-orange-600">{stats.lowStock}</p>
+                <p className="text-[10px] md:text-xs text-muted-foreground">Low Stock</p>
               </div>
             </div>
           </Card>
@@ -289,15 +289,17 @@ export default function VendorProducts() {
           </Button>
         </div>
 
-        {/* Tabs */}
+        {/* Tabs - Scrollable on mobile */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full grid grid-cols-5">
-            <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
-            <TabsTrigger value="active" className="text-xs">Active</TabsTrigger>
-            <TabsTrigger value="soldout" className="text-xs">Sold Out</TabsTrigger>
-            <TabsTrigger value="inactive" className="text-xs">Inactive</TabsTrigger>
-            <TabsTrigger value="featured" className="text-xs">Featured</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+            <TabsList className="inline-flex md:w-full md:grid md:grid-cols-5 gap-1">
+              <TabsTrigger value="all" className="text-xs px-4">All ({stats.total})</TabsTrigger>
+              <TabsTrigger value="active" className="text-xs px-4">Active</TabsTrigger>
+              <TabsTrigger value="soldout" className="text-xs px-4">Sold Out</TabsTrigger>
+              <TabsTrigger value="inactive" className="text-xs px-4">Hidden</TabsTrigger>
+              <TabsTrigger value="featured" className="text-xs px-4">Featured</TabsTrigger>
+            </TabsList>
+          </div>
         </Tabs>
 
         {/* Products List */}
