@@ -114,8 +114,8 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
         <div className="hidden md:block">
           <AdminSidebar />
         </div>
-        <main className="flex-1 bg-muted/30">
-          <div className="p-4 md:p-6 pt-20 md:pt-6">
+        <main className="flex-1 bg-muted/30 overflow-y-auto">
+          <div className="p-4 md:p-6 pt-20 md:pt-6 pb-24 md:pb-6">
             <h1 className="text-2xl font-bold mb-6">{title}</h1>
             {children}
           </div>
