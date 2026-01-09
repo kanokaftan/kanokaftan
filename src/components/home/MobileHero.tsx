@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useProducts } from "@/hooks/useProducts";
-import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
-import { useEffect, useState } from "react";
+import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel";
+import { useEffect, useState, useCallback } from "react";
 import Autoplay from "embla-carousel-autoplay";
 
 import kaftanBlue from "@/assets/products/kaftan-blue.jpg";
@@ -32,6 +32,8 @@ const fallbackSlides = [
 
 export function MobileHero() {
   const { data } = useProducts({ featured: true, limit: 5 });
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
   const [autoplayPlugin] = useState(() => 
     Autoplay({ delay: 4000, stopOnInteraction: false })
   );
@@ -46,12 +48,35 @@ export function MobileHero() {
       }))
     : fallbackSlides.map(slide => ({ ...slide, slug: undefined }));
 
+  const onSelect = useCallback(() => {
+    if (!api) return;
+    setCurrent(api.selectedScrollSnap());
+  }, [api]);
+
+  useEffect(() => {
+    if (!api) return;
+    
+    onSelect();
+    api.on("select", onSelect);
+    api.on("reInit", onSelect);
+    
+    return () => {
+      api.off("select", onSelect);
+      api.off("reInit", onSelect);
+    };
+  }, [api, onSelect]);
+
+  const scrollTo = useCallback((index: number) => {
+    api?.scrollTo(index);
+  }, [api]);
+
   return (
     <section className="relative mx-4 mt-4 overflow-hidden rounded-2xl">
       <Carousel 
         opts={{ loop: true }} 
         plugins={[autoplayPlugin]}
         className="w-full"
+        setApi={setApi}
       >
         <CarouselContent>
           {slides.map((slide, index) => (
@@ -101,12 +126,18 @@ export function MobileHero() {
         </CarouselContent>
       </Carousel>
       
-      {/* Carousel Indicators */}
+      {/* Carousel Indicators - Now Active */}
       <div className="absolute bottom-24 left-6 flex gap-1.5">
         {slides.map((_, index) => (
-          <div
+          <button
             key={index}
-            className="h-1 w-6 rounded-full bg-white/40"
+            onClick={() => scrollTo(index)}
+            className={`h-1 w-6 rounded-full transition-all duration-300 ${
+              current === index 
+                ? "bg-white w-8" 
+                : "bg-white/40 hover:bg-white/60"
+            }`}
+            aria-label={`Go to slide ${index + 1}`}
           />
         ))}
       </div>

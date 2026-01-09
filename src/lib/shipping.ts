@@ -1,17 +1,19 @@
 /**
- * Distance-based shipping calculation with order value discounts
+ * Distance-based shipping calculation with order value discounts and promo codes
  */
 
-// Shipping price tiers by distance (in km)
+import { supabase } from "@/integrations/supabase/client";
+
+// Shipping price tiers by distance (in km) - Rebalanced for better pricing
 const DISTANCE_TIERS = [
-  { maxKm: 5, fee: 1500 },
-  { maxKm: 10, fee: 2000 },
-  { maxKm: 20, fee: 2800 },
-  { maxKm: 50, fee: 4000 },
-  { maxKm: 100, fee: 5500 },
-  { maxKm: 200, fee: 7000 },
-  { maxKm: 300, fee: 8500 },
-  { maxKm: Infinity, fee: 10000 },
+  { maxKm: 5, fee: 800 },
+  { maxKm: 10, fee: 1200 },
+  { maxKm: 20, fee: 1800 },
+  { maxKm: 50, fee: 2500 },
+  { maxKm: 100, fee: 3500 },
+  { maxKm: 200, fee: 5000 },
+  { maxKm: 300, fee: 6500 },
+  { maxKm: Infinity, fee: 8000 },
 ];
 
 // Order value discount tiers
@@ -24,11 +26,11 @@ const VALUE_DISCOUNTS = [
 ];
 
 // Default shipping fee when distance can't be calculated
-export const DEFAULT_SHIPPING_FEE = 5000;
+export const DEFAULT_SHIPPING_FEE = 2500;
 
 // Min and max shipping fees for display
-export const MIN_SHIPPING_FEE = 1500;
-export const MAX_SHIPPING_FEE = 10000;
+export const MIN_SHIPPING_FEE = 800;
+export const MAX_SHIPPING_FEE = 8000;
 
 /**
  * Calculate distance between two coordinates using Haversine formula
@@ -110,23 +112,94 @@ export function getNextDiscountTier(subtotal: number): {
   return null; // Already at max discount
 }
 
+export interface PromoCodeResult {
+  valid: boolean;
+  code?: string;
+  discountType?: 'free' | 'percentage';
+  discountValue?: number;
+  error?: string;
+}
+
 /**
- * Calculate final shipping fee with distance and order value discount
+ * Validate a shipping promo code
+ */
+export async function validatePromoCode(code: string): Promise<PromoCodeResult> {
+  if (!code?.trim()) {
+    return { valid: false, error: 'Please enter a promo code' };
+  }
+
+  const { data, error } = await supabase
+    .from('shipping_promo_codes')
+    .select('*')
+    .eq('code', code.toUpperCase().trim())
+    .eq('is_active', true)
+    .single();
+
+  if (error || !data) {
+    return { valid: false, error: 'Invalid promo code' };
+  }
+
+  // Check expiry
+  if (data.expires_at && new Date(data.expires_at) < new Date()) {
+    return { valid: false, error: 'This promo code has expired' };
+  }
+
+  return {
+    valid: true,
+    code: data.code,
+    discountType: data.discount_type as 'free' | 'percentage',
+    discountValue: data.discount_value,
+  };
+}
+
+/**
+ * Calculate final shipping fee with distance, order value discount, and promo code
  */
 export function calculateShippingFee(
   distanceKm: number | null,
-  subtotal: number
+  subtotal: number,
+  promoCode?: PromoCodeResult
 ): { 
   baseFee: number; 
   discount: number; 
   discountAmount: number; 
   finalFee: number; 
   distanceKm: number | null;
+  promoApplied: boolean;
+  promoDescription?: string;
 } {
   const baseFee = distanceKm !== null 
     ? getBaseFeeByDistance(distanceKm) 
     : DEFAULT_SHIPPING_FEE;
   
+  // Check if promo code gives better discount
+  if (promoCode?.valid) {
+    if (promoCode.discountType === 'free') {
+      return {
+        baseFee,
+        discount: 1, // 100%
+        discountAmount: baseFee,
+        finalFee: 0,
+        distanceKm,
+        promoApplied: true,
+        promoDescription: 'Free shipping applied!',
+      };
+    } else if (promoCode.discountType === 'percentage') {
+      const promoDiscount = (promoCode.discountValue || 0) / 100;
+      const discountAmount = Math.round(baseFee * promoDiscount);
+      return {
+        baseFee,
+        discount: promoDiscount,
+        discountAmount,
+        finalFee: baseFee - discountAmount,
+        distanceKm,
+        promoApplied: true,
+        promoDescription: `${promoCode.discountValue}% off shipping!`,
+      };
+    }
+  }
+  
+  // Fall back to value-based discount
   const discount = getDiscountByValue(subtotal);
   const discountAmount = Math.round(baseFee * discount);
   const finalFee = baseFee - discountAmount;
@@ -137,6 +210,7 @@ export function calculateShippingFee(
     discountAmount,
     finalFee,
     distanceKm,
+    promoApplied: false,
   };
 }
 

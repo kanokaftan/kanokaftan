@@ -51,12 +51,26 @@ serve(async (req) => {
       // Get order details first
       const { data: order, error: orderFetchError } = await supabase
         .from('orders')
-        .select('user_id, total')
+        .select('user_id, total, payment_status')
         .eq('id', orderId)
         .single();
 
+      // Check if already processed to prevent duplicate notifications
+      if (order?.payment_status === 'paid') {
+        console.log('Order already processed, skipping notifications');
+        return new Response(
+          JSON.stringify({
+            success: true,
+            status: 'already_processed',
+            amount: transaction.amount / 100,
+            reference: transaction.reference,
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       // Update order if payment is successful
-      const { error: updateError } = await supabase
+      const { error: updateError, data: updateData } = await supabase
         .from('orders')
         .update({
           payment_status: 'paid',
@@ -72,12 +86,16 @@ serve(async (req) => {
           updated_at: new Date().toISOString()
         })
         .eq('id', orderId)
-        .eq('payment_status', 'pending'); // Only update if not already paid
+        .eq('payment_status', 'pending') // Only update if not already paid
+        .select();
 
       if (updateError) {
         console.error('Failed to update order:', updateError);
-      } else {
-        // Send notification to customer
+      } else if (updateData && updateData.length > 0) {
+        // Only send notifications if the update actually happened
+        console.log('Order updated, sending notifications...');
+        
+        // Send SINGLE notification to customer (moved OUTSIDE the loop)
         if (order?.user_id) {
           await supabase.from('notifications').insert({
             user_id: order.user_id,
@@ -88,6 +106,7 @@ serve(async (req) => {
             action_url: `/orders/${orderId}`,
             metadata: { order_id: orderId, amount: transaction.amount / 100 }
           });
+          console.log('Customer notification sent');
         }
 
         // Reduce stock and notify vendors
@@ -156,21 +175,27 @@ serve(async (req) => {
             }
           }
 
-          // Notify each vendor about their new order
-          for (const [vendorId, vendorOrder] of Object.entries(vendorOrders)) {
-            const itemNames = vendorOrder.items.map(i => i.product_name).join(', ');
-            await supabase.from('notifications').insert({
+          // Notify each vendor about their new order (ONE notification per vendor)
+          const vendorNotifications = Object.entries(vendorOrders).map(([vendorId, vendorOrder]) => {
+            const itemNames = vendorOrder.items.map(i => i.product_name).slice(0, 2).join(', ');
+            const moreItems = vendorOrder.items.length > 2 ? ` +${vendorOrder.items.length - 2} more` : '';
+            return {
               user_id: vendorId,
               title: 'New Order Received!',
-              message: `You have a new order for ${itemNames}. Total: ₦${vendorOrder.total.toLocaleString()}`,
+              message: `You have a new order for ${itemNames}${moreItems}. Total: ₦${vendorOrder.total.toLocaleString()}`,
               type: 'order',
               category: 'order',
               action_url: '/vendor/orders',
               metadata: { order_id: orderId, total: vendorOrder.total }
-            });
+            };
+          });
+
+          if (vendorNotifications.length > 0) {
+            await supabase.from('notifications').insert(vendorNotifications);
+            console.log(`Sent ${vendorNotifications.length} vendor notification(s)`);
           }
 
-          // Notify admins
+          // Notify admins (ONE notification per admin)
           const { data: adminUsers } = await supabase
             .from('user_roles')
             .select('user_id')
@@ -187,8 +212,11 @@ serve(async (req) => {
               metadata: { order_id: orderId, amount: transaction.amount / 100 }
             }));
             await supabase.from('notifications').insert(adminNotifications);
+            console.log(`Sent ${adminNotifications.length} admin notification(s)`);
           }
         }
+      } else {
+        console.log('Order was already updated or not found, skipping notifications');
       }
     }
 
