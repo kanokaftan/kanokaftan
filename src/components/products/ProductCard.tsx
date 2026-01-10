@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Heart, ShoppingCart, BadgeCheck, Eye } from "lucide-react";
+import { Heart, ShoppingCart, BadgeCheck, Eye, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -86,6 +86,35 @@ export function ProductCard({ product, onQuickView }: ProductCardProps) {
     onQuickView?.(product);
   };
 
+  const handleShare = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const productUrl = `${window.location.origin}/products/${product.slug}`;
+    const shareData = {
+      title: product.name,
+      text: `Check out ${product.name} on Kano Kaftan!`,
+      url: productUrl,
+    };
+
+    try {
+      if (navigator.share && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(productUrl);
+        toast.success("Product link copied! 🎉", {
+          description: "Share it with friends",
+        });
+      }
+    } catch (error) {
+      // User cancelled share or error
+      if ((error as Error).name !== 'AbortError') {
+        await navigator.clipboard.writeText(productUrl);
+        toast.success("Product link copied! 🎉");
+      }
+    }
+  };
+
   return (
     <Card className="group overflow-hidden border-0 shadow-sm transition-shadow hover:shadow-md">
       <Link to={`/products/${product.slug}`}>
@@ -144,6 +173,14 @@ export function ProductCard({ product, onQuickView }: ProductCardProps) {
               onClick={handleAddToCart}
             >
               <ShoppingCart className="h-4 w-4" />
+            </Button>
+            <Button 
+              size="icon" 
+              variant="secondary" 
+              className="h-9 w-9"
+              onClick={handleShare}
+            >
+              <Share2 className="h-4 w-4" />
             </Button>
           </div>
         </div>
