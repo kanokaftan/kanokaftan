@@ -132,11 +132,11 @@ export default function VendorProfile() {
   const storeAddress = vendor.store_address as { city?: string; state?: string } | null;
 
   const handleShareShop = async () => {
-    const shopUrl = `${window.location.origin}/vendor/${vendorId}`;
+    const shopUrl = `https://kanokaftan.shop/vendor/${vendorId}`;
     const storeName = vendor.store_name || vendor.full_name || "Store";
     const shareData = {
-      title: storeName,
-      text: `Check out ${storeName} on Kano Kaftan!`,
+      title: `${storeName} - Kano Kaftan`,
+      text: `Check out ${storeName} on Kano Kaftan! Shop authentic Nigerian traditional attire.`,
       url: shopUrl,
     };
 
