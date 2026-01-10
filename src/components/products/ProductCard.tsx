@@ -144,7 +144,8 @@ export function ProductCard({ product, onQuickView }: ProductCardProps) {
             </Badge>
           )}
 
-          <div className="absolute right-3 top-3 flex flex-col gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+          {/* Action buttons - visible on hover for desktop, always visible on mobile */}
+          <div className="absolute right-3 top-3 flex flex-col gap-2 opacity-100 md:opacity-0 transition-opacity md:group-hover:opacity-100">
             <Button 
               size="icon" 
               variant="secondary" 
