@@ -1,6 +1,5 @@
-import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ChevronLeft, Store, BadgeCheck, Package, Star, MapPin } from "lucide-react";
+import { ChevronLeft, Store, BadgeCheck, Package, Star, MapPin, Share2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ProductCard } from "@/components/products/ProductCard";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import type { Product } from "@/hooks/useProducts";
 
 function formatPrice(amount: number): string {
@@ -131,6 +131,32 @@ export default function VendorProfile() {
 
   const storeAddress = vendor.store_address as { city?: string; state?: string } | null;
 
+  const handleShareShop = async () => {
+    const shopUrl = `${window.location.origin}/vendor/${vendorId}`;
+    const storeName = vendor.store_name || vendor.full_name || "Store";
+    const shareData = {
+      title: storeName,
+      text: `Check out ${storeName} on Kano Kaftan!`,
+      url: shopUrl,
+    };
+
+    try {
+      if (navigator.share && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shopUrl);
+        toast.success("Vendor shop link copied! 🎉", {
+          description: "Share it with friends",
+        });
+      }
+    } catch (error) {
+      if ((error as Error).name !== 'AbortError') {
+        await navigator.clipboard.writeText(shopUrl);
+        toast.success("Vendor shop link copied! 🎉");
+      }
+    }
+  };
+
   return (
     <MobileLayout hideHeader>
       {/* Hero Section */}
@@ -144,6 +170,16 @@ export default function VendorProfile() {
           <Link to="/products">
             <ChevronLeft className="h-5 w-5" />
           </Link>
+        </Button>
+
+        {/* Share Shop Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute right-4 top-4 h-10 w-10 rounded-full bg-background/80 backdrop-blur"
+          onClick={handleShareShop}
+        >
+          <Share2 className="h-5 w-5" />
         </Button>
 
         <div className="pt-12 flex flex-col items-center text-center">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ChevronLeft, Heart, Minus, Plus, ShoppingCart, Truck, Shield, RotateCcw, BadgeCheck, Store, MessageCircle } from "lucide-react";
+import { ChevronLeft, Heart, Minus, Plus, ShoppingCart, Truck, Shield, RotateCcw, BadgeCheck, Store, Share2 } from "lucide-react";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -121,6 +121,31 @@ export default function ProductDetail() {
     }
   };
 
+  const handleShare = async () => {
+    const productUrl = `${window.location.origin}/products/${product.slug}`;
+    const shareData = {
+      title: product.name,
+      text: `Check out ${product.name} on Kano Kaftan!`,
+      url: productUrl,
+    };
+
+    try {
+      if (navigator.share && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(productUrl);
+        toast.success("Product link copied! 🎉", {
+          description: "Share it with friends",
+        });
+      }
+    } catch (error) {
+      if ((error as Error).name !== 'AbortError') {
+        await navigator.clipboard.writeText(productUrl);
+        toast.success("Product link copied! 🎉");
+      }
+    }
+  };
+
   return (
     <MobileLayout hideHeader>
       {/* Image Gallery */}
@@ -151,18 +176,28 @@ export default function ProductDetail() {
           </Link>
         </Button>
         
-        {/* Wishlist Button */}
-        <Button
-          variant="secondary"
-          size="icon"
-          className={cn(
-            "absolute right-4 top-4 h-10 w-10 rounded-full shadow-md",
-            inWishlist && "bg-primary text-primary-foreground hover:bg-primary/90"
-          )}
-          onClick={handleWishlistClick}
-        >
-          <Heart className={cn("h-5 w-5", inWishlist && "fill-current")} />
-        </Button>
+        {/* Action Buttons */}
+        <div className="absolute right-4 top-4 flex flex-col gap-2">
+          <Button
+            variant="secondary"
+            size="icon"
+            className={cn(
+              "h-10 w-10 rounded-full shadow-md",
+              inWishlist && "bg-primary text-primary-foreground hover:bg-primary/90"
+            )}
+            onClick={handleWishlistClick}
+          >
+            <Heart className={cn("h-5 w-5", inWishlist && "fill-current")} />
+          </Button>
+          <Button
+            variant="secondary"
+            size="icon"
+            className="h-10 w-10 rounded-full shadow-md"
+            onClick={handleShare}
+          >
+            <Share2 className="h-5 w-5" />
+          </Button>
+        </div>
 
         {/* Discount Badge */}
         {hasDiscount && (
