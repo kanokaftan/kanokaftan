@@ -90,10 +90,10 @@ export function ProductCard({ product, onQuickView }: ProductCardProps) {
     e.preventDefault();
     e.stopPropagation();
     
-    const productUrl = `${window.location.origin}/products/${product.slug}`;
+    const productUrl = `https://kanokaftan.shop/products/${product.slug}`;
     const shareData = {
-      title: product.name,
-      text: `Check out ${product.name} on Kano Kaftan!`,
+      title: `${product.name} - Kano Kaftan`,
+      text: `Check out ${product.name} on Kano Kaftan! Authentic Nigerian traditional attire.`,
       url: productUrl,
     };
 
@@ -186,7 +186,7 @@ export function ProductCard({ product, onQuickView }: ProductCardProps) {
           </div>
         </div>
 
-        <CardContent className="p-4">
+        <CardContent className="p-4 pb-16 md:pb-4">
           {product.category && (
             <p className="text-xs text-muted-foreground">{product.category.name}</p>
           )}
@@ -221,6 +221,18 @@ export function ProductCard({ product, onQuickView }: ProductCardProps) {
                 {formatPrice(product.compare_at_price!)}
               </p>
             )}
+          </div>
+
+          {/* Floating Add to Cart button for mobile */}
+          <div className="absolute bottom-0 left-0 right-0 p-3 md:hidden">
+            <Button 
+              className="w-full gap-2 shadow-lg" 
+              size="sm"
+              onClick={handleAddToCart}
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Add to Cart
+            </Button>
           </div>
         </CardContent>
       </Link>

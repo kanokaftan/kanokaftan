@@ -122,10 +122,10 @@ export default function ProductDetail() {
   };
 
   const handleShare = async () => {
-    const productUrl = `${window.location.origin}/products/${product.slug}`;
+    const productUrl = `https://kanokaftan.shop/products/${product.slug}`;
     const shareData = {
-      title: product.name,
-      text: `Check out ${product.name} on Kano Kaftan!`,
+      title: `${product.name} - Kano Kaftan`,
+      text: `Check out ${product.name} on Kano Kaftan! Authentic Nigerian traditional attire.`,
       url: productUrl,
     };
 
