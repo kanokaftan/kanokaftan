@@ -147,7 +147,7 @@ export default function ProductDetail() {
   };
 
   return (
-    <MobileLayout hideHeader>
+    <MobileLayout hideHeader hideBottomNav>
       {/* Image Gallery */}
       <div className="relative">
         <div className="aspect-square w-full bg-muted">
