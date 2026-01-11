@@ -48,17 +48,25 @@ serve(async (req) => {
     console.log(`Payment verification result: ${transaction.status}`);
 
     if (isSuccessful && orderId) {
-      // Get order details first with FOR UPDATE to prevent race conditions
+      console.log(`Processing successful payment for order: ${orderId}, reference: ${reference}`);
+      
+      // Get order details first
       const { data: order, error: orderFetchError } = await supabase
         .from('orders')
         .select('user_id, total, payment_status, payment_reference')
         .eq('id', orderId)
         .single();
 
-      // Check if already processed to prevent duplicate notifications
-      // Also check payment_reference as secondary guard
-      if (order?.payment_status === 'paid' || order?.payment_reference === reference) {
-        console.log('Order already processed, skipping all operations');
+      if (orderFetchError) {
+        console.error('Failed to fetch order:', orderFetchError);
+        throw new Error('Order not found');
+      }
+
+      console.log(`Order state: payment_status=${order?.payment_status}, payment_reference=${order?.payment_reference}`);
+
+      // Check if already fully processed (payment_status is 'paid')
+      if (order?.payment_status === 'paid') {
+        console.log('Order already paid, returning already_processed');
         return new Response(
           JSON.stringify({
             success: true,
@@ -70,14 +78,15 @@ serve(async (req) => {
         );
       }
 
-      // Update order if payment is successful - use multiple guards for idempotency
+      // Update order if payment is still pending
+      // Allow update even if payment_reference exists (was set by process-payment)
       const { error: updateError, data: updateData } = await supabase
         .from('orders')
         .update({
           payment_status: 'paid',
           status: 'payment_confirmed',
           escrow_status: 'held',
-          payment_reference: reference, // Store reference to prevent duplicate processing
+          payment_reference: reference,
           tracking_updates: [
             {
               status: 'payment_confirmed',
@@ -88,9 +97,10 @@ serve(async (req) => {
           updated_at: new Date().toISOString()
         })
         .eq('id', orderId)
-        .eq('payment_status', 'pending') // Only update if not already paid
-        .is('payment_reference', null) // Additional guard - only if no reference yet
+        .eq('payment_status', 'pending') // Only update if not already paid (idempotency)
         .select();
+
+      console.log(`Update result: ${updateData?.length || 0} rows updated`);
 
       if (updateError) {
         console.error('Failed to update order:', updateError);

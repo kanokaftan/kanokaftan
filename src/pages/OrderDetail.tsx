@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import {
@@ -11,6 +11,7 @@ import {
   Phone,
   MessageSquare,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import { useOrders, Order } from "@/hooks/useOrders";
 import { usePayment } from "@/hooks/usePayment";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 function formatPrice(amount: number): string {
   return new Intl.NumberFormat("en-NG", {
@@ -46,20 +48,35 @@ export default function OrderDetail() {
   const { orders, isLoading, confirmDelivery } = useOrders();
   const { initiatePayment, verifyPayment, isProcessing } = usePayment();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [order, setOrder] = useState<Order | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [hasAutoVerified, setHasAutoVerified] = useState(false);
+
+  // Refetch orders after payment verification
+  const refetchOrders = useCallback(() => {
+    if (user?.id) {
+      queryClient.invalidateQueries({ queryKey: ['orders', user.id] });
+    }
+  }, [queryClient, user?.id]);
 
   // Handle payment verification on return from Paystack
   useEffect(() => {
     const shouldVerify = searchParams.get("verify") === "true";
     const reference = searchParams.get("reference") || searchParams.get("trxref");
 
-    if (shouldVerify && reference && id) {
+    if (shouldVerify && reference && id && !isVerifying) {
       setIsVerifying(true);
       verifyPayment(reference, id)
         .then((result) => {
           if (result.success) {
-            toast.success("Payment verified successfully!");
+            if (result.status === 'already_processed') {
+              toast.success("Payment already confirmed!");
+            } else {
+              toast.success("Payment verified successfully!");
+            }
+            // Refetch orders to get updated status
+            refetchOrders();
           } else {
             toast.error(result.error || "Payment verification failed");
           }
@@ -70,7 +87,29 @@ export default function OrderDetail() {
           window.history.replaceState({}, "", `/orders/${id}`);
         });
     }
-  }, [searchParams, id, verifyPayment]);
+  }, [searchParams, id, verifyPayment, refetchOrders, isVerifying]);
+
+  // Auto-verify stuck orders that have a payment_reference but are still pending
+  useEffect(() => {
+    if (order && !hasAutoVerified && !isVerifying && 
+        order.payment_status === 'pending' && 
+        order.payment_reference) {
+      console.log('Auto-verifying stuck order:', order.id, 'with reference:', order.payment_reference);
+      setHasAutoVerified(true);
+      setIsVerifying(true);
+      
+      verifyPayment(order.payment_reference, order.id)
+        .then((result) => {
+          if (result.success) {
+            toast.success("Payment confirmed!");
+            refetchOrders();
+          }
+        })
+        .finally(() => {
+          setIsVerifying(false);
+        });
+    }
+  }, [order, hasAutoVerified, isVerifying, verifyPayment, refetchOrders]);
 
   useEffect(() => {
     if (!isLoading && orders.length > 0) {
@@ -144,7 +183,30 @@ export default function OrderDetail() {
 
   const status = statusConfig[order.status] || statusConfig.processing;
   const StatusIcon = status.icon;
-  const showPayButton = order.status === "pending_payment" && order.payment_status === "pending";
+  // Only show pay button if truly pending and no payment_reference exists
+  const showPayButton = order.status === "pending_payment" && 
+                        order.payment_status === "pending" && 
+                        !order.payment_reference;
+  // Show verify button if pending but has payment_reference (stuck order)
+  const showVerifyButton = order.payment_status === "pending" && 
+                           order.payment_reference && 
+                           !isVerifying;
+
+  const handleManualVerify = async () => {
+    if (!order?.payment_reference) return;
+    setIsVerifying(true);
+    try {
+      const result = await verifyPayment(order.payment_reference, order.id);
+      if (result.success) {
+        toast.success("Payment confirmed!");
+        refetchOrders();
+      } else {
+        toast.error(result.error || "Verification failed");
+      }
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   return (
     <MobileLayout>
@@ -188,6 +250,37 @@ export default function OrderDetail() {
                 <>
                   <CreditCard className="mr-2 h-4 w-4" />
                   Pay {formatPrice(order.total)}
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+
+        {/* Verify Payment Banner - for stuck orders */}
+        {showVerifyButton && (
+          <div className="mb-4 rounded-xl bg-blue-50 border border-blue-200 p-4">
+            <div className="flex items-center gap-2 text-blue-800 mb-3">
+              <RefreshCw className="h-5 w-5" />
+              <span className="font-medium">Payment Processing</span>
+            </div>
+            <p className="text-sm text-blue-700 mb-3">
+              Your payment is being verified. Click below to check the status.
+            </p>
+            <Button 
+              className="w-full" 
+              variant="outline"
+              onClick={handleManualVerify}
+              disabled={isVerifying}
+            >
+              {isVerifying ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Verifying...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Verify Payment Status
                 </>
               )}
             </Button>
