@@ -106,7 +106,8 @@ export function useOrders() {
           variant:product_variants (
             id,
             name,
-            price_adjustment
+            price_adjustment,
+            stock_quantity
           )
         `)
         .eq("user_id", userId);
@@ -116,7 +117,20 @@ export function useOrders() {
       if (cartError) throw new Error(`Cart fetch error: ${cartError.message}`);
       if (!cartItems || cartItems.length === 0) throw new Error("Cart is empty");
 
-      // Calculate totals
+      // STOCK VALIDATION: Check if all items have sufficient stock
+      const stockErrors: string[] = [];
+      for (const item of cartItems) {
+        const availableStock = item.variant?.stock_quantity ?? item.product.stock_quantity;
+        if (item.quantity > availableStock) {
+          stockErrors.push(
+            `"${item.product.name}"${item.variant ? ` (${item.variant.name})` : ""} only has ${availableStock} in stock, but you requested ${item.quantity}`
+          );
+        }
+      }
+
+      if (stockErrors.length > 0) {
+        throw new Error(`Insufficient stock:\n${stockErrors.join("\n")}`);
+      }
       const subtotal = cartItems.reduce((sum, item) => {
         const price = item.product.price + (item.variant?.price_adjustment || 0);
         return sum + price * item.quantity;
