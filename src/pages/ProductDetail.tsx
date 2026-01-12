@@ -33,6 +33,8 @@ export default function ProductDetail() {
   const { addProduct: addToRecentlyViewed } = useRecentlyViewed();
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
 
   // Track product view
   useEffect(() => {
@@ -86,13 +88,46 @@ export default function ProductDetail() {
   const colors = [...new Set(variants.filter(v => v.color).map(v => v.color))];
   const inWishlist = isInWishlist(product.id);
 
+  // Find selected variant based on size and color selection
+  const selectedVariant = variants.find(v => {
+    if (sizes.length > 0 && colors.length > 0) {
+      return v.size === selectedSize && v.color === selectedColor;
+    } else if (sizes.length > 0) {
+      return v.size === selectedSize;
+    } else if (colors.length > 0) {
+      return v.color === selectedColor;
+    }
+    return false;
+  });
+
+  // Calculate price with variant adjustment
+  const variantPriceAdjustment = selectedVariant?.price_adjustment || 0;
+  const finalPrice = product.price + variantPriceAdjustment;
+  
+  // Get available stock (variant stock if selected, otherwise product stock)
+  const availableStock = selectedVariant?.stock_quantity ?? product.stock_quantity;
+
   const handleAddToCart = () => {
+    // Validate variant selection if variants exist
+    if (sizes.length > 0 && !selectedSize) {
+      toast.error("Please select a size");
+      return;
+    }
+    if (colors.length > 0 && !selectedColor) {
+      toast.error("Please select a color");
+      return;
+    }
+
     addToCart.mutate(
-      { productId: product.id, quantity },
+      { 
+        productId: product.id, 
+        quantity,
+        variantId: selectedVariant?.id 
+      },
       {
         onSuccess: () => {
           toast.success("Added to cart", {
-            description: `${product.name} x ${quantity}`,
+            description: `${product.name}${selectedVariant ? ` (${selectedVariant.name})` : ""} x ${quantity}`,
           });
         },
         onError: () => {
@@ -240,15 +275,15 @@ export default function ProductDetail() {
           
           {/* Stock indicator */}
           <div className="flex items-center gap-2 mt-2">
-            {product.stock_quantity > 0 ? (
+            {availableStock > 0 ? (
               <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
                 ✓ In Stock
               </Badge>
             ) : (
               <Badge variant="destructive">Out of Stock</Badge>
             )}
-            {product.stock_quantity > 0 && product.stock_quantity < 10 && (
-              <span className="text-xs text-orange-600">Only {product.stock_quantity} left!</span>
+            {availableStock > 0 && availableStock < 10 && (
+              <span className="text-xs text-orange-600">Only {availableStock} left!</span>
             )}
           </div>
         </div>
@@ -257,12 +292,12 @@ export default function ProductDetail() {
         <div className="bg-gradient-to-r from-primary/5 to-transparent p-4 rounded-xl -mx-4">
           <div className="flex items-baseline gap-3 px-4">
             <span className="font-display text-3xl font-bold text-foreground">
-              {formatPrice(product.price)}
+              {formatPrice(finalPrice)}
             </span>
             {hasDiscount && (
               <>
                 <span className="text-lg text-muted-foreground line-through">
-                  {formatPrice(product.compare_at_price!)}
+                  {formatPrice(product.compare_at_price! + variantPriceAdjustment)}
                 </span>
                 <Badge variant="destructive" className="ml-auto">
                   Save {Math.round((1 - product.price / product.compare_at_price!) * 100)}%
@@ -317,14 +352,17 @@ export default function ProductDetail() {
           <div className="space-y-4 p-4 rounded-xl bg-muted/30 border">
             {sizes.length > 0 && (
               <div>
-                <p className="mb-2 text-sm font-semibold">Size</p>
+                <p className="mb-2 text-sm font-semibold">
+                  Size {!selectedSize && <span className="text-destructive">*</span>}
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {sizes.map((size) => (
                     <Button
                       key={size}
-                      variant="outline"
+                      variant={selectedSize === size ? "default" : "outline"}
                       size="sm"
-                      className="min-w-[3rem] rounded-full hover:bg-primary hover:text-primary-foreground"
+                      className="min-w-[3rem] rounded-full"
+                      onClick={() => setSelectedSize(size)}
                     >
                       {size}
                     </Button>
@@ -335,14 +373,17 @@ export default function ProductDetail() {
 
             {colors.length > 0 && (
               <div>
-                <p className="mb-2 text-sm font-semibold">Color</p>
+                <p className="mb-2 text-sm font-semibold">
+                  Color {!selectedColor && <span className="text-destructive">*</span>}
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {colors.map((color) => (
                     <Button
                       key={color}
-                      variant="outline"
+                      variant={selectedColor === color ? "default" : "outline"}
                       size="sm"
-                      className="rounded-full hover:bg-primary hover:text-primary-foreground"
+                      className="rounded-full"
+                      onClick={() => setSelectedColor(color)}
                     >
                       {color}
                     </Button>
@@ -357,7 +398,7 @@ export default function ProductDetail() {
         <div className="flex items-center justify-between p-4 rounded-xl bg-card border">
           <div>
             <p className="text-sm font-semibold">Quantity</p>
-            <p className="text-xs text-muted-foreground">{product.stock_quantity} available</p>
+            <p className="text-xs text-muted-foreground">{availableStock} available</p>
           </div>
           <div className="flex items-center gap-1 rounded-full border bg-background">
             <Button
@@ -374,8 +415,8 @@ export default function ProductDetail() {
               variant="ghost"
               size="icon"
               className="h-10 w-10 rounded-full"
-              onClick={() => setQuantity(Math.min(product.stock_quantity, quantity + 1))}
-              disabled={quantity >= product.stock_quantity}
+              onClick={() => setQuantity(Math.min(availableStock, quantity + 1))}
+              disabled={quantity >= availableStock}
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -418,13 +459,13 @@ export default function ProductDetail() {
           <div className="flex items-center gap-3 max-w-lg mx-auto">
             <div className="text-left">
               <p className="text-xs text-muted-foreground">Total</p>
-              <p className="font-bold text-lg">{formatPrice(product.price * quantity)}</p>
+              <p className="font-bold text-lg">{formatPrice(finalPrice * quantity)}</p>
             </div>
             <Button 
               size="lg" 
               className="flex-1 gap-2 h-12 rounded-full shadow-lg"
               onClick={handleAddToCart}
-              disabled={product.stock_quantity === 0}
+              disabled={availableStock === 0}
             >
               <ShoppingCart className="h-5 w-5" />
               Add to Cart

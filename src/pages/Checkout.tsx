@@ -174,6 +174,11 @@ export default function Checkout() {
       return;
     }
 
+    // Prevent double submission
+    if (isSubmitting) {
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const order = await createOrder.mutateAsync({
@@ -200,7 +205,15 @@ export default function Checkout() {
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to place order";
-      toast.error(message);
+      // Show stock errors in a more user-friendly way
+      if (message.includes("Insufficient stock")) {
+        toast.error("Some items are out of stock", {
+          description: "Please update your cart quantities",
+          duration: 5000,
+        });
+      } else {
+        toast.error(message);
+      }
     } finally {
       setIsSubmitting(false);
     }
