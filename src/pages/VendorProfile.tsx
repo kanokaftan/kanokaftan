@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { ProductCard } from "@/components/products/ProductCard";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 import type { Product } from "@/hooks/useProducts";
 
 function formatPrice(amount: number): string {
@@ -97,6 +98,18 @@ export default function VendorProfile() {
       };
     },
     enabled: !!vendorId && !!products,
+  });
+
+  // Update document meta for social sharing
+  const storeName = vendor?.store_name || vendor?.full_name || "Store";
+  const storeDescription = vendor?.store_description || `Shop authentic Nigerian Agbada, Kaftan, and Dashiki from ${storeName} on Kano Kaftan.`;
+  const storeImage = vendor?.avatar_url || "https://storage.googleapis.com/gpt-engineer-file-uploads/n85PtjtstLSH7FGT5eE0A6dm6zi2/social-images/social-1767791624177-Gemini_Generated_Image_duw5q6duw5q6duw5.png";
+  
+  useDocumentMeta({
+    title: vendor ? `${storeName} - Kano Kaftan` : "Loading Store...",
+    description: storeDescription,
+    image: storeImage,
+    url: `https://kanokaftan.shop/vendor/${vendorId}`,
   });
 
   if (vendorLoading) {
