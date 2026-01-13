@@ -125,22 +125,6 @@ export function MobileHero() {
           ))}
         </CarouselContent>
       </Carousel>
-      
-      {/* Carousel Indicators */}
-      <div className="absolute bottom-24 left-6 flex gap-2">
-        {slides.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => scrollTo(index)}
-            className={`h-2 rounded-full transition-all duration-300 ${
-              current === index 
-                ? "bg-white w-6" 
-                : "bg-white/50 w-2 hover:bg-white/70"
-            }`}
-            aria-label={`Go to slide ${index + 1}`}
-          />
-        ))}
-      </div>
     </section>
   );
 }

@@ -13,6 +13,7 @@ import type { Product } from "@/hooks/useProducts";
 interface ProductCardProps {
   product: Product;
   onQuickView?: (product: Product) => void;
+  hideFloatingCart?: boolean;
 }
 
 function formatPrice(amount: number): string {
@@ -23,7 +24,7 @@ function formatPrice(amount: number): string {
   }).format(amount);
 }
 
-export function ProductCard({ product, onQuickView }: ProductCardProps) {
+export function ProductCard({ product, onQuickView, hideFloatingCart = false }: ProductCardProps) {
   const navigate = useNavigate();
   const { userId, addToWishlist, isInWishlist } = useWishlist();
   const { addToCart } = useCart();
@@ -224,16 +225,18 @@ export function ProductCard({ product, onQuickView }: ProductCardProps) {
           </div>
 
           {/* Floating Add to Cart button for mobile */}
-          <div className="absolute bottom-0 left-0 right-0 p-3 md:hidden">
-            <Button 
-              className="w-full gap-2 shadow-lg" 
-              size="sm"
-              onClick={handleAddToCart}
-            >
-              <ShoppingCart className="h-4 w-4" />
-              Add to Cart
-            </Button>
-          </div>
+          {!hideFloatingCart && (
+            <div className="absolute bottom-0 left-0 right-0 p-3 md:hidden">
+              <Button 
+                className="w-full gap-2 shadow-lg" 
+                size="sm"
+                onClick={handleAddToCart}
+              >
+                <ShoppingCart className="h-4 w-4" />
+                Add to Cart
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Link>
     </Card>

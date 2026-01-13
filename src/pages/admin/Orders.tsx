@@ -15,6 +15,7 @@ export default function AdminOrders() {
   const { orders, isLoading, updateOrderStatus } = useAdminOrders();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [paymentFilter, setPaymentFilter] = useState<string>("all");
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = 
@@ -22,7 +23,8 @@ export default function AdminOrders() {
       order.customer?.email.toLowerCase().includes(search.toLowerCase()) ||
       order.id.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesPayment = paymentFilter === "all" || order.payment_status === paymentFilter;
+    return matchesSearch && matchesStatus && matchesPayment;
   });
 
   const formatCurrency = (amount: number) => {
@@ -88,8 +90,19 @@ export default function AdminOrders() {
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
             {statuses.map(status => (
-              <SelectItem key={status} value={status} className="capitalize">{status}</SelectItem>
+              <SelectItem key={status} value={status} className="capitalize">{status.replace(/_/g, " ")}</SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+        <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by payment" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Payments</SelectItem>
+            <SelectItem value="paid">Paid</SelectItem>
+            <SelectItem value="pending">Unpaid</SelectItem>
+            <SelectItem value="failed">Failed</SelectItem>
           </SelectContent>
         </Select>
       </div>

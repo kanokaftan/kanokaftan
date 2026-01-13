@@ -267,7 +267,7 @@ export default function VendorProfile() {
         ) : (
           <div className="grid grid-cols-2 gap-4">
             {products?.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard key={product.id} product={product} hideFloatingCart />
             ))}
           </div>
         )}
