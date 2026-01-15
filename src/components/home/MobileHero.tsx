@@ -71,7 +71,7 @@ export function MobileHero() {
   }, [api]);
 
   return (
-    <section className="relative mx-4 mt-4 overflow-hidden rounded-2xl">
+    <section className="relative mx-4 mt-3 overflow-hidden rounded-xl">
       <Carousel 
         opts={{ loop: true }} 
         plugins={[autoplayPlugin]}
@@ -81,7 +81,7 @@ export function MobileHero() {
         <CarouselContent>
           {slides.map((slide, index) => (
             <CarouselItem key={index}>
-              <div className="relative aspect-[3/4] w-full">
+              <div className="relative aspect-[4/5] sm:aspect-[16/9] w-full">
                 <img
                   src={slide.image}
                   alt={slide.title}
@@ -92,27 +92,27 @@ export function MobileHero() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
                 
                 {/* Content */}
-                <div className="absolute inset-0 flex flex-col justify-end p-6">
+                <div className="absolute inset-0 flex flex-col justify-end p-4 sm:p-6">
                   {/* Tag */}
-                  <span className="mb-2 inline-flex w-fit rounded-md bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
+                  <span className="mb-1.5 inline-flex w-fit rounded-md bg-primary px-2.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
                     {slide.tag}
                   </span>
                   
                   {/* Title */}
-                  <h1 className="font-display text-2xl font-bold leading-tight text-white sm:text-3xl whitespace-pre-line">
+                  <h1 className="font-display text-xl font-bold leading-tight text-white sm:text-2xl whitespace-pre-line">
                     {slide.title}
                   </h1>
                   
-                  {/* Description */}
-                  <p className="mt-2 max-w-[280px] text-sm leading-relaxed text-white/85">
+                  {/* Description - hidden on mobile for compactness */}
+                  <p className="mt-1.5 max-w-[240px] text-xs leading-relaxed text-white/85 line-clamp-2 hidden sm:block">
                     {slide.description}
                   </p>
                   
                   {/* CTA Button */}
                   <Button 
-                    size="default" 
+                    size="sm" 
                     variant="secondary"
-                    className="mt-4 w-fit rounded-full px-6 font-medium"
+                    className="mt-3 w-fit rounded-full px-5 text-xs font-medium"
                     asChild
                   >
                     <Link to={slide.slug ? `/products/${slide.slug}` : "/products"}>
