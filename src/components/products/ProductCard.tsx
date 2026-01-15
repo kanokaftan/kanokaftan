@@ -14,6 +14,7 @@ interface ProductCardProps {
   product: Product;
   onQuickView?: (product: Product) => void;
   hideFloatingCart?: boolean;
+  compact?: boolean;
 }
 
 function formatPrice(amount: number): string {
@@ -24,7 +25,7 @@ function formatPrice(amount: number): string {
   }).format(amount);
 }
 
-export function ProductCard({ product, onQuickView, hideFloatingCart = false }: ProductCardProps) {
+export function ProductCard({ product, onQuickView, hideFloatingCart = false, compact = false }: ProductCardProps) {
   const navigate = useNavigate();
   const { userId, addToWishlist, isInWishlist } = useWishlist();
   const { addToCart } = useCart();
@@ -119,7 +120,10 @@ export function ProductCard({ product, onQuickView, hideFloatingCart = false }: 
   return (
     <Card className="group overflow-hidden border-0 shadow-sm transition-shadow hover:shadow-md">
       <Link to={`/products/${product.slug}`}>
-        <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+        <div className={cn(
+          "relative overflow-hidden bg-muted",
+          compact ? "aspect-square" : "aspect-[3/4]"
+        )}>
           {imageUrl ? (
             <img
               src={imageUrl}
@@ -127,38 +131,47 @@ export function ProductCard({ product, onQuickView, hideFloatingCart = false }: 
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
+            <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground text-xs">
               No Image
             </div>
           )}
           
           {/* Featured badge */}
           {product.featured && (
-            <Badge className="absolute left-3 top-3 bg-amber-500 hover:bg-amber-600">
+            <Badge className={cn(
+              "absolute bg-amber-500 hover:bg-amber-600",
+              compact ? "left-1.5 top-1.5 text-[9px] px-1.5 py-0.5" : "left-3 top-3"
+            )}>
               ⭐ Featured
             </Badge>
           )}
           
           {discount && !product.featured && (
-            <Badge className="absolute left-3 top-3 bg-destructive text-destructive-foreground">
-              {discount}% OFF
+            <Badge className={cn(
+              "absolute bg-destructive text-destructive-foreground",
+              compact ? "left-1.5 top-1.5 text-[9px] px-1.5 py-0.5" : "left-3 top-3"
+            )}>
+              -{discount}%
             </Badge>
           )}
 
           {/* Action buttons - visible on hover for desktop, always visible on mobile */}
-          <div className="absolute right-3 top-3 flex flex-col gap-2 opacity-100 md:opacity-0 transition-opacity md:group-hover:opacity-100">
+          <div className={cn(
+            "absolute flex flex-col gap-1.5 opacity-100 md:opacity-0 transition-opacity md:group-hover:opacity-100",
+            compact ? "right-1.5 top-1.5" : "right-3 top-3 gap-2"
+          )}>
             <Button 
               size="icon" 
               variant="secondary" 
               className={cn(
-                "h-9 w-9",
+                compact ? "h-7 w-7" : "h-9 w-9",
                 inWishlist && "bg-primary text-primary-foreground hover:bg-primary/90"
               )}
               onClick={handleWishlistClick}
             >
-              <Heart className={cn("h-4 w-4", inWishlist && "fill-current")} />
+              <Heart className={cn(compact ? "h-3.5 w-3.5" : "h-4 w-4", inWishlist && "fill-current")} />
             </Button>
-            {onQuickView && (
+            {onQuickView && !compact && (
               <Button 
                 size="icon" 
                 variant="secondary" 
@@ -168,35 +181,44 @@ export function ProductCard({ product, onQuickView, hideFloatingCart = false }: 
                 <Eye className="h-4 w-4" />
               </Button>
             )}
-            <Button 
-              size="icon" 
-              variant="secondary" 
-              className="h-9 w-9"
-              onClick={handleAddToCart}
-            >
-              <ShoppingCart className="h-4 w-4" />
-            </Button>
-            <Button 
-              size="icon" 
-              variant="secondary" 
-              className="h-9 w-9"
-              onClick={handleShare}
-            >
-              <Share2 className="h-4 w-4" />
-            </Button>
+            {!compact && (
+              <Button 
+                size="icon" 
+                variant="secondary" 
+                className="h-9 w-9"
+                onClick={handleAddToCart}
+              >
+                <ShoppingCart className="h-4 w-4" />
+              </Button>
+            )}
+            {!compact && (
+              <Button 
+                size="icon" 
+                variant="secondary" 
+                className="h-9 w-9"
+                onClick={handleShare}
+              >
+                <Share2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
 
-        <CardContent className="p-4 pb-16 md:pb-4">
-          {product.category && (
+        <CardContent className={cn(
+          compact ? "p-2 pb-2" : "p-4 pb-16 md:pb-4"
+        )}>
+          {!compact && product.category && (
             <p className="text-xs text-muted-foreground">{product.category.name}</p>
           )}
-          <p className="mt-1 font-medium text-foreground line-clamp-2">
+          <p className={cn(
+            "font-medium text-foreground",
+            compact ? "text-xs line-clamp-1 mt-0" : "mt-1 line-clamp-2"
+          )}>
             {product.name}
           </p>
           
-          {/* Vendor info with avatar and verification */}
-          {vendorName && (
+          {/* Vendor info with avatar and verification - hide in compact mode */}
+          {!compact && vendorName && (
             <div className="mt-2 flex items-center gap-2">
               <Avatar className="h-5 w-5">
                 <AvatarImage src={vendorAvatar || undefined} />
@@ -213,19 +235,28 @@ export function ProductCard({ product, onQuickView, hideFloatingCart = false }: 
             </div>
           )}
           
-          <div className="mt-2 flex items-center gap-2">
-            <p className="font-display text-lg font-bold text-foreground">
+          <div className={cn(
+            "flex items-center gap-1.5",
+            compact ? "mt-0.5" : "mt-2"
+          )}>
+            <p className={cn(
+              "font-display font-bold text-foreground",
+              compact ? "text-xs" : "text-lg"
+            )}>
               {formatPrice(product.price)}
             </p>
             {hasDiscount && (
-              <p className="text-sm text-muted-foreground line-through">
+              <p className={cn(
+                "text-muted-foreground line-through",
+                compact ? "text-[10px]" : "text-sm"
+              )}>
                 {formatPrice(product.compare_at_price!)}
               </p>
             )}
           </div>
 
-          {/* Floating Add to Cart button for mobile */}
-          {!hideFloatingCart && (
+          {/* Floating Add to Cart button for mobile - only in non-compact mode */}
+          {!hideFloatingCart && !compact && (
             <div className="absolute bottom-0 left-0 right-0 p-3 md:hidden">
               <Button 
                 className="w-full gap-2 shadow-lg" 
