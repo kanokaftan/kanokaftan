@@ -155,10 +155,10 @@ export function ProductCard({ product, onQuickView, hideFloatingCart = false, co
             </Badge>
           )}
 
-          {/* Action buttons - visible on hover for desktop, always visible on mobile */}
+          {/* Wishlist button only */}
           <div className={cn(
-            "absolute flex flex-col gap-1.5 opacity-100 md:opacity-0 transition-opacity md:group-hover:opacity-100",
-            compact ? "right-1.5 top-1.5" : "right-3 top-3 gap-2"
+            "absolute",
+            compact ? "right-1.5 top-1.5" : "right-3 top-3"
           )}>
             <Button 
               size="icon" 
@@ -171,103 +171,38 @@ export function ProductCard({ product, onQuickView, hideFloatingCart = false, co
             >
               <Heart className={cn(compact ? "h-3.5 w-3.5" : "h-4 w-4", inWishlist && "fill-current")} />
             </Button>
-            {onQuickView && !compact && (
-              <Button 
-                size="icon" 
-                variant="secondary" 
-                className="h-9 w-9"
-                onClick={handleQuickView}
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-            )}
-            {!compact && (
-              <Button 
-                size="icon" 
-                variant="secondary" 
-                className="h-9 w-9"
-                onClick={handleAddToCart}
-              >
-                <ShoppingCart className="h-4 w-4" />
-              </Button>
-            )}
-            {!compact && (
-              <Button 
-                size="icon" 
-                variant="secondary" 
-                className="h-9 w-9"
-                onClick={handleShare}
-              >
-                <Share2 className="h-4 w-4" />
-              </Button>
-            )}
           </div>
         </div>
 
         <CardContent className={cn(
-          compact ? "p-2 pb-2" : "p-4 pb-16 md:pb-4"
+          compact ? "p-2 pb-2" : "p-3 pb-3"
         )}>
-          {!compact && product.category && (
-            <p className="text-xs text-muted-foreground">{product.category.name}</p>
-          )}
           <p className={cn(
             "font-medium text-foreground",
-            compact ? "text-xs line-clamp-1 mt-0" : "mt-1 line-clamp-2"
+            compact ? "text-xs line-clamp-1" : "text-sm line-clamp-2"
           )}>
             {product.name}
           </p>
           
-          {/* Vendor info with avatar and verification - hide in compact mode */}
-          {!compact && vendorName && (
-            <div className="mt-2 flex items-center gap-2">
-              <Avatar className="h-5 w-5">
-                <AvatarImage src={vendorAvatar || undefined} />
-                <AvatarFallback className="text-[10px]">
-                  {vendorName.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-xs text-muted-foreground truncate">
-                {vendorName}
-              </span>
-              {isVendorVerified && (
-                <BadgeCheck className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
-              )}
-            </div>
-          )}
-          
           <div className={cn(
             "flex items-center gap-1.5",
-            compact ? "mt-0.5" : "mt-2"
+            compact ? "mt-0.5" : "mt-1"
           )}>
             <p className={cn(
               "font-display font-bold text-foreground",
-              compact ? "text-xs" : "text-lg"
+              compact ? "text-xs" : "text-sm"
             )}>
               {formatPrice(product.price)}
             </p>
             {hasDiscount && (
               <p className={cn(
                 "text-muted-foreground line-through",
-                compact ? "text-[10px]" : "text-sm"
+                compact ? "text-[10px]" : "text-xs"
               )}>
                 {formatPrice(product.compare_at_price!)}
               </p>
             )}
           </div>
-
-          {/* Floating Add to Cart button for mobile - only in non-compact mode */}
-          {!hideFloatingCart && !compact && (
-            <div className="absolute bottom-0 left-0 right-0 p-3 md:hidden">
-              <Button 
-                className="w-full gap-2 shadow-lg" 
-                size="sm"
-                onClick={handleAddToCart}
-              >
-                <ShoppingCart className="h-4 w-4" />
-                Add to Cart
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Link>
     </Card>
