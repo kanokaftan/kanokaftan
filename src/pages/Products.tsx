@@ -14,6 +14,7 @@ export default function Products() {
   const [searchParams] = useSearchParams();
   const categorySlug = searchParams.get("category") || undefined;
   const search = searchParams.get("search") || undefined;
+  const featured = searchParams.get("featured") === "true";
   const page = parseInt(searchParams.get("page") || "1", 10);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   
@@ -31,6 +32,7 @@ export default function Products() {
   const { data: productsData, isLoading: productsLoading } = useProducts({
     categorySlug,
     search,
+    featured: featured || undefined,
     page,
     limit: 16,
   });
@@ -47,9 +49,9 @@ export default function Products() {
         <div className="px-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="font-display text-lg font-bold text-foreground">
-                {categorySlug ? categories.find(c => c.slug === categorySlug)?.name || 'Products' : 'All Products'}
-              </h1>
+            <h1 className="font-display text-lg font-bold text-foreground">
+              {featured ? 'Featured Products' : categorySlug ? categories.find(c => c.slug === categorySlug)?.name || 'Products' : 'All Products'}
+            </h1>
               {search && (
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   Results for "{search}"

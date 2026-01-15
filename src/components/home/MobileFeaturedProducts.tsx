@@ -95,7 +95,7 @@ export function MobileFeaturedProducts() {
             </button>
           </div>
           <Link 
-            to="/products" 
+            to="/products?featured=true" 
             className="text-xs font-medium text-primary"
           >
             View All
