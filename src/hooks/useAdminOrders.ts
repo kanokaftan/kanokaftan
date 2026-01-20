@@ -28,33 +28,53 @@ export function useAdminOrders() {
   const ordersQuery = useQuery({
     queryKey: ["admin-orders"],
     queryFn: async (): Promise<AdminOrder[]> => {
-      const { data, error } = await supabase
+      // First get orders
+      const { data: ordersData, error: ordersError } = await supabase
         .from("orders")
         .select(`
           *,
-          customer:profiles!orders_user_id_fkey(full_name, email),
           order_items(
             id,
             product_name,
             quantity,
             unit_price,
             total_price,
-            vendor:profiles!order_items_vendor_id_fkey(store_name)
+            vendor_id
           )
         `)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (ordersError) throw ordersError;
       
-      // Transform customer array to single object (Supabase returns array for joins)
-      return (data || []).map((order: any) => ({
-        ...order,
-        customer: Array.isArray(order.customer) ? order.customer[0] || null : order.customer,
-        order_items: (order.order_items || []).map((item: any) => ({
-          ...item,
-          vendor: Array.isArray(item.vendor) ? item.vendor[0] || null : item.vendor,
-        })),
-      }));
+      // Get unique user IDs and vendor IDs
+      const userIds = [...new Set((ordersData || []).map(o => o.user_id))];
+      const vendorIds = [...new Set((ordersData || []).flatMap(o => 
+        (o.order_items || []).map((item: any) => item.vendor_id)
+      ))];
+      
+      // Fetch profiles for customers and vendors
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, store_name")
+        .in("id", [...userIds, ...vendorIds]);
+      
+      const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+      
+      // Map orders with customer and vendor info
+      return (ordersData || []).map((order: any) => {
+        const customer = profileMap.get(order.user_id);
+        return {
+          ...order,
+          customer: customer ? { full_name: customer.full_name, email: customer.email } : null,
+          order_items: (order.order_items || []).map((item: any) => {
+            const vendor = profileMap.get(item.vendor_id);
+            return {
+              ...item,
+              vendor: vendor ? { store_name: vendor.store_name } : null,
+            };
+          }),
+        };
+      });
     },
   });
 
