@@ -1,3 +1,4 @@
+import Chat from "./pages/Chat";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/account" element={<Account />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/help" element={<Help />} />
+            <Route path="/chat" element={<Chat />} />
 
             {/* Admin Routes */}
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
