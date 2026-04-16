@@ -454,23 +454,22 @@ export default function ProductDetail() {
           </div>
         </div>
 
-        {/* Add to Cart - Fixed at bottom */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t z-40">
-          <div className="flex items-center gap-3 max-w-lg mx-auto">
-            <div className="text-left">
-              <p className="text-xs text-muted-foreground">Total</p>
-              <p className="font-bold text-lg">{formatPrice(finalPrice * quantity)}</p>
-            </div>
-            <Button 
-              size="lg" 
-              className="flex-1 gap-2 h-12 rounded-full shadow-lg"
-              onClick={handleAddToCart}
-              disabled={availableStock === 0}
-            >
-              <ShoppingCart className="h-5 w-5" />
-              Add to Cart
-            </Button>
-          </div>
+       {/* Chat to Order - Fixed at bottom */}
+<div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t z-40">
+  <div className="flex items-center gap-3 max-w-lg mx-auto">
+    <div className="text-left">
+      <p className="text-xs text-muted-foreground">Price</p>
+      <p className="font-bold text-lg">{formatPrice(finalPrice)}</p>
+    </div>
+    <Button 
+      size="lg" 
+      className="flex-1 gap-2 h-12 rounded-full shadow-lg bg-gray-900 hover:bg-gray-700"
+      onClick={() => navigate(`/chat?product=${product.id}`)}
+    >
+      💬 Chat to Order
+    </Button>
+  </div>
+</div>
         </div>
 
         {/* Reviews Section */}
