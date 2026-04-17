@@ -9,28 +9,17 @@ export interface Product {
   price: number;
   compare_at_price: number | null;
   category_id: string | null;
-  vendor_id: string;
   is_active: boolean;
   featured: boolean;
   stock_quantity: number;
+  images: string[];
+  sizes: string[];
+  colors: string[];
   created_at: string;
   category?: {
     id: string;
     name: string;
     slug: string;
-  } | null;
-  product_images?: {
-    id: string;
-    url: string;
-    is_primary: boolean;
-    alt_text?: string | null;
-  }[];
-  vendor?: {
-    id: string;
-    full_name: string | null;
-    avatar_url: string | null;
-    is_verified: boolean;
-    store_name: string | null;
   } | null;
 }
 
@@ -56,18 +45,11 @@ export function useProducts({ categorySlug, search, page = 1, limit = 12, featur
     queryFn: async () => {
       let query = supabase
         .from("products")
-        .select(`
-          *,
-          category:categories(id, name, slug),
-          product_images(id, url, is_primary),
-          vendor:profiles!products_vendor_id_fkey(id, full_name, avatar_url, is_verified, store_name)
-        `, { count: "exact" })
+        .select(`*, category:categories(id, name, slug)`, { count: "exact" })
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
-      if (featured) {
-        query = query.eq("featured", true);
-      }
+      if (featured) query = query.eq("featured", true);
 
       if (categorySlug) {
         const { data: category } = await supabase
@@ -75,22 +57,16 @@ export function useProducts({ categorySlug, search, page = 1, limit = 12, featur
           .select("id")
           .eq("slug", categorySlug)
           .maybeSingle();
-        
-        if (category) {
-          query = query.eq("category_id", category.id);
-        }
+        if (category) query = query.eq("category_id", category.id);
       }
 
-      if (search) {
-        query = query.ilike("name", `%${search}%`);
-      }
+      if (search) query = query.ilike("name", `%${search}%`);
 
       const from = (page - 1) * limit;
       const to = from + limit - 1;
       query = query.range(from, to);
 
       const { data, error, count } = await query;
-
       if (error) throw error;
 
       return {
@@ -110,7 +86,6 @@ export function useCategories() {
         .from("categories")
         .select("*")
         .order("name");
-
       if (error) throw error;
       return data as Category[];
     },
