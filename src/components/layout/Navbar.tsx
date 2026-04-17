@@ -1,3 +1,5 @@
+import { useTheme } from "next-themes";
+import { Moon, Sun } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, X, ShoppingCart, Heart, User, LogOut } from "lucide-react";
@@ -9,6 +11,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 export function Navbar() {
+  
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const { count: cartCount } = useCart();
@@ -20,6 +23,20 @@ export function Navbar() {
         setUser(session?.user ?? null);
       }
     );
+    const { theme, setTheme } = useTheme();
+
+// Add this button next to the other icon buttons
+<Button
+  variant="ghost"
+  size="icon"
+  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+>
+  {theme === "dark" ? (
+    <Sun className="h-5 w-5" />
+  ) : (
+    <Moon className="h-5 w-5" />
+  )}
+</Button>
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
