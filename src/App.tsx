@@ -1,3 +1,4 @@
+import AdminChats from "./pages/admin/Chats";
 import Chat from "./pages/Chat";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -63,7 +64,8 @@ const App = () => (
             <Route path="/admin/categories" element={<AdminCategories />} />
             <Route path="/admin/finance" element={<AdminFinance />} />
             <Route path="/admin/reports" element={<AdminReports />} />
-            <Route path="/admin/settings" element={<AdminSettings />} />
+            <Route path="/admin/settings" element={<AdminSettings />} 
+              <Route path="/admin/chats" element={<AdminChats />} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
