@@ -8,15 +8,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { useCart } from "@/hooks/useCart";
 
 const authSchema = z.object({
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   full_name: z.string().optional(),
-  role: z.enum(["customer", "vendor"]).optional(),
 });
 
 type AuthFormData = z.infer<typeof authSchema>;
@@ -30,83 +27,42 @@ export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { mergeSessionCart } = useCart();
-  
-  const defaultRole = searchParams.get("role") === "vendor" ? "vendor" : "customer";
   const redirectTo = searchParams.get("redirect") || "/";
 
   const {
     register,
     handleSubmit,
-    setValue,
-    watch,
     formState: { errors },
   } = useForm<AuthFormData>({
     resolver: zodResolver(authSchema),
-    defaultValues: {
-      role: defaultRole as "customer" | "vendor",
-    },
   });
 
-  const selectedRole = watch("role");
-
-  // Check vendor role and redirect appropriately
-  const checkVendorAndRedirect = async (userId: string) => {
-    const { data } = await supabase.rpc("has_role", {
-      _user_id: userId,
-      _role: "vendor",
-    });
-    if (data) {
-      navigate("/vendor/dashboard");
-    } else {
-      // Use redirect parameter or default to home
-      navigate(redirectTo);
-    }
-  };
-
-  // Check if user is already logged in
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // Merge cart then redirect
-        await mergeSessionCart(session.user.id);
-        await checkVendorAndRedirect(session.user.id);
-      }
+      if (session) navigate(redirectTo);
     };
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          // Merge cart then redirect
-          setTimeout(async () => {
-            await mergeSessionCart(session.user.id);
-            await checkVendorAndRedirect(session.user.id);
-          }, 0);
-        }
+        if (event === "SIGNED_IN" && session) navigate(redirectTo);
       }
     );
 
     return () => subscription.unsubscribe();
-  }, [navigate, mergeSessionCart, redirectTo]);
+  }, [navigate, redirectTo]);
 
   const onSubmit = async (data: AuthFormData) => {
     setIsLoading(true);
-
     try {
       if (mode === "register") {
-        const redirectUrl = `${window.location.origin}/`;
-        
         const { error } = await supabase.auth.signUp({
           email: data.email,
           password: data.password,
           options: {
-            emailRedirectTo: redirectUrl,
-            data: {
-              full_name: data.full_name || "",
-              role: data.role || "customer",
-            },
+            emailRedirectTo: `${window.location.origin}/`,
+            data: { full_name: data.full_name || "" },
           },
         });
 
@@ -114,24 +70,17 @@ export default function AuthPage() {
           if (error.message.includes("already registered")) {
             toast({
               title: "Account exists",
-              description: "This email is already registered. Please sign in instead.",
+              description: "This email is already registered. Please sign in.",
               variant: "destructive",
             });
             setMode("login");
-          } else {
-            throw error;
-          }
+          } else throw error;
         } else {
           toast({
             title: "Account created!",
-            description: "Welcome to K² - you're now signed in.",
+            description: "Welcome to Kano Kaftan!",
           });
-          // Redirect based on selected role
-          if (data.role === "vendor") {
-            navigate("/vendor/dashboard");
-          } else {
-            navigate("/");
-          }
+          navigate("/");
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -140,21 +89,16 @@ export default function AuthPage() {
         });
 
         if (error) {
-          if (error.message.includes("Invalid login credentials")) {
-            toast({
-              title: "Invalid credentials",
-              description: "Please check your email and password.",
-              variant: "destructive",
-            });
-          } else {
-            throw error;
-          }
+          toast({
+            title: "Invalid credentials",
+            description: "Please check your email and password.",
+            variant: "destructive",
+          });
         } else {
           toast({
             title: "Welcome back!",
-            description: "You've successfully signed in.",
+            description: "You're now signed in.",
           });
-          // Auth state change listener will handle the redirect
         }
       }
     } catch (error: any) {
@@ -175,10 +119,9 @@ export default function AuthPage() {
         <div className="mx-auto w-full max-w-md">
           {/* Logo */}
           <Link to="/" className="mb-8 flex items-center gap-3">
-            <img src="/logo.png" alt="K² Kano Kaftan" className="h-12 w-12 object-contain" />
+            <img src="/logo.png" alt="Kano Kaftan" className="h-12 w-12 object-contain" />
             <div>
-              <span className="font-display text-2xl font-bold text-primary">K²</span>
-              <span className="font-display text-lg ml-1">Kano Kaftan</span>
+              <span className="font-display text-2xl font-bold text-primary">Kano Kaftan</span>
             </div>
           </Link>
 
@@ -188,43 +131,19 @@ export default function AuthPage() {
           <p className="mt-2 text-muted-foreground">
             {mode === "login"
               ? "Sign in to access your account"
-              : "Join K² to shop or sell traditional attire"}
+              : "Join Kano Kaftan to shop traditional attire"}
           </p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-6">
             {mode === "register" && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="full_name">Full Name</Label>
-                  <Input
-                    id="full_name"
-                    placeholder="Enter your full name"
-                    {...register("full_name")}
-                  />
-                </div>
-
-                <div className="space-y-3">
-                  <Label>I want to</Label>
-                  <RadioGroup
-                    value={selectedRole}
-                    onValueChange={(value) => setValue("role", value as "customer" | "vendor")}
-                    className="flex gap-4"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="customer" id="customer" />
-                      <Label htmlFor="customer" className="cursor-pointer font-normal">
-                        Shop for attire
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="vendor" id="vendor" />
-                      <Label htmlFor="vendor" className="cursor-pointer font-normal">
-                        Sell my products
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-              </>
+              <div className="space-y-2">
+                <Label htmlFor="full_name">Full Name</Label>
+                <Input
+                  id="full_name"
+                  placeholder="Enter your full name"
+                  {...register("full_name")}
+                />
+              </div>
             )}
 
             <div className="space-y-2">
@@ -309,7 +228,7 @@ export default function AuthPage() {
             Traditional Excellence,<br />Modern Convenience
           </h2>
           <p className="mt-4 text-lg text-primary-foreground/80">
-            Discover authentic Nigerian attire from master craftsmen in Kano, 
+            Discover authentic traditional attire from master craftsmen in Kano,
             delivered right to your doorstep.
           </p>
         </div>
