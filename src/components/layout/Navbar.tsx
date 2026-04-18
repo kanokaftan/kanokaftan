@@ -1,20 +1,14 @@
-import { useTheme } from "next-themes";
-import { Moon, Sun } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, X, ShoppingCart, Heart, User, LogOut } from "lucide-react";
+import { Menu, X, Heart, User, LogOut, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { useCart } from "@/hooks/useCart";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 export function Navbar() {
-  
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
-  const { count: cartCount } = useCart();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,25 +17,9 @@ export function Navbar() {
         setUser(session?.user ?? null);
       }
     );
-    const { theme, setTheme } = useTheme();
-
-// Add this button next to the other icon buttons
-<Button
-  variant="ghost"
-  size="icon"
-  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
->
-  {theme === "dark" ? (
-    <Sun className="h-5 w-5" />
-  ) : (
-    <Moon className="h-5 w-5" />
-  )}
-</Button>
-
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
     });
-
     return () => subscription.unsubscribe();
   }, []);
 
@@ -55,37 +33,31 @@ export function Navbar() {
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
-          <span className="font-display text-2xl font-bold text-primary">
-            K<sup className="text-sm">2</sup>
+          <img src="/logo.png" alt="Kano Kaftan" className="h-8 w-8 object-contain" />
+          <span className="font-display text-lg font-bold text-primary">
+            Kano Kaftan
           </span>
-          <span className="hidden font-display text-lg sm:inline">Kano Kaftan</span>
         </Link>
 
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-8 md:flex">
-          <Link 
-            to="/products" 
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
+          <Link to="/products" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
             Shop
           </Link>
-          <Link 
-            to="/products?category=agbada" 
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
+          <Link to="/products?category=agbada" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
             Agbada
           </Link>
-          <Link 
-            to="/products?category=kaftan" 
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
+          <Link to="/products?category=kaftan" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
             Kaftan
           </Link>
-          <Link 
-            to="/products?category=dashiki" 
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
+          <Link to="/products?category=dashiki" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
             Dashiki
+          </Link>
+          <Link to="/gallery" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
+            Gallery
+          </Link>
+          <Link to="/logistics" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
+            Logistics
           </Link>
         </div>
 
@@ -94,33 +66,25 @@ export function Navbar() {
           <Button variant="ghost" size="icon" className="hidden sm:flex" asChild>
             <Link to="/wishlist">
               <Heart className="h-5 w-5" />
-              <span className="sr-only">Wishlist</span>
             </Link>
           </Button>
-          <Button variant="ghost" size="icon" asChild className="relative">
-            <Link to="/cart">
-              <ShoppingCart className="h-5 w-5" />
-              {cartCount > 0 && (
-                <Badge className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center">
-                  {cartCount > 9 ? "9+" : cartCount}
-                </Badge>
-              )}
-              <span className="sr-only">Cart</span>
+
+          <Button variant="ghost" size="icon" asChild>
+            <Link to="/chat">
+              <MessageCircle className="h-5 w-5" />
             </Link>
           </Button>
-          
+
           {user ? (
             <div className="hidden items-center gap-1 sm:flex">
               <NotificationBell />
               <Button variant="ghost" size="icon" asChild>
-                <Link to="/account">
+                <Link to="/profile">
                   <User className="h-5 w-5" />
-                  <span className="sr-only">Account</span>
                 </Link>
               </Button>
               <Button variant="ghost" size="icon" onClick={handleLogout}>
                 <LogOut className="h-5 w-5" />
-                <span className="sr-only">Logout</span>
               </Button>
             </div>
           ) : (
@@ -145,66 +109,26 @@ export function Navbar() {
       {isMenuOpen && (
         <div className="border-t md:hidden">
           <div className="container flex flex-col gap-4 py-4">
-            <Link 
-              to="/products" 
-              className="text-sm font-medium"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Shop All
-            </Link>
-            <Link 
-              to="/products?category=agbada" 
-              className="text-sm font-medium"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Agbada
-            </Link>
-            <Link 
-              to="/products?category=kaftan" 
-              className="text-sm font-medium"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Kaftan
-            </Link>
-            <Link 
-              to="/products?category=dashiki" 
-              className="text-sm font-medium"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Dashiki
-            </Link>
-            <Link 
-              to="/wishlist" 
-              className="text-sm font-medium"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Wishlist
-            </Link>
+            <Link to="/products" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Shop All</Link>
+            <Link to="/products?category=agbada" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Agbada</Link>
+            <Link to="/products?category=kaftan" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Kaftan</Link>
+            <Link to="/products?category=dashiki" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Dashiki</Link>
+            <Link to="/gallery" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Gallery</Link>
+            <Link to="/logistics" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Logistics</Link>
+            <Link to="/wishlist" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Wishlist</Link>
+            <Link to="/chat" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Chat to Order</Link>
             {user ? (
               <>
-                <Link 
-                  to="/account" 
-                  className="text-sm font-medium"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  My Account
-                </Link>
-                <button 
+                <Link to="/profile" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>My Profile</Link>
+                <button
                   className="text-left text-sm font-medium text-destructive"
-                  onClick={() => {
-                    handleLogout();
-                    setIsMenuOpen(false);
-                  }}
+                  onClick={() => { handleLogout(); setIsMenuOpen(false); }}
                 >
                   Sign Out
                 </button>
               </>
             ) : (
-              <Link 
-                to="/auth" 
-                className="text-sm font-medium text-primary"
-                onClick={() => setIsMenuOpen(false)}
-              >
+              <Link to="/auth" className="text-sm font-medium text-primary" onClick={() => setIsMenuOpen(false)}>
                 Sign In / Register
               </Link>
             )}
