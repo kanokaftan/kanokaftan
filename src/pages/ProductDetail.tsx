@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ChevronLeft, Heart, Minus, Plus, ShoppingCart, Truck, Shield, RotateCcw, BadgeCheck, Store, Share2 } from "lucide-react";
+import { ChevronLeft, Heart, Share2, Truck, Shield, RotateCcw } from "lucide-react";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProduct } from "@/hooks/useProduct";
-import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { ReviewsList } from "@/components/reviews/ReviewsList";
@@ -28,27 +26,23 @@ export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { data: product, isLoading, error } = useProduct(slug || "");
-  const { addToCart } = useCart();
   const { userId, addToWishlist, isInWishlist } = useWishlist();
   const { addProduct: addToRecentlyViewed } = useRecentlyViewed();
   const [selectedImage, setSelectedImage] = useState(0);
-  const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
 
-  // Track product view
   useEffect(() => {
     if (product) {
-      const primaryImage = product.product_images?.find(img => img.is_primary);
       addToRecentlyViewed({
         id: product.id,
         slug: product.slug,
         name: product.name,
         price: product.price,
-        imageUrl: primaryImage?.url || product.product_images?.[0]?.url,
+        imageUrl: product.images?.[0],
       });
     }
-  }, [product, addToRecentlyViewed]);
+  }, [product]);
 
   if (isLoading) {
     return (
@@ -70,7 +64,9 @@ export default function ProductDetail() {
       <MobileLayout>
         <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 py-6">
           <h1 className="text-lg font-bold">Product Not Found</h1>
-          <p className="mt-2 text-sm text-muted-foreground">The product you're looking for doesn't exist.</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            The product you're looking for doesn't exist.
+          </p>
           <Button asChild className="mt-4">
             <Link to="/products">Browse Products</Link>
           </Button>
@@ -79,63 +75,11 @@ export default function ProductDetail() {
     );
   }
 
-  const images = product.product_images?.sort((a, b) => 
-    (a.is_primary ? -1 : 1) - (b.is_primary ? -1 : 1)
-  ) || [];
+  const images = product.images || [];
+  const sizes = product.sizes || [];
+  const colors = product.colors || [];
   const hasDiscount = product.compare_at_price && product.compare_at_price > product.price;
-  const variants = product.product_variants || [];
-  const sizes = [...new Set(variants.filter(v => v.size).map(v => v.size))];
-  const colors = [...new Set(variants.filter(v => v.color).map(v => v.color))];
   const inWishlist = isInWishlist(product.id);
-
-  // Find selected variant based on size and color selection
-  const selectedVariant = variants.find(v => {
-    if (sizes.length > 0 && colors.length > 0) {
-      return v.size === selectedSize && v.color === selectedColor;
-    } else if (sizes.length > 0) {
-      return v.size === selectedSize;
-    } else if (colors.length > 0) {
-      return v.color === selectedColor;
-    }
-    return false;
-  });
-
-  // Calculate price with variant adjustment
-  const variantPriceAdjustment = selectedVariant?.price_adjustment || 0;
-  const finalPrice = product.price + variantPriceAdjustment;
-  
-  // Get available stock (variant stock if selected, otherwise product stock)
-  const availableStock = selectedVariant?.stock_quantity ?? product.stock_quantity;
-
-  const handleAddToCart = () => {
-    // Validate variant selection if variants exist
-    if (sizes.length > 0 && !selectedSize) {
-      toast.error("Please select a size");
-      return;
-    }
-    if (colors.length > 0 && !selectedColor) {
-      toast.error("Please select a color");
-      return;
-    }
-
-    addToCart.mutate(
-      { 
-        productId: product.id, 
-        quantity,
-        variantId: selectedVariant?.id 
-      },
-      {
-        onSuccess: () => {
-          toast.success("Added to cart", {
-            description: `${product.name}${selectedVariant ? ` (${selectedVariant.name})` : ""} x ${quantity}`,
-          });
-        },
-        onError: () => {
-          toast.error("Failed to add to cart");
-        },
-      }
-    );
-  };
 
   const handleWishlistClick = async () => {
     if (!userId) {
@@ -143,7 +87,6 @@ export default function ProductDetail() {
       navigate("/auth");
       return;
     }
-
     try {
       const result = await addToWishlist.mutateAsync(product.id);
       if (result.action === "added") {
@@ -151,7 +94,7 @@ export default function ProductDetail() {
       } else {
         toast.success("Removed from favorites");
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to update favorites");
     }
   };
@@ -160,21 +103,18 @@ export default function ProductDetail() {
     const productUrl = `https://kanokaftan.shop/products/${product.slug}`;
     const shareData = {
       title: `${product.name} - Kano Kaftan`,
-      text: `Check out ${product.name} on Kano Kaftan! Authentic Nigerian traditional attire.`,
+      text: `Check out ${product.name} on Kano Kaftan!`,
       url: productUrl,
     };
-
     try {
       if (navigator.share && navigator.canShare(shareData)) {
         await navigator.share(shareData);
       } else {
         await navigator.clipboard.writeText(productUrl);
-        toast.success("Product link copied! 🎉", {
-          description: "Share it with friends",
-        });
+        toast.success("Product link copied! 🎉");
       }
-    } catch (error) {
-      if ((error as Error).name !== 'AbortError') {
+    } catch (err) {
+      if ((err as Error).name !== "AbortError") {
         await navigator.clipboard.writeText(productUrl);
         toast.success("Product link copied! 🎉");
       }
@@ -188,8 +128,8 @@ export default function ProductDetail() {
         <div className="aspect-square w-full bg-muted">
           {images.length > 0 ? (
             <img
-              src={images[selectedImage]?.url}
-              alt={images[selectedImage]?.alt_text || product.name}
+              src={images[selectedImage]}
+              alt={product.name}
               className="h-full w-full object-cover"
             />
           ) : (
@@ -198,7 +138,7 @@ export default function ProductDetail() {
             </div>
           )}
         </div>
-        
+
         {/* Back Button */}
         <Button
           variant="secondary"
@@ -210,7 +150,7 @@ export default function ProductDetail() {
             <ChevronLeft className="h-5 w-5" />
           </Link>
         </Button>
-        
+
         {/* Action Buttons */}
         <div className="absolute right-4 top-4 flex flex-col gap-2">
           <Button
@@ -258,11 +198,11 @@ export default function ProductDetail() {
       </div>
 
       {/* Product Info */}
-      <div className="space-y-5 px-4 py-5 pb-24">
+      <div className="space-y-5 px-4 py-5 pb-28">
         {/* Category & Name */}
         <div>
           {product.category && (
-            <Link 
+            <Link
               to={`/products?category=${product.category.slug}`}
               className="inline-flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full uppercase tracking-wide hover:bg-primary/20 transition-colors"
             >
@@ -272,70 +212,30 @@ export default function ProductDetail() {
           <h1 className="mt-2 font-display text-2xl font-bold text-foreground leading-tight">
             {product.name}
           </h1>
-          
-          {/* Stock indicator */}
           <div className="flex items-center gap-2 mt-2">
-            {availableStock > 0 ? (
+            {product.stock_quantity > 0 ? (
               <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
-                ✓ In Stock
+                ✓ Available
               </Badge>
             ) : (
               <Badge variant="destructive">Out of Stock</Badge>
             )}
-            {availableStock > 0 && availableStock < 10 && (
-              <span className="text-xs text-orange-600">Only {availableStock} left!</span>
-            )}
           </div>
         </div>
 
-        {/* Price Section */}
+        {/* Price */}
         <div className="bg-gradient-to-r from-primary/5 to-transparent p-4 rounded-xl -mx-4">
           <div className="flex items-baseline gap-3 px-4">
             <span className="font-display text-3xl font-bold text-foreground">
-              {formatPrice(finalPrice)}
+              {formatPrice(product.price)}
             </span>
             {hasDiscount && (
-              <>
-                <span className="text-lg text-muted-foreground line-through">
-                  {formatPrice(product.compare_at_price! + variantPriceAdjustment)}
-                </span>
-                <Badge variant="destructive" className="ml-auto">
-                  Save {Math.round((1 - product.price / product.compare_at_price!) * 100)}%
-                </Badge>
-              </>
+              <span className="text-lg text-muted-foreground line-through">
+                {formatPrice(product.compare_at_price!)}
+              </span>
             )}
           </div>
         </div>
-
-        {/* Seller Card */}
-        {product.vendor && (
-          <Link 
-            to={`/vendor/${product.vendor.id}`}
-            className="flex items-center gap-3 rounded-xl bg-card p-4 border shadow-sm hover:shadow-md hover:border-primary/30 transition-all"
-          >
-            <Avatar className="h-14 w-14 border-2 border-primary/20 shadow">
-              <AvatarImage src={product.vendor.avatar_url || undefined} alt={product.vendor.full_name || "Seller"} />
-              <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">
-                {product.vendor.full_name?.charAt(0) || product.vendor.store_name?.charAt(0) || "V"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold truncate">
-                  {product.vendor.store_name || product.vendor.full_name}
-                </span>
-                {product.vendor.is_verified && (
-                  <BadgeCheck className="h-5 w-5 text-primary flex-shrink-0" />
-                )}
-              </div>
-              <p className="text-sm text-muted-foreground mt-0.5">Verified Seller</p>
-            </div>
-            <Button variant="default" size="sm" className="rounded-full gap-2 shadow-sm">
-              <Store className="h-4 w-4" />
-              View Shop
-            </Button>
-          </Link>
-        )}
 
         {/* Description */}
         {product.description && (
@@ -347,81 +247,45 @@ export default function ProductDetail() {
           </div>
         )}
 
-        {/* Variants */}
-        {(sizes.length > 0 || colors.length > 0) && (
-          <div className="space-y-4 p-4 rounded-xl bg-muted/30 border">
-            {sizes.length > 0 && (
-              <div>
-                <p className="mb-2 text-sm font-semibold">
-                  Size {!selectedSize && <span className="text-destructive">*</span>}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {sizes.map((size) => (
-                    <Button
-                      key={size}
-                      variant={selectedSize === size ? "default" : "outline"}
-                      size="sm"
-                      className="min-w-[3rem] rounded-full"
-                      onClick={() => setSelectedSize(size)}
-                    >
-                      {size}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {colors.length > 0 && (
-              <div>
-                <p className="mb-2 text-sm font-semibold">
-                  Color {!selectedColor && <span className="text-destructive">*</span>}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {colors.map((color) => (
-                    <Button
-                      key={color}
-                      variant={selectedColor === color ? "default" : "outline"}
-                      size="sm"
-                      className="rounded-full"
-                      onClick={() => setSelectedColor(color)}
-                    >
-                      {color}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            )}
+        {/* Sizes */}
+        {sizes.length > 0 && (
+          <div>
+            <p className="mb-2 text-sm font-semibold">Size</p>
+            <div className="flex flex-wrap gap-2">
+              {sizes.map((size) => (
+                <Button
+                  key={size}
+                  variant={selectedSize === size ? "default" : "outline"}
+                  size="sm"
+                  className="min-w-[3rem] rounded-full"
+                  onClick={() => setSelectedSize(size)}
+                >
+                  {size}
+                </Button>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Quantity */}
-        <div className="flex items-center justify-between p-4 rounded-xl bg-card border">
+        {/* Colors */}
+        {colors.length > 0 && (
           <div>
-            <p className="text-sm font-semibold">Quantity</p>
-            <p className="text-xs text-muted-foreground">{availableStock} available</p>
+            <p className="mb-2 text-sm font-semibold">Color</p>
+            <div className="flex flex-wrap gap-2">
+              {colors.map((color) => (
+                <Button
+                  key={color}
+                  variant={selectedColor === color ? "default" : "outline"}
+                  size="sm"
+                  className="rounded-full"
+                  onClick={() => setSelectedColor(color)}
+                >
+                  {color}
+                </Button>
+              ))}
+            </div>
           </div>
-          <div className="flex items-center gap-1 rounded-full border bg-background">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-10 w-10 rounded-full"
-              onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              disabled={quantity <= 1}
-            >
-              <Minus className="h-4 w-4" />
-            </Button>
-            <span className="w-12 text-center font-semibold text-lg">{quantity}</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-10 w-10 rounded-full"
-              onClick={() => setQuantity(Math.min(availableStock, quantity + 1))}
-              disabled={quantity >= availableStock}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        )}
 
         {/* Features */}
         <div className="grid grid-cols-3 gap-3">
@@ -439,7 +303,7 @@ export default function ProductDetail() {
               <Shield className="h-5 w-5 text-green-600" />
             </div>
             <div>
-              <p className="text-xs font-semibold">Escrow</p>
+              <p className="text-xs font-semibold">Secure</p>
               <p className="text-[10px] text-muted-foreground">Protected</p>
             </div>
           </div>
@@ -454,30 +318,27 @@ export default function ProductDetail() {
           </div>
         </div>
 
-       {/* Chat to Order - Fixed at bottom */}
-<div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t z-40">
-  <div className="flex items-center gap-3 max-w-lg mx-auto">
-    <div className="text-left">
-      <p className="text-xs text-muted-foreground">Price</p>
-      <p className="font-bold text-lg">{formatPrice(finalPrice)}</p>
-    </div>
-    <Button 
-      size="lg" 
-      className="flex-1 gap-2 h-12 rounded-full shadow-lg bg-gray-900 hover:bg-gray-700"
-      onClick={() => navigate(`/chat?product=${product.id}`)}
-    >
-      💬 Chat to Order
-    </Button>
-  </div>
-</div>
-        </div>
-
-        {/* Reviews Section */}
         <Separator className="my-6" />
         <ReviewsList productId={product.id} />
-
-        {/* Recently Viewed */}
         <RecentlyViewed excludeProductId={product.id} />
+      </div>
+
+      {/* Chat to Order - Fixed at bottom */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t z-40">
+        <div className="flex items-center gap-3 max-w-lg mx-auto">
+          <div className="text-left">
+            <p className="text-xs text-muted-foreground">Price</p>
+            <p className="font-bold text-lg">{formatPrice(product.price)}</p>
+          </div>
+          <Button
+            size="lg"
+            className="flex-1 gap-2 h-12 rounded-full shadow-lg bg-gray-900 hover:bg-gray-700 text-white"
+            onClick={() => navigate(`/chat?product=${product.id}`)}
+            disabled={product.stock_quantity === 0}
+          >
+            💬 Chat to Order
+          </Button>
+        </div>
       </div>
     </MobileLayout>
   );
