@@ -31,7 +31,6 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
-        {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
           <img src="/logo.png" alt="Kano Kaftan" className="h-8 w-8 object-contain" />
           <span className="font-display text-lg font-bold text-primary">
@@ -39,49 +38,25 @@ export function Navbar() {
           </span>
         </Link>
 
-        {/* Desktop Navigation */}
         <div className="hidden items-center gap-8 md:flex">
-          <Link to="/products" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
-            Shop
-          </Link>
-          <Link to="/products?category=agbada" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
-            Agbada
-          </Link>
-          <Link to="/products?category=kaftan" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
-            Kaftan
-          </Link>
-          <Link to="/products?category=dashiki" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
-            Dashiki
-          </Link>
-          <Link to="/gallery" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
-            Gallery
-          </Link>
-          <Link to="/logistics" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
-            Logistics
-          </Link>
+          <Link to="/products" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Shop</Link>
+          <Link to="/products?category=agbada" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Agbada</Link>
+          <Link to="/products?category=kaftan" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Kaftan</Link>
+          <Link to="/products?category=dashiki" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Dashiki</Link>
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" className="hidden sm:flex" asChild>
-            <Link to="/wishlist">
-              <Heart className="h-5 w-5" />
-            </Link>
+            <Link to="/wishlist"><Heart className="h-5 w-5" /></Link>
           </Button>
-
           <Button variant="ghost" size="icon" asChild>
-            <Link to="/chat">
-              <MessageCircle className="h-5 w-5" />
-            </Link>
+            <Link to="/chat"><MessageCircle className="h-5 w-5" /></Link>
           </Button>
-
           {user ? (
             <div className="hidden items-center gap-1 sm:flex">
               <NotificationBell />
               <Button variant="ghost" size="icon" asChild>
-                <Link to="/profile">
-                  <User className="h-5 w-5" />
-                </Link>
+                <Link to="/profile"><User className="h-5 w-5" /></Link>
               </Button>
               <Button variant="ghost" size="icon" onClick={handleLogout}>
                 <LogOut className="h-5 w-5" />
@@ -92,20 +67,12 @@ export function Navbar() {
               <Link to="/auth">Sign In</Link>
             </Button>
           )}
-
-          {/* Mobile Menu Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
+          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
             {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="border-t md:hidden">
           <div className="container flex flex-col gap-4 py-4">
@@ -113,17 +80,12 @@ export function Navbar() {
             <Link to="/products?category=agbada" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Agbada</Link>
             <Link to="/products?category=kaftan" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Kaftan</Link>
             <Link to="/products?category=dashiki" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Dashiki</Link>
-            <Link to="/gallery" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Gallery</Link>
-            <Link to="/logistics" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Logistics</Link>
             <Link to="/wishlist" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Wishlist</Link>
-            <Link to="/chat" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Chat to Order</Link>
+            <Link to="/chat" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>💬 Chat to Order</Link>
             {user ? (
               <>
                 <Link to="/profile" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>My Profile</Link>
-                <button
-                  className="text-left text-sm font-medium text-destructive"
-                  onClick={() => { handleLogout(); setIsMenuOpen(false); }}
-                >
+                <button className="text-left text-sm font-medium text-destructive" onClick={() => { handleLogout(); setIsMenuOpen(false); }}>
                   Sign Out
                 </button>
               </>
