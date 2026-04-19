@@ -21,66 +21,68 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    let mounted = true;
+
+    const checkRoles = async (userId: string) => {
+      try {
+        const { data: adminData, error: adminError } = await supabase.rpc("has_role", {
+          _user_id: userId,
+          _role: "admin",
+        });
+        if (adminError) console.error("Admin check error:", adminError);
+        if (mounted) setIsAdmin(!!adminData);
+
+        const { data: vendorData, error: vendorError } = await supabase.rpc("has_role", {
+          _user_id: userId,
+          _role: "vendor",
+        });
+        if (vendorError) console.error("Vendor check error:", vendorError);
+        if (mounted) setIsVendor(!!vendorData);
+      } catch (error) {
+        console.error("Error checking roles:", error);
+        if (mounted) {
+          setIsAdmin(false);
+          setIsVendor(false);
+        }
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        checkRoles(session.user.id);
+      } else {
+        setIsAdmin(false);
+        setIsVendor(false);
+        setIsLoading(false);
+      }
+    });
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        if (!mounted) return;
         setSession(session);
         setUser(session?.user ?? null);
-        setIsLoading(false);
-
-        // Defer role checks to avoid deadlock
         if (session?.user) {
-          setTimeout(() => {
-            checkVendorStatus(session.user.id);
-            checkAdminStatus(session.user.id);
-          }, 0);
+          setIsLoading(true);
+          await checkRoles(session.user.id);
         } else {
-          setIsVendor(false);
           setIsAdmin(false);
+          setIsVendor(false);
+          setIsLoading(false);
         }
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-      
-      if (session?.user) {
-        checkVendorStatus(session.user.id);
-        checkAdminStatus(session.user.id);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
-
-  const checkVendorStatus = async (userId: string) => {
-    try {
-      const { data } = await supabase.rpc("has_role", {
-        _role: "vendor",
-        _user_id: userId,
-      });
-      setIsVendor(!!data);
-    } catch (error) {
-      console.error("Error checking vendor status:", error);
-      setIsVendor(false);
-    }
-  };
-
-  const checkAdminStatus = async (userId: string) => {
-    try {
-      const { data } = await supabase.rpc("has_role", {
-        _role: "admin",
-        _user_id: userId,
-      });
-      setIsAdmin(!!data);
-    } catch (error) {
-      console.error("Error checking admin status:", error);
-      setIsAdmin(false);
-    }
-  };
 
   const signOut = async () => {
     await supabase.auth.signOut();
