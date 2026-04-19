@@ -288,6 +288,7 @@ export default function AdminDashboard() {
               <Link
                 key={chat.id}
                 to="/admin/chats"
+                state={{ chatId: chat.id }}
                 className="flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3 hover:border-gray-200 transition-colors"
               >
                 <div className="w-9 h-9 rounded-full bg-gray-900 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">

@@ -22,54 +22,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    let roleCheckId = 0;
 
-    const checkRoles = async (userId: string) => {
+    const checkAdminRole = async (userId: string) => {
+      const currentId = ++roleCheckId;
       try {
-        const { data: adminData, error: adminError } = await supabase.rpc("has_role", {
+        const { data, error } = await supabase.rpc("has_role", {
           _user_id: userId,
           _role: "admin",
         });
-        if (adminError) console.error("Admin check error:", adminError);
-        if (mounted) setIsAdmin(!!adminData);
-
-        const { data: vendorData, error: vendorError } = await supabase.rpc("has_role", {
-          _user_id: userId,
-          _role: "vendor",
-        });
-        if (vendorError) console.error("Vendor check error:", vendorError);
-        if (mounted) setIsVendor(!!vendorData);
+        if (error) console.error("Admin check error:", error);
+        if (mounted && currentId === roleCheckId) setIsAdmin(!!data);
       } catch (error) {
-        console.error("Error checking roles:", error);
-        if (mounted) {
-          setIsAdmin(false);
-          setIsVendor(false);
-        }
+        console.error("Error checking admin role:", error);
+        if (mounted && currentId === roleCheckId) setIsAdmin(false);
       } finally {
-        if (mounted) setIsLoading(false);
+        if (mounted && currentId === roleCheckId) setIsLoading(false);
       }
     };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        checkRoles(session.user.id);
-      } else {
-        setIsAdmin(false);
-        setIsVendor(false);
-        setIsLoading(false);
-      }
-    });
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (!mounted) return;
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
           setIsLoading(true);
-          await checkRoles(session.user.id);
+          checkAdminRole(session.user.id);
         } else {
           setIsAdmin(false);
           setIsVendor(false);
@@ -77,6 +56,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
     );
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      if (!session) {
+        setIsLoading(false);
+      }
+    });
 
     return () => {
       mounted = false;

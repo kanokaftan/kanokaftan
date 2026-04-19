@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Send, ArrowLeft, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,7 @@ interface Chat {
 export default function AdminChats() {
   const { user, isAdmin, isLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [chats, setChats] = useState<Chat[]>([]);
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -43,7 +44,7 @@ export default function AdminChats() {
   }, [user, isAdmin, isLoading]);
 
   useEffect(() => {
-    if (isAdmin) {
+    if (!isLoading && isAdmin) {
       loadChats();
       subscribeToNewChats();
     }
@@ -51,7 +52,16 @@ export default function AdminChats() {
       if (chatChannelRef.current) supabase.removeChannel(chatChannelRef.current);
       if (messageChannelRef.current) supabase.removeChannel(messageChannelRef.current);
     };
-  }, [isAdmin]);
+  }, [isAdmin, isLoading]);
+
+  // Pre-select a chat when navigating from the dashboard
+  useEffect(() => {
+    const preselectedId = (location.state as { chatId?: string } | null)?.chatId;
+    if (preselectedId && chats.length > 0 && !selectedChat) {
+      const chat = chats.find((c) => c.id === preselectedId);
+      if (chat) setSelectedChat(chat);
+    }
+  }, [chats, location.state]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
