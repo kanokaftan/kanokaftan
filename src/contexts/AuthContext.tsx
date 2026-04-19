@@ -24,20 +24,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true;
     let roleCheckId = 0;
 
-    const checkAdminRole = async (userId: string) => {
+    const checkRoles = async (userId: string) => {
       const currentId = ++roleCheckId;
+      let adminResult = false;
+      let vendorResult = false;
+
       try {
-        const { data, error } = await supabase.rpc("has_role", {
+        const { data } = await supabase.rpc("has_role", {
           _user_id: userId,
           _role: "admin",
         });
-        if (error) console.error("Admin check error:", error);
-        if (mounted && currentId === roleCheckId) setIsAdmin(!!data);
-      } catch (error) {
-        console.error("Error checking admin role:", error);
-        if (mounted && currentId === roleCheckId) setIsAdmin(false);
-      } finally {
-        if (mounted && currentId === roleCheckId) setIsLoading(false);
+        adminResult = !!data;
+      } catch (e) {
+        console.error("Admin role check error:", e);
+      }
+
+      try {
+        const { data } = await supabase.rpc("has_role", {
+          _user_id: userId,
+          _role: "vendor",
+        });
+        vendorResult = !!data;
+      } catch (e) {
+        console.error("Vendor role check error:", e);
+      }
+
+      if (mounted && currentId === roleCheckId) {
+        setIsAdmin(adminResult);
+        setIsVendor(vendorResult);
+        setIsLoading(false);
       }
     };
 
@@ -48,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         if (session?.user) {
           setIsLoading(true);
-          checkAdminRole(session.user.id);
+          checkRoles(session.user.id);
         } else {
           setIsAdmin(false);
           setIsVendor(false);
