@@ -106,17 +106,26 @@ export default function AdminDashboard() {
       // Recent orders
       const { data: recentOrdersData } = await supabase
         .from("orders")
-        .select(`*, profiles(full_name, email)`)
+        .select("id, customer_id, status, total, created_at")
         .order("created_at", { ascending: false })
         .limit(5);
 
-      const recentOrders = (recentOrdersData || []).map((order) => ({
-        id: order.id,
-        customer_name: order.profiles?.full_name || order.profiles?.email || "Customer",
-        status: order.status,
-        total: order.total,
-        created_at: order.created_at,
-      }));
+      const orderUserIds = [...new Set((recentOrdersData || []).map((o: any) => o.customer_id).filter(Boolean))];
+      const { data: orderProfiles } = orderUserIds.length > 0
+        ? await supabase.from("profiles").select("id, full_name, email").in("id", orderUserIds)
+        : { data: [] };
+      const orderProfileMap = new Map((orderProfiles || []).map((p: any) => [p.id, p]));
+
+      const recentOrders = (recentOrdersData || []).map((order: any) => {
+        const profile = orderProfileMap.get(order.customer_id);
+        return {
+          id: order.id,
+          customer_name: profile?.full_name || profile?.email || "Customer",
+          status: order.status,
+          total: order.total,
+          created_at: order.created_at,
+        };
+      });
 
       const { count: pendingCount } = await supabase
         .from("orders")

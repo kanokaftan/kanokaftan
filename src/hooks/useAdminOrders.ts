@@ -45,17 +45,18 @@ export function useAdminOrders() {
 
       if (ordersError) throw ordersError;
 
-      const userIds = [...new Set((ordersData || []).map(o => o.user_id))];
+      const customerIds = [...new Set((ordersData || []).map((o: any) => o.customer_id || o.user_id).filter(Boolean))];
 
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, full_name, email")
-        .in("id", userIds);
+        .in("id", customerIds);
 
       const profileMap = new Map((profiles || []).map(p => [p.id, p]));
 
       return (ordersData || []).map((order: any) => {
-        const customer = profileMap.get(order.user_id);
+        const customerId = order.customer_id || order.user_id;
+        const customer = profileMap.get(customerId);
         return {
           ...order,
           customer: customer ? { full_name: customer.full_name, email: customer.email } : null,
@@ -70,10 +71,9 @@ export function useAdminOrders() {
 
   const updateOrderStatus = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
-      // Get the order to find user_id and vendors
       const { data: order, error: fetchError } = await supabase
         .from("orders")
-        .select("user_id")
+        .select("customer_id, user_id")
         .eq("id", orderId)
         .single();
 
@@ -85,19 +85,18 @@ export function useAdminOrders() {
         .eq("id", orderId);
       if (error) throw error;
 
-      // Notify customer about admin status update
-      if (order?.user_id) {
+      const notifyUserId = (order as any)?.customer_id || (order as any)?.user_id;
+      if (notifyUserId) {
         await supabase.from("notifications").insert({
-          user_id: order.user_id,
+          user_id: notifyUserId,
           title: "Order Status Updated",
           message: `Your order status has been updated to: ${status.replace(/_/g, ' ')}`,
           type: "order",
           category: "order",
           action_url: `/orders/${orderId}`,
           metadata: { order_id: orderId, status }
-        });
+        } as any);
       }
-
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });

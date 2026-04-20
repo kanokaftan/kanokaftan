@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Send, ArrowLeft, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { notifyRole } from "@/lib/notifications";
 
 interface Message {
   id: string;
@@ -136,6 +137,18 @@ export default function Chat() {
         sender_id: user!.id,
         content,
         is_admin: false,
+      });
+
+      // Notify all admins of the new customer message
+      notifyRole("admin", {
+        title: "New customer message",
+        message: content,
+        type: "info",
+        category: "general",
+        actionUrl: `/admin/chats`,
+        metadata: { chat_id: chat.id },
+      }).catch(() => {
+        // Notification failure is non-critical
       });
     } catch (error) {
       console.error("Error sending message:", error);
