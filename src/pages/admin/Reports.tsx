@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAdminReports } from "@/hooks/useAdminReports";
-import { FileDown, TrendingUp, Package, Store, Users } from "lucide-react";
+import { FileDown, TrendingUp, Package, Users } from "lucide-react";
 import { 
   LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend 
@@ -40,15 +40,12 @@ export default function AdminReports() {
   return (
     <AdminLayout title="Reports">
       <Tabs defaultValue="sales" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
           <TabsTrigger value="sales" className="gap-2">
             <TrendingUp className="h-4 w-4 hidden sm:block" />Sales
           </TabsTrigger>
           <TabsTrigger value="products" className="gap-2">
             <Package className="h-4 w-4 hidden sm:block" />Products
-          </TabsTrigger>
-          <TabsTrigger value="vendors" className="gap-2">
-            <Store className="h-4 w-4 hidden sm:block" />Vendors
           </TabsTrigger>
           <TabsTrigger value="users" className="gap-2">
             <Users className="h-4 w-4 hidden sm:block" />Users
@@ -185,7 +182,6 @@ export default function AdminReports() {
                     <TableHead>#</TableHead>
                     <TableHead>Product</TableHead>
                     <TableHead>Category</TableHead>
-                    <TableHead>Vendor</TableHead>
                     <TableHead>Units Sold</TableHead>
                     <TableHead>Revenue</TableHead>
                     <TableHead>Stock</TableHead>
@@ -195,7 +191,7 @@ export default function AdminReports() {
                   {isLoading ? (
                     [...Array(10)].map((_, i) => (
                       <TableRow key={i}>
-                        <TableCell colSpan={7}><Skeleton className="h-8 w-full" /></TableCell>
+                        <TableCell colSpan={6}><Skeleton className="h-8 w-full" /></TableCell>
                       </TableRow>
                     ))
                   ) : (
@@ -204,7 +200,6 @@ export default function AdminReports() {
                         <TableCell className="text-muted-foreground">{i + 1}</TableCell>
                         <TableCell className="font-medium max-w-[200px] truncate">{product.name}</TableCell>
                         <TableCell><Badge variant="outline">{product.category}</Badge></TableCell>
-                        <TableCell>{product.vendor}</TableCell>
                         <TableCell>{product.totalSold}</TableCell>
                         <TableCell className="font-semibold">{formatCurrency(product.revenue)}</TableCell>
                         <TableCell>
@@ -212,109 +207,6 @@ export default function AdminReports() {
                             {product.stockRemaining}
                           </span>
                         </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Vendors Report */}
-        <TabsContent value="vendors" className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold">Vendor Performance Report</h2>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="gap-2"
-              onClick={() => exportToCSV(reports?.vendorReport || [], "vendors-report")}
-            >
-              <FileDown className="h-4 w-4" />Export
-            </Button>
-          </div>
-
-          {/* Mobile View */}
-          <div className="md:hidden space-y-3 mb-20">
-            {isLoading ? (
-              [...Array(5)].map((_, i) => <Skeleton key={i} className="h-28 w-full" />)
-            ) : (
-              reports?.vendorReport.map((vendor, i) => (
-                <Card key={vendor.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">#{i + 1}</span>
-                        <p className="font-semibold">{vendor.storeName}</p>
-                      </div>
-                      {vendor.isVerified ? (
-                        <Badge className="bg-green-100 text-green-800">Verified</Badge>
-                      ) : (
-                        <Badge variant="outline">Pending</Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-2">{vendor.name}</p>
-                    <div className="grid grid-cols-3 gap-2 text-sm">
-                      <div>
-                        <p className="text-muted-foreground">Products</p>
-                        <p className="font-semibold">{vendor.totalProducts}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Orders</p>
-                        <p className="font-semibold">{vendor.totalOrders}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Revenue</p>
-                        <p className="font-semibold">{formatCurrency(vendor.totalRevenue)}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-
-          {/* Desktop Table */}
-          <div className="hidden md:block">
-            <Card>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>#</TableHead>
-                    <TableHead>Store Name</TableHead>
-                    <TableHead>Owner</TableHead>
-                    <TableHead>Products</TableHead>
-                    <TableHead>Orders</TableHead>
-                    <TableHead>Revenue</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Joined</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoading ? (
-                    [...Array(10)].map((_, i) => (
-                      <TableRow key={i}>
-                        <TableCell colSpan={8}><Skeleton className="h-8 w-full" /></TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    reports?.vendorReport.map((vendor, i) => (
-                      <TableRow key={vendor.id}>
-                        <TableCell className="text-muted-foreground">{i + 1}</TableCell>
-                        <TableCell className="font-medium">{vendor.storeName}</TableCell>
-                        <TableCell>{vendor.name}</TableCell>
-                        <TableCell>{vendor.totalProducts}</TableCell>
-                        <TableCell>{vendor.totalOrders}</TableCell>
-                        <TableCell className="font-semibold">{formatCurrency(vendor.totalRevenue)}</TableCell>
-                        <TableCell>
-                          {vendor.isVerified ? (
-                            <Badge className="bg-green-100 text-green-800">Verified</Badge>
-                          ) : (
-                            <Badge variant="outline">Pending</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>{format(new Date(vendor.joinedDate), "MMM dd, yyyy")}</TableCell>
                       </TableRow>
                     ))
                   )}

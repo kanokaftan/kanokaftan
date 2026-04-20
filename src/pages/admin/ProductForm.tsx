@@ -82,8 +82,8 @@ export default function AdminProductForm() {
 
   const uploadImage = async (file: File): Promise<string> => {
     const ext = file.name.split(".").pop();
-    const fileName = `products/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("product-images").upload(fileName, file);
+    const fileName = `${user?.id}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("product-images").upload(fileName, file, { upsert: true });
     if (error) throw error;
     return supabase.storage.from("product-images").getPublicUrl(fileName).data.publicUrl;
   };
@@ -158,7 +158,7 @@ export default function AdminProductForm() {
         const slug = generateSlug(formData.name);
         const { data: newProduct, error } = await supabase
           .from("products")
-          .insert({ ...productPayload, slug, vendor_id: user.id })
+          .insert({ ...productPayload, slug })
           .select()
           .single();
         if (error) throw error;
