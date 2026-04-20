@@ -18,10 +18,8 @@ import { usePayment } from "@/hooks/usePayment";
 import { AddressForm } from "@/components/checkout/AddressForm";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { 
-  calculateShippingFee, 
-  calculateDistance, 
+import {
+  calculateShippingFee,
   getDiscountTierDescription,
   validatePromoCode,
   type PromoCodeResult
@@ -33,12 +31,6 @@ function formatPrice(amount: number): string {
     currency: "NGN",
     minimumFractionDigits: 0,
   }).format(amount);
-}
-
-interface VendorLocation {
-  id: string;
-  latitude: number | null;
-  longitude: number | null;
 }
 
 export default function Checkout() {
@@ -54,7 +46,6 @@ export default function Checkout() {
   const [isAddressSheetOpen, setIsAddressSheetOpen] = useState(false);
   const [isAllAddressesOpen, setIsAllAddressesOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [vendorLocations, setVendorLocations] = useState<VendorLocation[]>([]);
   
   // Promo code state
   const [promoCode, setPromoCode] = useState("");
@@ -74,67 +65,11 @@ export default function Checkout() {
     }
   }, [defaultAddress, selectedAddressId]);
 
-  // Fetch vendor locations for cart items
-  useEffect(() => {
-    const fetchVendorLocations = async () => {
-      if (!items.length) return;
-      
-      const productIds = items.map(item => item.product_id);
-      const { data: products } = await supabase
-        .from("products")
-        .select("vendor_id")
-        .in("id", productIds);
-      
-      if (!products?.length) return;
-
-      const vendorIds = [...new Set(products.map(p => p.vendor_id))];
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, store_address")
-        .in("id", vendorIds);
-      
-      if (profiles) {
-        const locations = profiles.map(p => {
-          const storeAddress = p.store_address as { latitude?: number; longitude?: number } | null;
-          return {
-            id: p.id,
-            latitude: storeAddress?.latitude || null,
-            longitude: storeAddress?.longitude || null
-          };
-        });
-        setVendorLocations(locations);
-      }
-    };
-
-    fetchVendorLocations();
-  }, [items]);
-
   const selectedAddress = addresses.find((a) => a.id === selectedAddressId);
 
-  // Calculate shipping based on distance to vendor
   const shippingInfo = useMemo(() => {
-    if (!selectedAddress) {
-      return calculateShippingFee(null, total, appliedPromo);
-    }
-
-    let distanceKm: number | null = null;
-
-    const vendorsWithCoords = vendorLocations.filter(v => v.latitude && v.longitude);
-
-    if (selectedAddress.latitude && selectedAddress.longitude && vendorsWithCoords.length > 0) {
-      const distances = vendorsWithCoords.map(vendor => 
-        calculateDistance(
-          selectedAddress.latitude!,
-          selectedAddress.longitude!,
-          vendor.latitude!,
-          vendor.longitude!
-        )
-      );
-      distanceKm = Math.max(...distances);
-    }
-
-    return calculateShippingFee(distanceKm, total, appliedPromo);
-  }, [selectedAddress, total, vendorLocations, appliedPromo]);
+    return calculateShippingFee(null, total, appliedPromo);
+  }, [total, appliedPromo]);
 
   const grandTotal = total + shippingInfo.finalFee;
   const discountDescription = getDiscountTierDescription(total);

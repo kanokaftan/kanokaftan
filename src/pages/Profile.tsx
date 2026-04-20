@@ -1,18 +1,15 @@
 import { MobileLayout } from "@/components/layout/MobileLayout";
-import { 
-  User, 
-  Settings, 
-  HelpCircle, 
-  LogOut, 
-  ChevronRight, 
-  Store, 
-  Shield, 
+import {
+  User,
+  Settings,
+  HelpCircle,
+  LogOut,
+  ChevronRight,
+  Shield,
   Heart,
   Package,
   MapPin,
-  CreditCard,
-  Bell,
-  Sparkles
+  Bell
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -26,7 +23,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function Profile() {
-  const { user, isVendor, isAdmin, isLoading, signOut } = useAuth();
+  const { user, isAdmin, isLoading, signOut } = useAuth();
   const navigate = useNavigate();
 
   // Fetch user profile data
@@ -135,20 +132,11 @@ export default function Profile() {
   ];
 
   if (isAdmin) {
-    menuItems.unshift({ 
-      icon: Shield, 
-      label: "Admin Dashboard", 
-      description: "Manage platform", 
-      href: "/admin/dashboard" 
-    });
-  }
-
-  if (isVendor) {
-    menuItems.unshift({ 
-      icon: Store, 
-      label: "Vendor Dashboard", 
-      description: "Manage your store", 
-      href: "/vendor/dashboard" 
+    menuItems.unshift({
+      icon: Shield,
+      label: "Admin Dashboard",
+      description: "Manage platform",
+      href: "/admin/dashboard"
     });
   }
 
@@ -173,16 +161,7 @@ export default function Profile() {
               </h2>
               <p className="text-sm text-muted-foreground truncate">{user.email}</p>
               <div className="flex items-center gap-2 mt-1.5">
-                <Badge variant={isVendor ? "default" : "secondary"} className="text-xs">
-                  {isVendor ? (
-                    <>
-                      <Store className="h-3 w-3 mr-1" />
-                      Vendor
-                    </>
-                  ) : (
-                    "Customer"
-                  )}
-                </Badge>
+                <Badge variant="secondary" className="text-xs">Customer</Badge>
                 {isAdmin && (
                   <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
                     <Shield className="h-3 w-3 mr-1" />
@@ -233,28 +212,6 @@ export default function Profile() {
             </Link>
           ))}
         </Card>
-
-        {/* Become a Vendor CTA */}
-        {!isVendor && (
-          <Card className="p-5 bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-amber-500/20 overflow-hidden relative">
-            <div className="absolute top-2 right-2">
-              <Sparkles className="h-5 w-5 text-amber-500" />
-            </div>
-            <h3 className="font-semibold text-lg flex items-center gap-2">
-              <Store className="h-5 w-5 text-amber-600" />
-              Become a Vendor
-            </h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Start selling your products and reach thousands of customers on K² Kano Kaftan
-            </p>
-            <Button className="mt-4 bg-amber-600 hover:bg-amber-700" asChild>
-              <Link to="/auth?mode=register&role=vendor">
-                Get Started
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Link>
-            </Button>
-          </Card>
-        )}
 
         {/* Logout Button */}
         <Button

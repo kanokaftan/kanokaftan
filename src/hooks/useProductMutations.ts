@@ -29,7 +29,7 @@ function generateSlug(name: string): string {
     .concat("-", Date.now().toString(36));
 }
 
-export function useProductMutations(vendorId: string | null) {
+export function useProductMutations(userId: string | null) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -41,17 +41,16 @@ export function useProductMutations(vendorId: string | null) {
       product: Omit<ProductData, "slug">;
       images: ProductImage[];
     }) => {
-      if (!vendorId) throw new Error("Vendor ID required");
+      if (!userId) throw new Error("User ID required");
 
       const slug = generateSlug(product.name);
 
-      // Create the product
       const { data: newProduct, error: productError } = await supabase
         .from("products")
         .insert({
           ...product,
           slug,
-          vendor_id: vendorId,
+          vendor_id: userId,
         })
         .select()
         .single();
@@ -75,7 +74,7 @@ export function useProductMutations(vendorId: string | null) {
       return newProduct;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vendor-products"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       toast({
         title: "Product created",
         description: "Your product has been added successfully",
@@ -134,7 +133,7 @@ export function useProductMutations(vendorId: string | null) {
       return { productId };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vendor-products"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       queryClient.invalidateQueries({ queryKey: ["vendor-product"] });
       toast({
         title: "Product updated",
@@ -161,7 +160,7 @@ export function useProductMutations(vendorId: string | null) {
       return { productId };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vendor-products"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       toast({
         title: "Product deleted",
         description: "The product has been removed",
@@ -193,7 +192,7 @@ export function useProductMutations(vendorId: string | null) {
       return { productId, isActive };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["vendor-products"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       toast({
         title: data.isActive ? "Product activated" : "Product deactivated",
         description: data.isActive
@@ -212,7 +211,7 @@ export function useProductMutations(vendorId: string | null) {
 
   const uploadImage = async (file: File): Promise<string> => {
     const fileExt = file.name.split(".").pop();
-    const fileName = `${vendorId}/${Date.now()}.${fileExt}`;
+    const fileName = `${userId}/${Date.now()}.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage
       .from("product-images")

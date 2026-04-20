@@ -38,41 +38,31 @@ export function useAdminOrders() {
             product_name,
             quantity,
             unit_price,
-            total_price,
-            vendor_id
+            total_price
           )
         `)
         .order("created_at", { ascending: false });
 
       if (ordersError) throw ordersError;
-      
-      // Get unique user IDs and vendor IDs
+
       const userIds = [...new Set((ordersData || []).map(o => o.user_id))];
-      const vendorIds = [...new Set((ordersData || []).flatMap(o => 
-        (o.order_items || []).map((item: any) => item.vendor_id)
-      ))];
-      
-      // Fetch profiles for customers and vendors
+
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, full_name, email, store_name")
-        .in("id", [...userIds, ...vendorIds]);
-      
+        .select("id, full_name, email")
+        .in("id", userIds);
+
       const profileMap = new Map((profiles || []).map(p => [p.id, p]));
-      
-      // Map orders with customer and vendor info
+
       return (ordersData || []).map((order: any) => {
         const customer = profileMap.get(order.user_id);
         return {
           ...order,
           customer: customer ? { full_name: customer.full_name, email: customer.email } : null,
-          order_items: (order.order_items || []).map((item: any) => {
-            const vendor = profileMap.get(item.vendor_id);
-            return {
-              ...item,
-              vendor: vendor ? { store_name: vendor.store_name } : null,
-            };
-          }),
+          order_items: (order.order_items || []).map((item: any) => ({
+            ...item,
+            vendor: null,
+          })),
         };
       });
     },
@@ -108,25 +98,6 @@ export function useAdminOrders() {
         });
       }
 
-      // Get vendor IDs from order items and notify them
-      const { data: orderItems } = await supabase
-        .from("order_items")
-        .select("vendor_id")
-        .eq("order_id", orderId);
-
-      if (orderItems) {
-        const uniqueVendorIds = [...new Set(orderItems.map(item => item.vendor_id))];
-        const vendorNotifications = uniqueVendorIds.map(vendorId => ({
-          user_id: vendorId,
-          title: "Order Status Updated by Admin",
-          message: `Order #${orderId.slice(0, 8)} status changed to: ${status.replace(/_/g, ' ')}`,
-          type: "order" as const,
-          category: "order" as const,
-          action_url: "/vendor/orders",
-          metadata: { order_id: orderId, status }
-        }));
-        await supabase.from("notifications").insert(vendorNotifications);
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });

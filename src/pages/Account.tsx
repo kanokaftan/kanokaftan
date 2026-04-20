@@ -4,15 +4,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { 
-  User, 
-  Mail, 
-  Phone, 
-  Save, 
-  Loader2, 
-  LogOut, 
-  ShieldCheck, 
-  Key, 
-  Store, 
+  Mail,
+  Save,
+  Loader2,
+  LogOut,
+  ShieldCheck,
+  Key,
   Camera,
   ChevronRight,
   MapPin,
@@ -43,7 +40,7 @@ type AccountFormData = z.infer<typeof accountSchema>;
 export default function Account() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, isLoading: authLoading, signOut, isVendor } = useAuth();
+  const { user, isLoading: authLoading, signOut } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -316,32 +313,6 @@ export default function Account() {
             </Link>
           ))}
         </Card>
-
-        {/* Vendor Account */}
-        {isVendor && (
-          <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-background overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <CardHeader className="relative">
-              <CardTitle className="flex items-center gap-2">
-                <Store className="h-5 w-5 text-primary" />
-                Vendor Account
-              </CardTitle>
-              <CardDescription>
-                Manage your store, products, and orders
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                className="w-full" 
-                onClick={() => navigate("/vendor/dashboard")}
-              >
-                <Store className="mr-2 h-4 w-4" />
-                Go to Vendor Dashboard
-                <ChevronRight className="ml-auto h-4 w-4" />
-              </Button>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Security */}
         <Card>

@@ -11,7 +11,6 @@ export interface AdminProduct {
   featured: boolean;
   created_at: string;
   category: { name: string } | null;
-  vendor: { store_name: string | null; full_name: string | null } | null;
   product_images: { url: string }[];
 }
 
@@ -23,14 +22,8 @@ export function useAdminProducts() {
     queryFn: async (): Promise<AdminProduct[]> => {
       const { data, error } = await supabase
         .from("products")
-        .select(`
-          *,
-          category:categories(name),
-          vendor:profiles!products_vendor_id_fkey(store_name, full_name),
-          product_images(url)
-        `)
+        .select(`*, category:categories(name), product_images(url)`)
         .order("created_at", { ascending: false });
-
       if (error) throw error;
       return data || [];
     },
@@ -38,36 +31,23 @@ export function useAdminProducts() {
 
   const toggleFeatured = useMutation({
     mutationFn: async ({ productId, featured }: { productId: string; featured: boolean }) => {
-      const { error } = await supabase
-        .from("products")
-        .update({ featured })
-        .eq("id", productId);
+      const { error } = await supabase.from("products").update({ featured }).eq("id", productId);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-products"] }),
   });
 
   const toggleActive = useMutation({
     mutationFn: async ({ productId, isActive }: { productId: string; isActive: boolean }) => {
-      const { error } = await supabase
-        .from("products")
-        .update({ is_active: isActive })
-        .eq("id", productId);
+      const { error } = await supabase.from("products").update({ is_active: isActive }).eq("id", productId);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-products"] }),
   });
 
   const deleteProduct = useMutation({
     mutationFn: async (productId: string) => {
-      const { error } = await supabase
-        .from("products")
-        .delete()
-        .eq("id", productId);
+      const { error } = await supabase.from("products").delete().eq("id", productId);
       if (error) throw error;
     },
     onSuccess: () => {

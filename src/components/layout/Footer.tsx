@@ -100,23 +100,18 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Sellers */}
+          {/* About */}
           <div className="space-y-4">
-            <h4 className="font-display text-lg font-semibold">Sell on K²</h4>
+            <h4 className="font-display text-lg font-semibold">About</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/auth?mode=register&role=vendor" className="text-primary-foreground/80 hover:text-primary-foreground">
-                  Become a Vendor
+                <Link to="/help" className="text-primary-foreground/80 hover:text-primary-foreground">
+                  About Us
                 </Link>
               </li>
               <li>
-                <Link to="/vendor/dashboard" className="text-primary-foreground/80 hover:text-primary-foreground">
-                  Vendor Dashboard
-                </Link>
-              </li>
-              <li>
-                <Link to="/vendor/guide" className="text-primary-foreground/80 hover:text-primary-foreground">
-                  Seller Guide
+                <Link to="/help" className="text-primary-foreground/80 hover:text-primary-foreground">
+                  Our Story
                 </Link>
               </li>
             </ul>

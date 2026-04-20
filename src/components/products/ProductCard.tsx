@@ -38,10 +38,6 @@ export function ProductCard({ product, onQuickView, hideFloatingCart = false, co
     ? Math.round(((product.compare_at_price! - product.price) / product.compare_at_price!) * 100)
     : null;
 
-  const vendorName = product.vendor?.store_name || product.vendor?.full_name;
-  const vendorAvatar = product.vendor?.avatar_url;
-  const isVendorVerified = product.vendor?.is_verified;
-
   const handleWishlistClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();

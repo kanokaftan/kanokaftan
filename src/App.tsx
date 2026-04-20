@@ -24,6 +24,7 @@ import AdminFinance from "./pages/admin/Finance";
 import AdminReports from "./pages/admin/Reports";
 import AdminSettings from "./pages/admin/Settings";
 import AdminChats from "./pages/admin/Chats";
+import AdminProductForm from "./pages/admin/ProductForm";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -66,6 +67,8 @@ const App = () => (
             <Route path="/admin/reports" element={<AdminReports />} />
             <Route path="/admin/settings" element={<AdminSettings />} />
             <Route path="/admin/chats" element={<AdminChats />} />
+            <Route path="/admin/products/new" element={<AdminProductForm />} />
+            <Route path="/admin/products/:id/edit" element={<AdminProductForm />} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

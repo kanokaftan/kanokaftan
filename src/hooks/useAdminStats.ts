@@ -2,10 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AdminStats {
-  // Users & Vendors
   totalUsers: number;
-  totalVendors: number;
-  verifiedVendors: number;
   totalProducts: number;
   
   // Orders (by payment status)
@@ -28,22 +25,9 @@ export function useAdminStats() {
   return useQuery({
     queryKey: ["admin-stats"],
     queryFn: async (): Promise<AdminStats> => {
-      // Get total users count
       const { count: totalUsers } = await supabase
         .from("profiles")
         .select("*", { count: "exact", head: true });
-
-      // Get vendors count
-      const { count: totalVendors } = await supabase
-        .from("user_roles")
-        .select("*", { count: "exact", head: true })
-        .eq("role", "vendor");
-
-      // Get verified vendors count
-      const { count: verifiedVendors } = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true })
-        .eq("is_verified", true);
 
       // Get total products count
       const { count: totalProducts } = await supabase
@@ -118,8 +102,6 @@ export function useAdminStats() {
 
       return {
         totalUsers: totalUsers || 0,
-        totalVendors: totalVendors || 0,
-        verifiedVendors: verifiedVendors || 0,
         totalProducts: totalProducts || 0,
         totalPaidOrders: totalPaidOrders || 0,
         pendingPayments: pendingPayments || 0,
