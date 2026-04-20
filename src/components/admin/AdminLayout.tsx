@@ -3,7 +3,7 @@ import { useNavigate, Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, Package, ShoppingCart,
   Tag, DollarSign, BarChart, Settings, MessageCircle,
-  Menu, X, LogOut, Store, Shield
+  Menu, X, LogOut, ShoppingBag, Shield
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
@@ -49,34 +49,31 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4">
+      <div className="min-h-screen bg-background p-4">
         <Skeleton className="h-12 w-full mb-4 rounded-xl" />
         <div className="grid grid-cols-2 gap-3">
-          <Skeleton className="h-28 rounded-xl" />
-          <Skeleton className="h-28 rounded-xl" />
-          <Skeleton className="h-28 rounded-xl" />
-          <Skeleton className="h-28 rounded-xl" />
+          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Mobile Header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b">
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-card border-b">
         <div className="flex items-center justify-between px-4 h-14">
           <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-gray-900" />
-            <span className="font-bold text-sm">Kano Kaftan Admin</span>
+            <Shield className="h-5 w-5 text-foreground" />
+            <span className="font-bold text-sm text-foreground">Kano Kaftan Admin</span>
           </div>
           <div className="flex items-center gap-1">
             <NotificationBell />
             <button
               onClick={() => setSidebarOpen(true)}
-              className="p-2 rounded-lg hover:bg-gray-100"
+              className="p-2 rounded-lg hover:bg-muted transition-colors"
             >
-              <Menu className="h-5 w-5" />
+              <Menu className="h-5 w-5 text-foreground" />
             </button>
           </div>
         </div>
@@ -85,26 +82,29 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
       {/* Sidebar Overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-50 md:hidden"
+          className="fixed inset-0 bg-black/50 z-50 md:hidden animate-in fade-in-0 duration-200"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed left-0 top-0 h-full w-64 bg-white border-r z-50 flex flex-col transition-transform duration-300 md:translate-x-0",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        "fixed left-0 top-0 h-full w-64 bg-card border-r z-50 flex flex-col transition-transform duration-300 md:translate-x-0",
+        sidebarOpen ? "translate-x-0 animate-in slide-in-from-left duration-300" : "-translate-x-full"
       )}>
         {/* Sidebar Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
-              <span className="text-white text-xs font-bold">KK</span>
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <span className="text-primary-foreground text-xs font-bold">KK</span>
             </div>
-            <span className="font-bold text-sm">Admin Portal</span>
+            <span className="font-bold text-sm text-foreground">Admin Portal</span>
           </div>
-          <button onClick={() => setSidebarOpen(false)} className="md:hidden p-1 rounded-lg hover:bg-gray-100">
-            <X className="w-5 h-5" />
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="md:hidden p-1 rounded-lg hover:bg-muted transition-colors"
+          >
+            <X className="w-5 h-5 text-foreground" />
           </button>
         </div>
 
@@ -120,8 +120,8 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-gray-900 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
                 <item.icon className="w-4 h-4 flex-shrink-0" />
@@ -141,14 +141,14 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
           <Link
             to="/"
             onClick={() => setSidebarOpen(false)}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
-            <Store className="w-4 h-4" />
+            <ShoppingBag className="w-4 h-4" />
             Go to Store
           </Link>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
           >
             <LogOut className="w-4 h-4" />
             Logout
@@ -160,14 +160,14 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
       <div className="md:ml-64">
         <main className="pt-14 md:pt-0 pb-20 md:pb-6 min-h-screen">
           <div className="p-4 md:p-6">
-            <h1 className="text-xl font-bold mb-4 md:mb-6">{title}</h1>
+            <h1 className="text-xl font-bold mb-4 md:mb-6 text-foreground">{title}</h1>
             {children}
           </div>
         </main>
       </div>
 
       {/* Mobile Bottom Nav */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t z-40">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t z-40">
         <div className="grid grid-cols-5 h-14">
           {bottomNavItems.map((item) => {
             const isActive = location.pathname === item.url;
@@ -177,7 +177,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
                 to={item.url}
                 className={cn(
                   "flex flex-col items-center justify-center gap-0.5 transition-colors",
-                  isActive ? "text-gray-900" : "text-gray-400"
+                  isActive ? "text-foreground" : "text-muted-foreground"
                 )}
               >
                 <item.icon className={cn("h-5 w-5", isActive && "stroke-[2.5]")} />
