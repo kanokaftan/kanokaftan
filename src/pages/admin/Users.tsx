@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { AdminPagination } from "@/components/admin/AdminPagination";
 import { useAdminUsers } from "@/hooks/useAdminUsers";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,14 +12,22 @@ import { Search, BadgeCheck, Shield, Store } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
+const PAGE_SIZE = 20;
+
 export default function AdminUsers() {
   const { users, isLoading, updateUserVerification } = useAdminUsers();
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
-  const filteredUsers = users.filter(user => 
+  const filteredUsers = users.filter(user =>
     user.full_name?.toLowerCase().includes(search.toLowerCase()) ||
     user.email.toLowerCase().includes(search.toLowerCase())
   );
+
+  const totalPages = Math.ceil(filteredUsers.length / PAGE_SIZE);
+  const paginatedUsers = filteredUsers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  useEffect(() => { setPage(1); }, [search]);
 
   const handleVerify = async (userId: string, currentStatus: boolean) => {
     try {
@@ -56,13 +65,13 @@ export default function AdminUsers() {
       </div>
 
       {/* Mobile View */}
-      <div className="md:hidden space-y-3 mb-20">
+      <div className="md:hidden space-y-3">
         {isLoading ? (
           [...Array(5)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)
         ) : filteredUsers.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">No users found</p>
         ) : (
-          filteredUsers.map((user) => (
+          paginatedUsers.map((user) => (
             <div key={user.id} className="bg-card rounded-lg p-4 border">
               <div className="flex items-start gap-3">
                 <Avatar>
@@ -100,6 +109,11 @@ export default function AdminUsers() {
         )}
       </div>
 
+      {/* Mobile pagination */}
+      <div className="md:hidden mb-20">
+        <AdminPagination page={page} totalPages={totalPages} totalItems={filteredUsers.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+      </div>
+
       {/* Desktop Table */}
       <div className="hidden md:block">
         <div className="rounded-lg border bg-card">
@@ -128,7 +142,7 @@ export default function AdminUsers() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredUsers.map((user) => (
+                paginatedUsers.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -173,6 +187,7 @@ export default function AdminUsers() {
             </TableBody>
           </Table>
         </div>
+        <AdminPagination page={page} totalPages={totalPages} totalItems={filteredUsers.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </div>
     </AdminLayout>
   );

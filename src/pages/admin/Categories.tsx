@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { AdminPagination } from "@/components/admin/AdminPagination";
 import { useAdminCategories } from "@/hooks/useAdminCategories";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Pencil, Trash2, Package } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 
@@ -20,10 +21,14 @@ interface CategoryFormData {
   image_url: string;
 }
 
+const PAGE_SIZE = 20;
+
 export default function AdminCategories() {
   const { categories, isLoading, createCategory, updateCategory, deleteCategory } = useAdminCategories();
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<CategoryFormData>();
 
@@ -72,11 +77,28 @@ export default function AdminCategories() {
     setIsDialogOpen(true);
   };
 
+  const filteredCategories = categories.filter(c =>
+    c.name.toLowerCase().includes(search.toLowerCase()) ||
+    c.slug.toLowerCase().includes(search.toLowerCase())
+  );
+  const totalPages = Math.ceil(filteredCategories.length / PAGE_SIZE);
+  const paginatedCategories = filteredCategories.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  useEffect(() => { setPage(1); }, [search]);
+
   return (
     <AdminLayout title="Categories">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <p className="text-muted-foreground">Manage product categories</p>
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between mb-6">
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search categories..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={handleNewCategory} className="gap-2">
@@ -147,10 +169,10 @@ export default function AdminCategories() {
       <div className="md:hidden space-y-3 mb-20">
         {isLoading ? (
           [...Array(4)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)
-        ) : categories.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8">No categories yet</p>
+        ) : paginatedCategories.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8">{search ? "No categories found" : "No categories yet"}</p>
         ) : (
-          categories.map((category) => (
+          paginatedCategories.map((category) => (
             <div key={category.id} className="bg-card rounded-lg p-4 border">
               <div className="flex items-start gap-3">
                 <div className="h-12 w-12 rounded-lg overflow-hidden bg-muted flex-shrink-0">
@@ -197,6 +219,11 @@ export default function AdminCategories() {
         )}
       </div>
 
+      {/* Mobile pagination */}
+      <div className="md:hidden mb-20">
+        <AdminPagination page={page} totalPages={totalPages} totalItems={filteredCategories.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+      </div>
+
       {/* Desktop Table */}
       <div className="hidden md:block">
         <div className="rounded-lg border bg-card">
@@ -217,14 +244,14 @@ export default function AdminCategories() {
                     <TableCell colSpan={5}><Skeleton className="h-10 w-full" /></TableCell>
                   </TableRow>
                 ))
-              ) : categories.length === 0 ? (
+              ) : paginatedCategories.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    No categories yet
+                    {search ? "No categories found" : "No categories yet"}
                   </TableCell>
                 </TableRow>
               ) : (
-                categories.map((category) => (
+                paginatedCategories.map((category) => (
                   <TableRow key={category.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -275,6 +302,7 @@ export default function AdminCategories() {
             </TableBody>
           </Table>
         </div>
+        <AdminPagination page={page} totalPages={totalPages} totalItems={filteredCategories.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </div>
     </AdminLayout>
   );

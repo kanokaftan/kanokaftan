@@ -17,14 +17,20 @@ const authSchema = z.object({
 });
 
 type AuthFormData = z.infer<typeof authSchema>;
+type AuthMode = "login" | "register" | "forgot" | "reset";
 
 export default function AuthPage() {
   const [searchParams] = useSearchParams();
-  const [mode, setMode] = useState<"login" | "register">(
-    searchParams.get("mode") === "register" ? "register" : "login"
-  );
+  const [mode, setMode] = useState<AuthMode>(() => {
+    if (searchParams.get("mode") === "register") return "register";
+    if (typeof window !== "undefined" && window.location.hash.includes("type=recovery")) return "reset";
+    return "login";
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSent, setForgotSent] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
   const redirectTo = searchParams.get("redirect") || "/";
@@ -112,6 +118,40 @@ export default function AuthPage() {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail) return;
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: `${window.location.origin}/auth?mode=reset`,
+      });
+      if (error) throw error;
+      setForgotSent(true);
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message || "Could not send reset email.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword || newPassword.length < 6) return;
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast({ title: "Password updated!", description: "You can now sign in with your new password." });
+      setMode("login");
+      setNewPassword("");
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message || "Could not update password.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen">
       {/* Left Panel - Form */}
@@ -126,14 +166,95 @@ export default function AuthPage() {
           </Link>
 
           <h1 className="font-display text-2xl font-bold text-primary">
-            {mode === "login" ? "Welcome back" : "Create your account"}
+            {mode === "login" ? "Welcome back" :
+             mode === "register" ? "Create your account" :
+             mode === "forgot" ? "Reset your password" :
+             "Set new password"}
           </h1>
           <p className="mt-2 text-muted-foreground">
-            {mode === "login"
-              ? "Sign in to access your account"
-              : "Join Kano Kaftan to shop traditional attire"}
+            {mode === "login" ? "Sign in to access your account" :
+             mode === "register" ? "Join Kano Kaftan to shop traditional attire" :
+             mode === "forgot" ? "Enter your email and we'll send a reset link" :
+             "Choose a new password for your account"}
           </p>
 
+          {/* Forgot password form */}
+          {mode === "forgot" && (
+            <div className="mt-8">
+              {forgotSent ? (
+                <div className="rounded-xl bg-green-50 border border-green-200 p-4 text-center">
+                  <p className="font-medium text-green-800 mb-1">Check your email</p>
+                  <p className="text-sm text-green-700">We sent a password reset link to <strong>{forgotEmail}</strong>.</p>
+                  <button
+                    type="button"
+                    onClick={() => { setMode("login"); setForgotSent(false); }}
+                    className="mt-4 text-sm font-medium text-primary hover:underline"
+                  >
+                    Back to sign in
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleForgotPassword} className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="forgot-email">Email address</Label>
+                    <Input
+                      id="forgot-email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Send Reset Link
+                  </Button>
+                  <p className="text-center text-sm text-muted-foreground">
+                    <button type="button" className="font-medium text-primary hover:underline" onClick={() => setMode("login")}>
+                      Back to sign in
+                    </button>
+                  </p>
+                </form>
+              )}
+            </div>
+          )}
+
+          {/* Reset password form */}
+          {mode === "reset" && (
+            <form onSubmit={handleResetPassword} className="mt-8 space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">New Password</Label>
+                <div className="relative">
+                  <Input
+                    id="new-password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Min. 6 characters"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    minLength={6}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                  </Button>
+                </div>
+              </div>
+              <Button type="submit" className="w-full" disabled={isLoading || newPassword.length < 6}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Set New Password
+              </Button>
+            </form>
+          )}
+
+          {/* Login / Register form */}
+          {(mode === "login" || mode === "register") && (
           <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-6">
             {mode === "register" && (
               <div className="space-y-2">
@@ -187,6 +308,18 @@ export default function AuthPage() {
               )}
             </div>
 
+            {mode === "login" && (
+              <div className="text-right -mt-2">
+                <button
+                  type="button"
+                  className="text-sm text-muted-foreground hover:text-primary hover:underline"
+                  onClick={() => setMode("forgot")}
+                >
+                  Forgot password?
+                </button>
+              </div>
+            )}
+
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {mode === "login" ? "Sign In" : "Create Account"}
@@ -218,6 +351,7 @@ export default function AuthPage() {
               </>
             )}
           </p>
+          )}
         </div>
       </div>
 

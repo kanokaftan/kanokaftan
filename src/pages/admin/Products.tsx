@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useAdminProducts } from "@/hooks/useAdminProducts";
+import { AdminPagination } from "@/components/admin/AdminPagination";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,14 +13,22 @@ import { Search, Star, Trash2, Plus, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Link, useNavigate } from "react-router-dom";
 
+const PAGE_SIZE = 20;
+
 export default function AdminProducts() {
   const { products, isLoading, toggleFeatured, toggleActive, deleteProduct } = useAdminProducts();
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const navigate = useNavigate();
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  const totalPages = Math.ceil(filteredProducts.length / PAGE_SIZE);
+  const paginatedProducts = filteredProducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  useEffect(() => { setPage(1); }, [search]);
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", minimumFractionDigits: 0 }).format(amount);
@@ -81,7 +90,7 @@ export default function AdminProducts() {
             </Button>
           </div>
         ) : (
-          filteredProducts.map((product) => (
+          paginatedProducts.map((product) => (
             <div key={product.id} className="bg-card rounded-lg p-4 border">
               <div className="flex gap-3">
                 <div className="h-16 w-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
@@ -147,6 +156,11 @@ export default function AdminProducts() {
         )}
       </div>
 
+      {/* Mobile pagination */}
+      <div className="md:hidden mb-20">
+        <AdminPagination page={page} totalPages={totalPages} totalItems={filteredProducts.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+      </div>
+
       {/* Desktop Table */}
       <div className="hidden md:block rounded-lg border bg-card">
         <Table>
@@ -175,7 +189,7 @@ export default function AdminProducts() {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredProducts.map((product) => (
+              paginatedProducts.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -229,6 +243,9 @@ export default function AdminProducts() {
             )}
           </TableBody>
         </Table>
+      </div>
+      <div className="hidden md:block">
+        <AdminPagination page={page} totalPages={totalPages} totalItems={filteredProducts.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </div>
     </AdminLayout>
   );

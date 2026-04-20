@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { AdminPagination } from "@/components/admin/AdminPagination";
 import { useAdminOrders } from "@/hooks/useAdminOrders";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,14 +12,17 @@ import { Search } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
+const PAGE_SIZE = 20;
+
 export default function AdminOrders() {
   const { orders, isLoading, updateOrderStatus } = useAdminOrders();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
+  const [page, setPage] = useState(1);
 
   const filteredOrders = orders.filter(order => {
-    const matchesSearch = 
+    const matchesSearch =
       order.customer?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
       order.customer?.email.toLowerCase().includes(search.toLowerCase()) ||
       order.id.toLowerCase().includes(search.toLowerCase());
@@ -26,6 +30,11 @@ export default function AdminOrders() {
     const matchesPayment = paymentFilter === "all" || order.payment_status === paymentFilter;
     return matchesSearch && matchesStatus && matchesPayment;
   });
+
+  const totalPages = Math.ceil(filteredOrders.length / PAGE_SIZE);
+  const paginatedOrders = filteredOrders.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  useEffect(() => { setPage(1); }, [search, statusFilter, paymentFilter]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-NG", {
@@ -107,14 +116,19 @@ export default function AdminOrders() {
         </Select>
       </div>
 
+      {/* Result count */}
+      {!isLoading && (
+        <p className="text-sm text-muted-foreground mb-2">{filteredOrders.length} order{filteredOrders.length !== 1 ? "s" : ""}</p>
+      )}
+
       {/* Mobile View */}
-      <div className="md:hidden space-y-3 mb-20">
+      <div className="md:hidden space-y-3">
         {isLoading ? (
           [...Array(5)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)
         ) : filteredOrders.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">No orders found</p>
         ) : (
-          filteredOrders.map((order) => (
+          paginatedOrders.map((order) => (
             <div key={order.id} className="bg-card rounded-lg p-4 border">
               <div className="flex items-start justify-between mb-3">
                 <div>
@@ -153,6 +167,11 @@ export default function AdminOrders() {
         )}
       </div>
 
+      {/* Mobile pagination */}
+      <div className="md:hidden mb-20">
+        <AdminPagination page={page} totalPages={totalPages} totalItems={filteredOrders.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+      </div>
+
       {/* Desktop Table */}
       <div className="hidden md:block">
         <div className="rounded-lg border bg-card">
@@ -183,7 +202,7 @@ export default function AdminOrders() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredOrders.map((order) => (
+                paginatedOrders.map((order) => (
                   <TableRow key={order.id}>
                     <TableCell className="font-mono text-sm">#{order.id.slice(0, 8)}</TableCell>
                     <TableCell>
@@ -224,6 +243,7 @@ export default function AdminOrders() {
             </TableBody>
           </Table>
         </div>
+        <AdminPagination page={page} totalPages={totalPages} totalItems={filteredOrders.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </div>
     </AdminLayout>
   );
