@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Send, ArrowLeft, MessageCircle } from "lucide-react";
+import { Send, ArrowLeft, MessageCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -20,9 +20,10 @@ interface Chat {
   created_at: string;
   updated_at: string;
   customer_id: string;
-  profiles: { full_name: string | null; email: string; phone: string | null } | null;
-  last_message?: string;
-  unread?: boolean;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string | null;
+  last_message: string;
 }
 
 export default function AdminChats() {
@@ -35,6 +36,7 @@ export default function AdminChats() {
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [loadingChats, setLoadingChats] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const messageChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const chatChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -46,20 +48,20 @@ export default function AdminChats() {
   useEffect(() => {
     if (!isLoading && isAdmin) {
       loadChats();
-      subscribeToNewChats();
+      subscribeToChatUpdates();
     }
     return () => {
-      if (chatChannelRef.current) supabase.removeChannel(chatChannelRef.current);
-      if (messageChannelRef.current) supabase.removeChannel(messageChannelRef.current);
+      chatChannelRef.current && supabase.removeChannel(chatChannelRef.current);
+      messageChannelRef.current && supabase.removeChannel(messageChannelRef.current);
     };
   }, [isAdmin, isLoading]);
 
-  // Pre-select a chat when navigating from the dashboard
+  // Pre-select chat from dashboard navigation
   useEffect(() => {
-    const preselectedId = (location.state as { chatId?: string } | null)?.chatId;
-    if (preselectedId && chats.length > 0 && !selectedChat) {
-      const chat = chats.find((c) => c.id === preselectedId);
-      if (chat) setSelectedChat(chat);
+    const preId = (location.state as { chatId?: string } | null)?.chatId;
+    if (preId && chats.length > 0 && !selectedChat) {
+      const found = chats.find((c) => c.id === preId);
+      if (found) setSelectedChat(found);
     }
   }, [chats, location.state]);
 
@@ -82,101 +84,100 @@ export default function AdminChats() {
 
   const loadChats = async () => {
     setLoadingChats(true);
-    try {
-      // Step 1: get chats
-      const { data: chatsData, error } = await supabase
-        .from("chats")
-        .select("*")
-        .order("updated_at", { ascending: false });
+    setError(null);
 
-      if (error) {
-        console.error("Error loading chats:", error);
-        setLoadingChats(false);
-        return;
-      }
+    // Step 1: fetch all chats
+    const { data: chatsData, error: chatsError } = await supabase
+      .from("chats")
+      .select("id, customer_id, status, created_at, updated_at")
+      .order("updated_at", { ascending: false });
 
-      if (!chatsData || chatsData.length === 0) {
-        setChats([]);
-        setLoadingChats(false);
-        return;
-      }
-
-      // Step 2: fetch profiles for all customer_ids
-      const customerIds = [...new Set(chatsData.map((c: any) => c.customer_id).filter(Boolean))];
-      const { data: profilesData } = await supabase
-        .from("profiles")
-        .select("id, full_name, email, phone")
-        .in("id", customerIds);
-
-      const profileMap = new Map((profilesData || []).map((p: any) => [p.id, p]));
-
-      // Step 3: fetch last message for each chat
-      const chatsWithDetails = await Promise.all(
-        chatsData.map(async (chat: any) => {
-          const { data: msgs } = await supabase
-            .from("messages")
-            .select("content")
-            .eq("chat_id", chat.id)
-            .order("created_at", { ascending: false })
-            .limit(1);
-          const profile = profileMap.get(chat.customer_id) || null;
-          return {
-            ...chat,
-            profiles: profile,
-            last_message: msgs?.[0]?.content || "No messages yet",
-          };
-        })
-      );
-      setChats(chatsWithDetails as Chat[]);
-    } finally {
+    if (chatsError) {
+      console.error("Chats error:", chatsError);
+      setError(`Cannot load chats: ${chatsError.message}. Run the RLS fix SQL in Supabase dashboard.`);
       setLoadingChats(false);
+      return;
     }
+
+    if (!chatsData || chatsData.length === 0) {
+      setChats([]);
+      setLoadingChats(false);
+      return;
+    }
+
+    // Step 2: fetch customer profiles
+    const ids = [...new Set(chatsData.map((c) => c.customer_id).filter(Boolean))];
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, email, phone")
+      .in("id", ids);
+
+    const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
+
+    // Step 3: fetch last message per chat
+    const enriched = await Promise.all(
+      chatsData.map(async (chat) => {
+        const { data: msgs } = await supabase
+          .from("messages")
+          .select("content")
+          .eq("chat_id", chat.id)
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        const profile = profileMap.get(chat.customer_id);
+        return {
+          id: chat.id,
+          status: chat.status,
+          created_at: chat.created_at,
+          updated_at: chat.updated_at,
+          customer_id: chat.customer_id,
+          customerName: profile?.full_name || "Customer",
+          customerEmail: profile?.email || "",
+          customerPhone: profile?.phone || null,
+          last_message: msgs?.[0]?.content || "No messages yet",
+        } as Chat;
+      })
+    );
+
+    setChats(enriched);
+    setLoadingChats(false);
   };
 
-  const subscribeToNewChats = () => {
-    if (chatChannelRef.current) supabase.removeChannel(chatChannelRef.current);
-    const channel = supabase
-      .channel("admin-new-chats")
-      .on("postgres_changes", { event: "*", schema: "public", table: "chats" }, () => {
-        loadChats();
-      })
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, () => {
-        loadChats();
-      })
+  const subscribeToChatUpdates = () => {
+    chatChannelRef.current && supabase.removeChannel(chatChannelRef.current);
+    chatChannelRef.current = supabase
+      .channel("admin-chats-feed")
+      .on("postgres_changes", { event: "*", schema: "public", table: "chats" }, loadChats)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, loadChats)
       .subscribe();
-    chatChannelRef.current = channel;
   };
 
   const loadMessages = useCallback(async (chatId: string) => {
     const { data, error } = await supabase
       .from("messages")
-      .select("*")
+      .select("id, content, is_admin, sender_id, created_at")
       .eq("chat_id", chatId)
       .order("created_at", { ascending: true });
-    if (error) console.error("Error loading messages:", error);
+
+    if (error) console.error("Messages error:", error);
     if (data) setMessages(data);
   }, []);
 
   const subscribeToMessages = useCallback((chatId: string) => {
-    if (messageChannelRef.current) {
-      supabase.removeChannel(messageChannelRef.current);
-      messageChannelRef.current = null;
-    }
-    const channel = supabase
-      .channel(`admin-messages-${chatId}`)
-      .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "messages",
-        filter: `chat_id=eq.${chatId}`,
-      }, (payload) => {
-        setMessages((prev) => {
-          if (prev.find((m) => m.id === payload.new.id)) return prev;
-          return [...prev, payload.new as Message];
-        });
-      })
+    messageChannelRef.current && supabase.removeChannel(messageChannelRef.current);
+    messageChannelRef.current = supabase
+      .channel(`admin-msg-${chatId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages", filter: `chat_id=eq.${chatId}` },
+        (payload) => {
+          setMessages((prev) => {
+            if (prev.find((m) => m.id === payload.new.id)) return prev;
+            return [...prev, payload.new as Message];
+          });
+        }
+      )
       .subscribe();
-    messageChannelRef.current = channel;
   }, []);
 
   const sendMessage = async () => {
@@ -185,23 +186,27 @@ export default function AdminChats() {
     setNewMessage("");
     setSending(true);
     try {
-      await supabase.from("messages").insert({
+      const { error: msgError } = await supabase.from("messages").insert({
         chat_id: selectedChat.id,
         sender_id: user!.id,
         content,
         is_admin: true,
       });
+      if (msgError) throw msgError;
+
       await supabase
         .from("chats")
         .update({ updated_at: new Date().toISOString() })
         .eq("id", selectedChat.id);
+
+      // Notify customer
       await supabase.from("notifications").insert({
         user_id: selectedChat.customer_id,
         title: "New message from Kano Kaftan",
         message: content,
       });
-    } catch (error) {
-      console.error("Error sending message:", error);
+    } catch (err: any) {
+      console.error("Send error:", err);
       setNewMessage(content);
     } finally {
       setSending(false);
@@ -215,24 +220,23 @@ export default function AdminChats() {
     setMessages([]);
   };
 
-  const formatTime = (date: string) =>
-    new Date(date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const fmt = (d: string) =>
+    new Date(d).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-  const formatDate = (date: string) => {
-    const d = new Date(date);
-    const now = new Date();
-    const days = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
-    if (days === 0) return formatTime(date);
-    if (days === 1) return "Yesterday";
-    return d.toLocaleDateString([], { day: "numeric", month: "short" });
+  const fmtDate = (d: string) => {
+    const diff = Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
+    if (diff === 0) return fmt(d);
+    if (diff === 1) return "Yesterday";
+    return new Date(d).toLocaleDateString([], { day: "numeric", month: "short" });
   };
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
+      {/* Sidebar */}
       <div className={`w-full md:w-80 bg-white border-r flex flex-col ${selectedChat ? "hidden md:flex" : "flex"}`}>
-        <div className="p-4 border-b bg-white">
+        <div className="p-4 border-b">
           <div className="flex items-center gap-2 mb-1">
-            <button onClick={() => navigate("/admin/dashboard")} className="p-1">
+            <button onClick={() => navigate("/admin/dashboard")} className="p-1 hover:bg-gray-100 rounded">
               <ArrowLeft className="w-5 h-5" />
             </button>
             <h1 className="font-bold text-lg">Customer Chats</h1>
@@ -246,13 +250,24 @@ export default function AdminChats() {
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900" />
             </div>
           )}
-          {!loadingChats && chats.length === 0 && (
+
+          {error && (
+            <div className="m-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-red-700">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {!loadingChats && !error && chats.length === 0 && (
             <div className="text-center mt-16 px-4">
               <MessageCircle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-400 text-sm font-medium">No chats yet</p>
               <p className="text-gray-300 text-xs mt-1">Customer chats will appear here</p>
             </div>
           )}
+
           {chats.map((chat) => (
             <div
               key={chat.id}
@@ -264,17 +279,15 @@ export default function AdminChats() {
               <div className="flex items-start justify-between mb-1">
                 <div className="flex items-center gap-2">
                   <div className="w-9 h-9 rounded-full bg-gray-900 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
-                    {(chat.profiles?.full_name || chat.profiles?.email || "?")[0].toUpperCase()}
+                    {(chat.customerName || "?")[0].toUpperCase()}
                   </div>
                   <div>
-                    <p className="font-medium text-sm leading-tight">
-                      {chat.profiles?.full_name || "Customer"}
-                    </p>
-                    <p className="text-xs text-gray-400">{chat.profiles?.phone || chat.profiles?.email}</p>
+                    <p className="font-medium text-sm">{chat.customerName}</p>
+                    <p className="text-xs text-gray-400">{chat.customerPhone || chat.customerEmail}</p>
                   </div>
                 </div>
                 <div className="text-right flex-shrink-0 ml-2">
-                  <p className="text-xs text-gray-400">{formatDate(chat.updated_at || chat.created_at)}</p>
+                  <p className="text-xs text-gray-400">{fmtDate(chat.updated_at || chat.created_at)}</p>
                   <span className={`text-xs px-1.5 py-0.5 rounded-full mt-1 inline-block ${
                     chat.status === "open" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
                   }`}>
@@ -288,21 +301,25 @@ export default function AdminChats() {
         </div>
       </div>
 
+      {/* Chat window */}
       {selectedChat ? (
         <div className="flex-1 flex flex-col min-h-0">
           <div className="bg-white border-b px-4 py-3 flex items-center gap-3 flex-shrink-0">
-            <button onClick={() => { setSelectedChat(null); setMessages([]); }} className="md:hidden p-1">
+            <button
+              onClick={() => { setSelectedChat(null); setMessages([]); }}
+              className="md:hidden p-1 hover:bg-gray-100 rounded"
+            >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div className="w-9 h-9 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold flex-shrink-0">
-              {(selectedChat.profiles?.full_name || selectedChat.profiles?.email || "?")[0].toUpperCase()}
+              {(selectedChat.customerName || "?")[0].toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm">{selectedChat.profiles?.full_name || "Customer"}</p>
-              <p className="text-xs text-gray-500 truncate">{selectedChat.profiles?.phone || selectedChat.profiles?.email}</p>
+              <p className="font-semibold text-sm">{selectedChat.customerName}</p>
+              <p className="text-xs text-gray-500">{selectedChat.customerPhone || selectedChat.customerEmail}</p>
             </div>
             {selectedChat.status === "open" && (
-              <Button size="sm" variant="outline" onClick={() => closeChat(selectedChat.id)} className="text-xs flex-shrink-0">
+              <Button size="sm" variant="outline" onClick={() => closeChat(selectedChat.id)} className="text-xs">
                 Close chat
               </Button>
             )}
@@ -316,7 +333,7 @@ export default function AdminChats() {
               <div key={msg.id} className={`flex ${msg.is_admin ? "justify-end" : "justify-start"}`}>
                 {!msg.is_admin && (
                   <div className="w-7 h-7 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-xs font-bold mr-2 flex-shrink-0 self-end">
-                    {(selectedChat.profiles?.full_name || "C")[0].toUpperCase()}
+                    {(selectedChat.customerName || "C")[0].toUpperCase()}
                   </div>
                 )}
                 <div className={`max-w-[75%] rounded-2xl px-4 py-2 text-sm ${
@@ -326,7 +343,7 @@ export default function AdminChats() {
                 }`}>
                   {msg.content}
                   <p className={`text-xs mt-1 ${msg.is_admin ? "text-gray-300" : "text-gray-400"}`}>
-                    {formatTime(msg.created_at)}
+                    {fmt(msg.created_at)}
                   </p>
                 </div>
               </div>
