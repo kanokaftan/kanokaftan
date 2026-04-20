@@ -78,24 +78,31 @@ export default function AdminDashboard() {
         supabase.from("orders").select("id", { count: "exact" }),
       ]);
 
-      // Recent chats with last message
+      // Recent chats - fetch profiles separately to avoid FK join issues
       const { data: recentChatsData } = await supabase
         .from("chats")
-        .select(`*, profiles(full_name, email)`)
+        .select("*")
         .order("updated_at", { ascending: false })
         .limit(5);
 
+      const recentChatCustomerIds = [...new Set((recentChatsData || []).map((c: any) => c.customer_id).filter(Boolean))];
+      const { data: chatProfiles } = recentChatCustomerIds.length > 0
+        ? await supabase.from("profiles").select("id, full_name, email").in("id", recentChatCustomerIds)
+        : { data: [] };
+      const chatProfileMap = new Map((chatProfiles || []).map((p: any) => [p.id, p]));
+
       const recentChats = await Promise.all(
-        (recentChatsData || []).map(async (chat) => {
+        (recentChatsData || []).map(async (chat: any) => {
           const { data: msgs } = await supabase
             .from("messages")
             .select("content")
             .eq("chat_id", chat.id)
             .order("created_at", { ascending: false })
             .limit(1);
+          const profile = chatProfileMap.get(chat.customer_id);
           return {
             id: chat.id,
-            customer_name: chat.profiles?.full_name || chat.profiles?.email || "Customer",
+            customer_name: profile?.full_name || profile?.email || "Customer",
             last_message: msgs?.[0]?.content || "No messages",
             created_at: chat.updated_at || chat.created_at,
             status: chat.status,
@@ -103,20 +110,29 @@ export default function AdminDashboard() {
         })
       );
 
-      // Recent orders
+      // Recent orders - fetch profiles separately
       const { data: recentOrdersData } = await supabase
         .from("orders")
-        .select(`*, profiles(full_name, email)`)
+        .select("id, user_id, status, total, created_at")
         .order("created_at", { ascending: false })
         .limit(5);
 
-      const recentOrders = (recentOrdersData || []).map((order) => ({
-        id: order.id,
-        customer_name: order.profiles?.full_name || order.profiles?.email || "Customer",
-        status: order.status,
-        total: order.total,
-        created_at: order.created_at,
-      }));
+      const orderUserIds = [...new Set((recentOrdersData || []).map((o: any) => o.user_id).filter(Boolean))];
+      const { data: orderProfiles } = orderUserIds.length > 0
+        ? await supabase.from("profiles").select("id, full_name, email").in("id", orderUserIds)
+        : { data: [] };
+      const orderProfileMap = new Map((orderProfiles || []).map((p: any) => [p.id, p]));
+
+      const recentOrders = (recentOrdersData || []).map((order: any) => {
+        const profile = orderProfileMap.get(order.user_id);
+        return {
+          id: order.id,
+          customer_name: profile?.full_name || profile?.email || "Customer",
+          status: order.status,
+          total: order.total,
+          created_at: order.created_at,
+        };
+      });
 
       const { count: pendingCount } = await supabase
         .from("orders")

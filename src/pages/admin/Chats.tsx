@@ -82,32 +82,55 @@ export default function AdminChats() {
 
   const loadChats = async () => {
     setLoadingChats(true);
-    const { data, error } = await supabase
-      .from("chats")
-      .select(`*, profiles(full_name, email, phone)`)
-      .order("updated_at", { ascending: false });
+    try {
+      // Step 1: get chats
+      const { data: chatsData, error } = await supabase
+        .from("chats")
+        .select("*")
+        .order("updated_at", { ascending: false });
 
-    if (error) {
-      console.error("Error loading chats:", error);
-      setLoadingChats(false);
-      return;
-    }
+      if (error) {
+        console.error("Error loading chats:", error);
+        setLoadingChats(false);
+        return;
+      }
 
-    if (data) {
-      const chatsWithLastMessage = await Promise.all(
-        data.map(async (chat) => {
+      if (!chatsData || chatsData.length === 0) {
+        setChats([]);
+        setLoadingChats(false);
+        return;
+      }
+
+      // Step 2: fetch profiles for all customer_ids
+      const customerIds = [...new Set(chatsData.map((c: any) => c.customer_id).filter(Boolean))];
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, phone")
+        .in("id", customerIds);
+
+      const profileMap = new Map((profilesData || []).map((p: any) => [p.id, p]));
+
+      // Step 3: fetch last message for each chat
+      const chatsWithDetails = await Promise.all(
+        chatsData.map(async (chat: any) => {
           const { data: msgs } = await supabase
             .from("messages")
             .select("content")
             .eq("chat_id", chat.id)
             .order("created_at", { ascending: false })
             .limit(1);
-          return { ...chat, last_message: msgs?.[0]?.content || "No messages yet" };
+          const profile = profileMap.get(chat.customer_id) || null;
+          return {
+            ...chat,
+            profiles: profile,
+            last_message: msgs?.[0]?.content || "No messages yet",
+          };
         })
       );
-      setChats(chatsWithLastMessage as Chat[]);
+      setChats(chatsWithDetails as Chat[]);
+    } finally {
+      setLoadingChats(false);
     }
-    setLoadingChats(false);
   };
 
   const subscribeToNewChats = () => {
