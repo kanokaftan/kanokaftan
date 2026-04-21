@@ -158,7 +158,7 @@ export default function AdminProductForm() {
         const slug = generateSlug(formData.name);
         const { data: newProduct, error } = await supabase
           .from("products")
-          .insert({ ...productPayload, slug, vendor_id: user.id })
+          .insert({ ...productPayload, slug })
           .select()
           .single();
         if (error) throw error;

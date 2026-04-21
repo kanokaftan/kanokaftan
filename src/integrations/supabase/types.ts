@@ -199,6 +199,8 @@ export type Database = {
           content: string
           is_admin: boolean
           created_at: string
+          message_type: string
+          media_url: string | null
         }
         Insert: {
           id?: string
@@ -207,6 +209,8 @@ export type Database = {
           content: string
           is_admin?: boolean
           created_at?: string
+          message_type?: string
+          media_url?: string | null
         }
         Update: {
           id?: string
@@ -215,6 +219,8 @@ export type Database = {
           content?: string
           is_admin?: boolean
           created_at?: string
+          message_type?: string
+          media_url?: string | null
         }
         Relationships: [
           {

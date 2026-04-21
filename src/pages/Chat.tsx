@@ -2,11 +2,12 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Send, ArrowLeft, ShoppingBag, ChevronDown } from "lucide-react";
+import { Send, ArrowLeft, ShoppingBag, ChevronDown, Mic, Square, ImagePlus, X, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { notifyRole } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface Message {
   id: string;
@@ -14,6 +15,8 @@ interface Message {
   is_admin: boolean;
   sender_id: string;
   created_at: string;
+  message_type?: string;
+  media_url?: string | null;
 }
 
 interface Chat {
@@ -37,6 +40,23 @@ function TypingDots() {
   );
 }
 
+function VoicePlayer({ src, isAdmin }: { src: string; isAdmin: boolean }) {
+  return (
+    <div className="flex items-center gap-2 py-0.5">
+      <Mic className="h-3.5 w-3.5 shrink-0 opacity-60" />
+      <audio
+        controls
+        src={src}
+        className="h-8"
+        style={{ maxWidth: 180 }}
+      />
+    </div>
+  );
+}
+
+const formatDuration = (secs: number) =>
+  `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
+
 export default function Chat() {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -50,12 +70,27 @@ export default function Chat() {
   const [loading, setLoading] = useState(true);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [adminTyping, setAdminTyping] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  // Voice recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioPreviewUrl, setAudioPreviewUrl] = useState<string | null>(null);
+
+  // Image state
+  const [imagePreview, setImagePreview] = useState<{ file: File; url: string } | null>(null);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isLoading && !user) navigate("/auth");
@@ -66,6 +101,9 @@ export default function Chat() {
     return () => {
       channelRef.current && supabase.removeChannel(channelRef.current);
       typingChannelRef.current && supabase.removeChannel(typingChannelRef.current);
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+      if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+      if (imagePreview) URL.revokeObjectURL(imagePreview.url);
     };
   }, [user]);
 
@@ -75,12 +113,10 @@ export default function Chat() {
     }
   }, [messages, adminTyping]);
 
-  // Track scroll position for "jump to latest" button
   const handleScroll = () => {
     const el = scrollRef.current;
     if (!el) return;
-    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    setShowScrollBtn(distFromBottom > 120);
+    setShowScrollBtn(el.scrollHeight - el.scrollTop - el.clientHeight > 120);
   };
 
   const scrollToBottom = () => {
@@ -117,9 +153,7 @@ export default function Chat() {
   }, []);
 
   const subscribeToTyping = useCallback((chatId: string) => {
-    if (typingChannelRef.current) {
-      supabase.removeChannel(typingChannelRef.current);
-    }
+    if (typingChannelRef.current) supabase.removeChannel(typingChannelRef.current);
     typingChannelRef.current = supabase
       .channel(`typing:${chatId}`)
       .on("broadcast", { event: "typing" }, (payload) => {
@@ -160,9 +194,7 @@ export default function Chat() {
           await supabase.from("messages").insert({
             chat_id: newChat.id,
             sender_id: user!.id,
-            content: productId
-              ? "Hi! I'm interested in ordering this product."
-              : "Hi! I'd like to place an order.",
+            content: productId ? "Hi! I'm interested in ordering this product." : "Hi! I'd like to place an order.",
             is_admin: false,
           });
           await loadMessages(newChat.id);
@@ -188,8 +220,8 @@ export default function Chat() {
         sender_id: user!.id,
         content,
         is_admin: false,
+        message_type: "text",
       });
-
       notifyRole("admin", {
         title: "New customer message",
         message: content,
@@ -203,6 +235,116 @@ export default function Chat() {
       setNewMessage(content);
     } finally {
       setSending(false);
+    }
+  };
+
+  // ── Voice recording ───────────────────────────────────────────────
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
+      const recorder = new MediaRecorder(stream, { mimeType });
+      audioChunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+      recorder.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, { type: mimeType });
+        setAudioBlob(blob);
+        setAudioPreviewUrl(URL.createObjectURL(blob));
+        stream.getTracks().forEach((t) => t.stop());
+      };
+
+      recorder.start(100);
+      mediaRecorderRef.current = recorder;
+      setIsRecording(true);
+      setRecordingTime(0);
+      recordingTimerRef.current = setInterval(() => setRecordingTime((t) => t + 1), 1000);
+    } catch {
+      toast.error("Microphone access denied");
+    }
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+  };
+
+  const discardRecording = () => {
+    setAudioBlob(null);
+    if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl);
+    setAudioPreviewUrl(null);
+    setRecordingTime(0);
+  };
+
+  const sendVoiceNote = async () => {
+    if (!audioBlob || !chat) return;
+    setUploading(true);
+    try {
+      const ext = audioBlob.type.includes("mp4") ? "mp4" : "webm";
+      const fileName = `voice/${chat.id}/${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from("chat-media").upload(fileName, audioBlob);
+      if (uploadErr) throw uploadErr;
+      const { data: { publicUrl } } = supabase.storage.from("chat-media").getPublicUrl(fileName);
+
+      await supabase.from("messages").insert({
+        chat_id: chat.id,
+        sender_id: user!.id,
+        content: "",
+        is_admin: false,
+        message_type: "voice",
+        media_url: publicUrl,
+      });
+      notifyRole("admin", { title: "New voice message", message: "Customer sent a voice note", type: "info", category: "general", actionUrl: "/admin/chats", metadata: { chat_id: chat.id } }).catch(() => {});
+      discardRecording();
+    } catch {
+      toast.error("Failed to send voice note");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // ── Image upload ──────────────────────────────────────────────────
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { toast.error("Image must be under 10 MB"); return; }
+    if (imagePreview) URL.revokeObjectURL(imagePreview.url);
+    setImagePreview({ file, url: URL.createObjectURL(file) });
+    e.target.value = "";
+  };
+
+  const discardImage = () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview.url);
+    setImagePreview(null);
+  };
+
+  const sendImage = async () => {
+    if (!imagePreview || !chat) return;
+    setUploading(true);
+    try {
+      const ext = imagePreview.file.name.split(".").pop() || "jpg";
+      const fileName = `images/${chat.id}/${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from("chat-media").upload(fileName, imagePreview.file);
+      if (uploadErr) throw uploadErr;
+      const { data: { publicUrl } } = supabase.storage.from("chat-media").getPublicUrl(fileName);
+
+      await supabase.from("messages").insert({
+        chat_id: chat.id,
+        sender_id: user!.id,
+        content: "",
+        is_admin: false,
+        message_type: "image",
+        media_url: publicUrl,
+      });
+      notifyRole("admin", { title: "New image message", message: "Customer sent an image", type: "info", category: "general", actionUrl: "/admin/chats", metadata: { chat_id: chat.id } }).catch(() => {});
+      discardImage();
+    } catch {
+      toast.error("Failed to send image");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -224,24 +366,24 @@ export default function Chat() {
     );
   }
 
-  // Group messages: consecutive same-sender within 60s = same group
   const grouped = messages.map((msg, i) => {
     const prev = messages[i - 1];
     const isGrouped =
       prev &&
       prev.is_admin === msg.is_admin &&
+      (msg.message_type || "text") === (prev.message_type || "text") &&
       new Date(msg.created_at).getTime() - new Date(prev.created_at).getTime() < 60000;
     return { ...msg, isGrouped };
   });
+
+  const isClosed = chat?.status === "closed";
+  const canSend = !isClosed && !uploading;
 
   return (
     <div className="flex flex-col h-screen bg-muted/30">
       {/* Header */}
       <div className="bg-card border-b px-4 py-3 flex items-center gap-3 shadow-sm shrink-0">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-1.5 rounded-full hover:bg-muted transition-colors"
-        >
+        <button onClick={() => navigate(-1)} className="p-1.5 rounded-full hover:bg-muted transition-colors">
           <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
         <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center shrink-0">
@@ -288,7 +430,7 @@ export default function Chat() {
           </div>
         )}
 
-        {grouped.map((msg, i) => (
+        {grouped.map((msg) => (
           <div
             key={msg.id}
             className={cn(
@@ -307,18 +449,29 @@ export default function Chat() {
 
             <div
               className={cn(
-                "max-w-[78%] px-3.5 py-2 text-sm leading-relaxed",
+                "max-w-[78%] text-sm leading-relaxed",
+                msg.message_type === "image" ? "p-1 rounded-2xl overflow-hidden" : "px-3.5 py-2",
                 msg.is_admin
                   ? "bg-card text-foreground shadow-sm border"
                   : "bg-primary text-primary-foreground",
-                // Bubble shaping based on grouping
                 msg.is_admin
                   ? msg.isGrouped ? "rounded-2xl rounded-tl-sm" : "rounded-2xl rounded-bl-sm"
                   : msg.isGrouped ? "rounded-2xl rounded-tr-sm" : "rounded-2xl rounded-br-sm"
               )}
             >
-              {msg.content}
-              {!msg.isGrouped && (
+              {msg.message_type === "voice" && msg.media_url ? (
+                <VoicePlayer src={msg.media_url} isAdmin={msg.is_admin} />
+              ) : msg.message_type === "image" && msg.media_url ? (
+                <img
+                  src={msg.media_url}
+                  alt="Shared image"
+                  onClick={() => setLightboxSrc(msg.media_url!)}
+                  className="max-w-[220px] max-h-[200px] object-cover cursor-pointer hover:opacity-90 transition-opacity rounded-xl"
+                />
+              ) : (
+                msg.content
+              )}
+              {!msg.isGrouped && msg.message_type !== "image" && (
                 <p className={cn("text-[10px] mt-1", msg.is_admin ? "text-muted-foreground" : "text-primary-foreground/60")}>
                   {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </p>
@@ -327,7 +480,6 @@ export default function Chat() {
           </div>
         ))}
 
-        {/* Typing indicator */}
         {adminTyping && (
           <div className="flex justify-start mt-3 animate-in fade-in-0 slide-in-from-bottom-2 duration-200">
             <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold mr-2 shrink-0 self-end">
@@ -342,7 +494,7 @@ export default function Chat() {
         <div ref={bottomRef} />
       </div>
 
-      {/* Jump to latest button */}
+      {/* Jump to latest */}
       {showScrollBtn && (
         <button
           onClick={scrollToBottom}
@@ -352,31 +504,124 @@ export default function Chat() {
         </button>
       )}
 
-      {/* Input */}
+      {/* Input area */}
       <div className="bg-card border-t px-4 py-3 shrink-0">
-        <div className="flex items-center gap-2 bg-muted/50 rounded-2xl px-3 py-1.5 border border-border/50">
-          <Input
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder={chat?.status === "closed" ? "Chat is closed" : "Type a message..."}
-            className="flex-1 border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm px-0"
-            disabled={sending || chat?.status === "closed"}
-          />
-          <Button
-            onClick={sendMessage}
-            disabled={!newMessage.trim() || sending || chat?.status === "closed"}
-            size="icon"
-            className={cn(
-              "rounded-full h-8 w-8 shrink-0 transition-all duration-200",
-              newMessage.trim() ? "bg-primary hover:bg-primary/90 scale-100" : "bg-muted scale-90 opacity-60"
+
+        {/* Image preview strip */}
+        {imagePreview && (
+          <div className="flex items-center gap-2 mb-2 p-2 bg-muted/50 rounded-xl border animate-in slide-in-from-bottom-2 duration-200">
+            <img src={imagePreview.url} alt="" className="h-14 w-14 rounded-lg object-cover shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium truncate">{imagePreview.file.name}</p>
+              <p className="text-[10px] text-muted-foreground">{(imagePreview.file.size / 1024).toFixed(0)} KB</p>
+            </div>
+            <button onClick={discardImage} className="p-1 rounded-full hover:bg-muted transition-colors">
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+            <Button size="sm" onClick={sendImage} disabled={uploading} className="h-8 rounded-xl text-xs shrink-0">
+              {uploading ? <span className="animate-spin h-3 w-3 border-2 border-current border-t-transparent rounded-full inline-block" /> : "Send"}
+            </Button>
+          </div>
+        )}
+
+        {/* Voice preview */}
+        {audioPreviewUrl && !isRecording && (
+          <div className="flex items-center gap-2 mb-2 p-2 bg-muted/50 rounded-xl border animate-in slide-in-from-bottom-2 duration-200">
+            <Mic className="w-4 h-4 text-primary shrink-0" />
+            <audio controls src={audioPreviewUrl} className="flex-1 h-8" />
+            <button onClick={discardRecording} className="p-1 rounded-full hover:bg-muted transition-colors">
+              <Trash2 className="w-4 h-4 text-muted-foreground" />
+            </button>
+            <Button size="sm" onClick={sendVoiceNote} disabled={uploading} className="h-8 rounded-xl text-xs shrink-0">
+              {uploading ? <span className="animate-spin h-3 w-3 border-2 border-current border-t-transparent rounded-full inline-block" /> : "Send"}
+            </Button>
+          </div>
+        )}
+
+        {/* Recording indicator */}
+        {isRecording && (
+          <div className="flex items-center gap-3 mb-2 bg-red-50 border border-red-200 rounded-2xl px-4 py-2.5 animate-in fade-in-0 duration-200">
+            <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+            <span className="text-sm font-medium text-red-700 flex-1">Recording {formatDuration(recordingTime)}</span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={stopRecording}
+              className="h-8 rounded-xl text-xs border-red-300 text-red-700 hover:bg-red-100"
+            >
+              <Square className="w-3 h-3 mr-1 fill-current" />Stop
+            </Button>
+          </div>
+        )}
+
+        {/* Main input row */}
+        {!isRecording && !audioPreviewUrl && !imagePreview && (
+          <div className="flex items-center gap-2 bg-muted/50 rounded-2xl px-3 py-1.5 border border-border/50">
+            <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+            <button
+              onClick={() => canSend && imageInputRef.current?.click()}
+              disabled={!canSend}
+              className="p-1 rounded-full hover:bg-muted transition-colors disabled:opacity-40"
+              title="Send image"
+            >
+              <ImagePlus className="w-[18px] h-[18px] text-muted-foreground" />
+            </button>
+
+            <Input
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder={isClosed ? "Chat is closed" : "Type a message..."}
+              className="flex-1 border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm px-0"
+              disabled={sending || !canSend}
+            />
+
+            {!newMessage.trim() && canSend && (
+              <button
+                onClick={startRecording}
+                className="p-1 rounded-full hover:bg-muted transition-colors"
+                title="Record voice note"
+              >
+                <Mic className="w-[18px] h-[18px] text-muted-foreground" />
+              </button>
             )}
-          >
-            <Send className="w-3.5 h-3.5" />
-          </Button>
-        </div>
-        <p className="text-[10px] text-muted-foreground/50 text-center mt-1">Press Enter to send</p>
+
+            <Button
+              onClick={sendMessage}
+              disabled={!newMessage.trim() || sending || !canSend}
+              size="icon"
+              className={cn(
+                "rounded-full h-8 w-8 shrink-0 transition-all duration-200",
+                newMessage.trim() ? "bg-primary hover:bg-primary/90 scale-100" : "bg-muted scale-90 opacity-60"
+              )}
+            >
+              <Send className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        )}
+
+        {!isRecording && !audioPreviewUrl && !imagePreview && (
+          <p className="text-[10px] text-muted-foreground/50 text-center mt-1">Press Enter to send</p>
+        )}
       </div>
+
+      {/* Lightbox */}
+      {lightboxSrc && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 animate-in fade-in-0 duration-200"
+          onClick={() => setLightboxSrc(null)}
+        >
+          <button className="absolute top-4 right-4 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors">
+            <X className="w-5 h-5 text-white" />
+          </button>
+          <img
+            src={lightboxSrc}
+            alt=""
+            className="max-w-full max-h-full rounded-xl object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }
