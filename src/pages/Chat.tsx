@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { notifyRole } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 interface Message {
   id: string;
@@ -58,6 +59,7 @@ const formatDuration = (secs: number) =>
   `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
 
 export default function Chat() {
+  const { t } = useTranslation();
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -360,7 +362,7 @@ export default function Chat() {
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="flex flex-col items-center gap-3">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Connecting...</p>
+          <p className="text-sm text-muted-foreground">{t("chat.connecting")}</p>
         </div>
       </div>
     );
@@ -390,10 +392,10 @@ export default function Chat() {
           <span className="text-primary-foreground text-sm font-bold">K</span>
         </div>
         <div className="flex-1">
-          <h1 className="font-semibold text-foreground text-sm">Kano Kaftan</h1>
+          <h1 className="font-semibold text-foreground text-sm">{t("chat.title")}</h1>
           <p className="text-xs text-green-500 flex items-center gap-1">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-            Online
+            {t("chat.online")}
           </p>
         </div>
         <ShoppingBag className="w-5 h-5 text-muted-foreground" />
@@ -423,9 +425,9 @@ export default function Chat() {
             <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center mb-4">
               <span className="text-primary-foreground text-2xl font-display font-bold">K</span>
             </div>
-            <h2 className="font-semibold text-foreground mb-1">Welcome to Kano Kaftan</h2>
+            <h2 className="font-semibold text-foreground mb-1">{t("chat.welcome")}</h2>
             <p className="text-sm text-muted-foreground max-w-xs">
-              Send us a message and we'll get back to you shortly.
+              {t("chat.welcomeSubtitle")}
             </p>
           </div>
         )}
@@ -519,7 +521,7 @@ export default function Chat() {
               <X className="w-4 h-4 text-muted-foreground" />
             </button>
             <Button size="sm" onClick={sendImage} disabled={uploading} className="h-8 rounded-xl text-xs shrink-0">
-              {uploading ? <span className="animate-spin h-3 w-3 border-2 border-current border-t-transparent rounded-full inline-block" /> : "Send"}
+              {uploading ? <span className="animate-spin h-3 w-3 border-2 border-current border-t-transparent rounded-full inline-block" /> : t("chat.send")}
             </Button>
           </div>
         )}
@@ -533,7 +535,7 @@ export default function Chat() {
               <Trash2 className="w-4 h-4 text-muted-foreground" />
             </button>
             <Button size="sm" onClick={sendVoiceNote} disabled={uploading} className="h-8 rounded-xl text-xs shrink-0">
-              {uploading ? <span className="animate-spin h-3 w-3 border-2 border-current border-t-transparent rounded-full inline-block" /> : "Send"}
+              {uploading ? <span className="animate-spin h-3 w-3 border-2 border-current border-t-transparent rounded-full inline-block" /> : t("chat.send")}
             </Button>
           </div>
         )}
@@ -542,14 +544,14 @@ export default function Chat() {
         {isRecording && (
           <div className="flex items-center gap-3 mb-2 bg-red-50 border border-red-200 rounded-2xl px-4 py-2.5 animate-in fade-in-0 duration-200">
             <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse shrink-0" />
-            <span className="text-sm font-medium text-red-700 flex-1">Recording {formatDuration(recordingTime)}</span>
+            <span className="text-sm font-medium text-red-700 flex-1">{t("chat.recording") + " "}{formatDuration(recordingTime)}</span>
             <Button
               size="sm"
               variant="outline"
               onClick={stopRecording}
               className="h-8 rounded-xl text-xs border-red-300 text-red-700 hover:bg-red-100"
             >
-              <Square className="w-3 h-3 mr-1 fill-current" />Stop
+              <Square className="w-3 h-3 mr-1 fill-current" />{t("chat.stop")}
             </Button>
           </div>
         )}
@@ -562,7 +564,7 @@ export default function Chat() {
               onClick={() => canSend && imageInputRef.current?.click()}
               disabled={!canSend}
               className="p-1 rounded-full hover:bg-muted transition-colors disabled:opacity-40"
-              title="Send image"
+              title={t("chat.sendImage")}
             >
               <ImagePlus className="w-[18px] h-[18px] text-muted-foreground" />
             </button>
@@ -571,7 +573,7 @@ export default function Chat() {
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={isClosed ? "Chat is closed" : "Type a message..."}
+              placeholder={isClosed ? t("chat.closed") : t("chat.placeholder")}
               className="flex-1 border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm px-0"
               disabled={sending || !canSend}
             />
@@ -580,7 +582,7 @@ export default function Chat() {
               <button
                 onClick={startRecording}
                 className="p-1 rounded-full hover:bg-muted transition-colors"
-                title="Record voice note"
+                title={t("chat.recordVoice")}
               >
                 <Mic className="w-[18px] h-[18px] text-muted-foreground" />
               </button>
@@ -601,7 +603,7 @@ export default function Chat() {
         )}
 
         {!isRecording && !audioPreviewUrl && !imagePreview && (
-          <p className="text-[10px] text-muted-foreground/50 text-center mt-1">Press Enter to send</p>
+          <p className="text-[10px] text-muted-foreground/50 text-center mt-1">{t("chat.pressEnter")}</p>
         )}
       </div>
 

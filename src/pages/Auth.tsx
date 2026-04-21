@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 const authSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -20,6 +21,7 @@ type AuthFormData = z.infer<typeof authSchema>;
 type AuthMode = "login" | "register" | "forgot" | "reset";
 
 export default function AuthPage() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const [mode, setMode] = useState<AuthMode>(() => {
     if (searchParams.get("mode") === "register") return "register";
@@ -166,16 +168,16 @@ export default function AuthPage() {
           </Link>
 
           <h1 className="font-display text-2xl font-bold text-primary">
-            {mode === "login" ? "Welcome back" :
-             mode === "register" ? "Create your account" :
-             mode === "forgot" ? "Reset your password" :
-             "Set new password"}
+            {mode === "login" ? t("auth.welcomeBack") :
+             mode === "register" ? t("auth.createAccount") :
+             mode === "forgot" ? t("auth.resetPassword") :
+             t("auth.setNewPassword")}
           </h1>
           <p className="mt-2 text-muted-foreground">
-            {mode === "login" ? "Sign in to access your account" :
-             mode === "register" ? "Join Kano Kaftan to shop traditional attire" :
-             mode === "forgot" ? "Enter your email and we'll send a reset link" :
-             "Choose a new password for your account"}
+            {mode === "login" ? t("auth.signInSubtitle") :
+             mode === "register" ? t("auth.registerSubtitle") :
+             mode === "forgot" ? t("auth.forgotSubtitle") :
+             t("auth.resetSubtitle")}
           </p>
 
           {/* Forgot password form */}
@@ -183,20 +185,20 @@ export default function AuthPage() {
             <div className="mt-8">
               {forgotSent ? (
                 <div className="rounded-xl bg-green-50 border border-green-200 p-4 text-center">
-                  <p className="font-medium text-green-800 mb-1">Check your email</p>
-                  <p className="text-sm text-green-700">We sent a password reset link to <strong>{forgotEmail}</strong>.</p>
+                  <p className="font-medium text-green-800 mb-1">{t("auth.checkEmail")}</p>
+                  <p className="text-sm text-green-700">{t("auth.resetEmailSent")} <strong>{forgotEmail}</strong>.</p>
                   <button
                     type="button"
                     onClick={() => { setMode("login"); setForgotSent(false); }}
                     className="mt-4 text-sm font-medium text-primary hover:underline"
                   >
-                    Back to sign in
+                    {t("auth.backToSignIn")}
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleForgotPassword} className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="forgot-email">Email address</Label>
+                    <Label htmlFor="forgot-email">{t("auth.email")}</Label>
                     <Input
                       id="forgot-email"
                       type="email"
@@ -208,11 +210,11 @@ export default function AuthPage() {
                   </div>
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Send Reset Link
+                    {t("auth.sendResetLink")}
                   </Button>
                   <p className="text-center text-sm text-muted-foreground">
                     <button type="button" className="font-medium text-primary hover:underline" onClick={() => setMode("login")}>
-                      Back to sign in
+                      {t("auth.backToSignIn")}
                     </button>
                   </p>
                 </form>
@@ -224,7 +226,7 @@ export default function AuthPage() {
           {mode === "reset" && (
             <form onSubmit={handleResetPassword} className="mt-8 space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="new-password">New Password</Label>
+                <Label htmlFor="new-password">{t("auth.newPassword")}</Label>
                 <div className="relative">
                   <Input
                     id="new-password"
@@ -248,7 +250,7 @@ export default function AuthPage() {
               </div>
               <Button type="submit" className="w-full" disabled={isLoading || newPassword.length < 6}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Set New Password
+                {t("auth.setPassword")}
               </Button>
             </form>
           )}
@@ -258,7 +260,7 @@ export default function AuthPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-6">
             {mode === "register" && (
               <div className="space-y-2">
-                <Label htmlFor="full_name">Full Name</Label>
+                <Label htmlFor="full_name">{t("auth.fullName")}</Label>
                 <Input
                   id="full_name"
                   placeholder="Enter your full name"
@@ -268,7 +270,7 @@ export default function AuthPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("auth.email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -281,7 +283,7 @@ export default function AuthPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("auth.password")}</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -315,38 +317,38 @@ export default function AuthPage() {
                   className="text-sm text-muted-foreground hover:text-primary hover:underline"
                   onClick={() => setMode("forgot")}
                 >
-                  Forgot password?
+                  {t("auth.forgotPassword")}
                 </button>
               </div>
             )}
 
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {mode === "login" ? "Sign In" : "Create Account"}
+              {mode === "login" ? t("auth.signIn") : t("auth.signUp")}
             </Button>
           </form>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             {mode === "login" ? (
               <>
-                Don't have an account?{" "}
+                {t("auth.noAccount")}{" "}
                 <button
                   type="button"
                   className="font-medium text-primary hover:underline"
                   onClick={() => setMode("register")}
                 >
-                  Sign up
+                  {t("auth.signUpLink")}
                 </button>
               </>
             ) : (
               <>
-                Already have an account?{" "}
+                {t("auth.hasAccount")}{" "}
                 <button
                   type="button"
                   className="font-medium text-primary hover:underline"
                   onClick={() => setMode("login")}
                 >
-                  Sign in
+                  {t("auth.signInLink")}
                 </button>
               </>
             )}
@@ -359,11 +361,10 @@ export default function AuthPage() {
       <div className="hidden bg-primary lg:flex lg:w-1/2 lg:items-center lg:justify-center">
         <div className="max-w-md px-8 text-center text-primary-foreground">
           <h2 className="font-display text-4xl font-bold">
-            Traditional Excellence,<br />Modern Convenience
+            {t("home.traditionalExcellence")}<br />{t("home.modernConvenience")}
           </h2>
           <p className="mt-4 text-lg text-primary-foreground/80">
-            Discover authentic traditional attire from master craftsmen in Kano,
-            delivered right to your doorstep.
+            {t("home.authDescription")}
           </p>
         </div>
       </div>

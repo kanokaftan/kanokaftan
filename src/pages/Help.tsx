@@ -4,40 +4,21 @@ import { MobileLayout } from "@/components/layout/MobileLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-
-const faqs = [
-  {
-    question: "How do I track my order?",
-    answer: "You can track your order by going to 'Orders' in the menu. Click on any order to see its current status and tracking updates."
-  },
-  {
-    question: "What payment methods are accepted?",
-    answer: "We accept all major Nigerian bank cards, bank transfers, and USSD payments through Paystack."
-  },
-  {
-    question: "How long does delivery take?",
-    answer: "Delivery typically takes 2-5 business days within Lagos, and 5-10 business days for other states."
-  },
-  {
-    question: "Can I return or exchange an item?",
-    answer: "Yes, you can request a return or exchange within 7 days of delivery. The item must be unused and in its original packaging. Contact us to initiate a return."
-  },
-  {
-    question: "Is my payment secure?",
-    answer: "Absolutely! All payments are processed securely through Paystack, and your payment information is encrypted. We also hold payments in escrow until you confirm delivery."
-  },
-  {
-    question: "How does shipping work?",
-    answer: "Shipping is calculated based on your delivery address. Use promo code FREESHIP26 for free shipping!"
-  },
-  {
-    question: "Can I cancel my order?",
-    answer: "You can cancel orders that have not been paid for. Go to your Orders page and click 'Cancel Order' on pending payment orders."
-  },
-];
+import { useTranslation } from "react-i18next";
 
 export default function Help() {
+  const { t } = useTranslation();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const faqs = [
+    { question: t("help.q1"), answer: t("help.a1") },
+    { question: t("help.q2"), answer: t("help.a2") },
+    { question: t("help.q3"), answer: t("help.a3") },
+    { question: t("help.q4"), answer: t("help.a4") },
+    { question: t("help.q5"), answer: t("help.a5") },
+    { question: t("help.q6"), answer: t("help.a6") },
+    { question: t("help.q7"), answer: t("help.a7") },
+  ];
 
   const handleWhatsApp = () => {
     window.open("https://wa.me/2349076944503?text=Hello%2C%20I%20need%20help%20with%20my%20order", "_blank");
@@ -55,8 +36,8 @@ export default function Help() {
     <MobileLayout>
       <div className="container max-w-2xl py-6 space-y-6 pb-24">
         <div>
-          <h1 className="text-2xl font-bold">Help & Support</h1>
-          <p className="text-muted-foreground">Find answers or get in touch with us</p>
+          <h1 className="text-2xl font-bold">{t("help.title")}</h1>
+          <p className="text-muted-foreground">{t("help.contactUs")}</p>
         </div>
 
         {/* Contact Options */}
@@ -68,8 +49,9 @@ export default function Help() {
                   <Mail className="h-5 w-5 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-medium">Email Us</h3>
+                  <h3 className="font-medium">{t("help.emailUs")}</h3>
                   <p className="text-sm text-muted-foreground truncate">kanokaftan@gmail.com</p>
+                  <p className="text-xs text-muted-foreground">{t("help.emailDesc")}</p>
                 </div>
                 <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               </div>
@@ -83,8 +65,9 @@ export default function Help() {
                   <Phone className="h-5 w-5 text-green-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-medium">Call Us</h3>
+                  <h3 className="font-medium">{t("help.callUs")}</h3>
                   <p className="text-sm text-muted-foreground">+234 907 694 4503</p>
+                  <p className="text-xs text-muted-foreground">{t("help.callDesc")}</p>
                 </div>
                 <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               </div>
@@ -98,8 +81,8 @@ export default function Help() {
                   <MessageCircle className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-medium">Chat on WhatsApp</h3>
-                  <p className="text-sm text-muted-foreground">Get instant support</p>
+                  <h3 className="font-medium">{t("help.whatsapp")}</h3>
+                  <p className="text-sm text-muted-foreground">{t("help.whatsappDesc")}</p>
                 </div>
                 <Button size="sm" className="bg-green-600 hover:bg-green-700 gap-1">
                   <Send className="h-3 w-3" />
@@ -115,11 +98,9 @@ export default function Help() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <HelpCircle className="h-5 w-5" />
-              Frequently Asked Questions
+              {t("help.faqTitle")}
             </CardTitle>
-            <CardDescription>
-              Quick answers to common questions
-            </CardDescription>
+            <CardDescription>Quick answers to common questions</CardDescription>
           </CardHeader>
           <CardContent className="space-y-1">
             {faqs.map((faq, index) => (
@@ -129,14 +110,9 @@ export default function Help() {
                 onOpenChange={() => setOpenFaq(openFaq === index ? null : index)}
               >
                 <CollapsibleTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between font-normal h-auto py-3 px-3 text-left"
-                  >
+                  <Button variant="ghost" className="w-full justify-between font-normal h-auto py-3 px-3 text-left">
                     <span className="text-sm pr-2">{faq.question}</span>
-                    <ChevronDown 
-                      className={`h-4 w-4 flex-shrink-0 transition-transform ${openFaq === index ? 'rotate-180' : ''}`} 
-                    />
+                    <ChevronDown className={`h-4 w-4 flex-shrink-0 transition-transform ${openFaq === index ? "rotate-180" : ""}`} />
                   </Button>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="px-3 pb-3">
@@ -152,12 +128,8 @@ export default function Help() {
           <CardContent className="pt-6">
             <div className="text-center space-y-2">
               <h3 className="font-medium">Business Hours</h3>
-              <p className="text-sm text-muted-foreground">
-                Monday - Saturday: 9:00 AM - 6:00 PM (WAT)
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Sunday: Closed
-              </p>
+              <p className="text-sm text-muted-foreground">Monday – Saturday: 9:00 AM – 6:00 PM (WAT)</p>
+              <p className="text-sm text-muted-foreground">Sunday: Closed</p>
             </div>
           </CardContent>
         </Card>
