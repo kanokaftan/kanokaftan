@@ -26,8 +26,8 @@ export function HeroSection() {
               </Link>
             </Button>
             <Button size="lg" variant="outline" className="w-full sm:w-auto" asChild>
-              <Link to="/auth?mode=register&role=vendor">
-                Become a Vendor
+              <Link to="/chat">
+                Contact Us
               </Link>
             </Button>
           </div>

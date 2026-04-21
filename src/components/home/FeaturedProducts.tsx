@@ -62,7 +62,7 @@ export function FeaturedProducts() {
               Featured Products
             </h2>
             <p className="mt-4 text-muted-foreground">
-              Handpicked selections from our best vendors
+              Handpicked selections from our finest collection
             </p>
           </div>
           <Button variant="link" asChild className="hidden sm:flex">

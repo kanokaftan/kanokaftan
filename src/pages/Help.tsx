@@ -23,16 +23,12 @@ const faqs = [
     answer: "Yes, you can request a return or exchange within 7 days of delivery. The item must be unused and in its original packaging. Contact us to initiate a return."
   },
   {
-    question: "How do I become a vendor?",
-    answer: "Go to your Account page and click 'Become a Vendor' to upgrade your account. You'll get access to the vendor dashboard where you can list products and manage orders."
-  },
-  {
     question: "Is my payment secure?",
     answer: "Absolutely! All payments are processed securely through Paystack, and your payment information is encrypted. We also hold payments in escrow until you confirm delivery."
   },
   {
     question: "How does shipping work?",
-    answer: "Shipping is calculated based on the distance between the vendor and your delivery address. Use promo code FREESHIP26 for free shipping!"
+    answer: "Shipping is calculated based on your delivery address. Use promo code FREESHIP26 for free shipping!"
   },
   {
     question: "Can I cancel my order?",
