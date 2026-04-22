@@ -6,11 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n/index";
+
+const SETTINGS_KEY = "kk_user_settings";
 
 interface SettingItemProps {
   icon: React.ReactNode;
@@ -60,10 +60,16 @@ const CURRENCIES = [
   { value: "USD", label: "$ Dollar" },
 ];
 
+function loadSettings() {
+  try {
+    const saved = localStorage.getItem(SETTINGS_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return null;
+}
+
 export default function Settings() {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
@@ -77,25 +83,16 @@ export default function Settings() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const load = async () => {
-      if (!user) { setIsLoading(false); return; }
-      const { data } = await supabase
-        .from("profiles")
-        .select("notification_push, notification_orders, notification_promotions, preferred_language, preferred_currency")
-        .eq("id", user.id)
-        .single();
-      if (data) {
-        setNotifications(data.notification_push ?? true);
-        setOrderUpdates(data.notification_orders ?? true);
-        setPromotions(data.notification_promotions ?? false);
-        const savedLang = data.preferred_language ?? localStorage.getItem("kk_language") ?? "en";
-        setLanguage(savedLang);
-        setCurrency(data.preferred_currency ?? "NGN");
-      }
-      setIsLoading(false);
-    };
-    load();
-  }, [user]);
+    const saved = loadSettings();
+    if (saved) {
+      if (saved.notifications !== undefined) setNotifications(saved.notifications);
+      if (saved.orderUpdates !== undefined) setOrderUpdates(saved.orderUpdates);
+      if (saved.promotions !== undefined) setPromotions(saved.promotions);
+      if (saved.currency) setCurrency(saved.currency);
+    }
+    const savedLang = localStorage.getItem("kk_language") || "en";
+    setLanguage(savedLang);
+  }, []);
 
   const handleChange = <T,>(setter: React.Dispatch<React.SetStateAction<T>>, value: T) => {
     setter(value);
@@ -105,30 +102,25 @@ export default function Settings() {
   const handleLanguageChange = (value: string) => {
     setLanguage(value);
     setHasChanges(true);
-    // Apply immediately so UI switches in real time
     i18n.changeLanguage(value);
     localStorage.setItem("kk_language", value);
   };
 
   const handleSave = async () => {
-    if (!user) {
-      toast({ title: "Sign in required", description: "Please sign in to save preferences.", variant: "destructive" });
-      return;
-    }
     setIsSaving(true);
-    const { error } = await supabase.from("profiles").update({
-      notification_push: notifications,
-      notification_orders: orderUpdates,
-      notification_promotions: promotions,
-      preferred_language: language,
-      preferred_currency: currency,
-    }).eq("id", user.id);
-    setIsSaving(false);
-    if (error) {
-      toast({ title: "Failed to save", description: "Could not save preferences. Try again.", variant: "destructive" });
-    } else {
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+        notifications,
+        orderUpdates,
+        promotions,
+        currency,
+      }));
       setHasChanges(false);
       toast({ title: t("settings.saved") });
+    } catch {
+      toast({ title: "Failed to save", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -138,36 +130,17 @@ export default function Settings() {
     });
   };
 
-  if (isLoading) {
-    return (
-      <MobileLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      </MobileLayout>
-    );
-  }
-
   return (
     <MobileLayout>
       <div className="px-4 py-6 pb-32 space-y-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold">{t("settings.title")}</h1>
-            <p className="text-sm text-muted-foreground">{t("common.save")} {t("profile.settings").toLowerCase()}</p>
-          </div>
+          <h1 className="text-xl font-bold">{t("settings.title")}</h1>
           {hasChanges && (
-            <Button onClick={handleSave} disabled={isSaving || !user} size="sm">
+            <Button onClick={handleSave} disabled={isSaving} size="sm">
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("settings.saveChanges")}
             </Button>
           )}
         </div>
-
-        {!user && (
-          <div className="bg-muted/50 rounded-xl p-4 text-center">
-            <p className="text-sm text-muted-foreground">{t("settings.signInToSync")}</p>
-          </div>
-        )}
 
         <SettingSection title={t("settings.notifications")}>
           <SettingItem
@@ -199,9 +172,13 @@ export default function Settings() {
             label={t("settings.clearNotifications")}
             description={unreadCount > 0 ? `${unreadCount} ${t("settings.unread_other", { count: unreadCount })}` : t("settings.noUnread")}
           >
-            <Button variant="ghost" size="sm" onClick={handleClearNotifications}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearNotifications}
               disabled={clearAll.isPending || unreadCount === 0}
-              className="text-destructive hover:text-destructive">
+              className="text-destructive hover:text-destructive"
+            >
               {t("settings.clear")}
             </Button>
           </SettingItem>
