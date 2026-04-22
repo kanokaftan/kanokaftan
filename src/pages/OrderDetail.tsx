@@ -22,6 +22,7 @@ import { usePayment } from "@/hooks/usePayment";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 function formatPrice(amount: number): string {
   return new Intl.NumberFormat("en-NG", {
@@ -43,6 +44,7 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.E
 };
 
 export default function OrderDetail() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const { orders, isLoading, confirmDelivery } = useOrders();
@@ -53,14 +55,12 @@ export default function OrderDetail() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [hasAutoVerified, setHasAutoVerified] = useState(false);
 
-  // Refetch orders after payment verification
   const refetchOrders = useCallback(() => {
     if (user?.id) {
       queryClient.invalidateQueries({ queryKey: ['orders', user.id] });
     }
   }, [queryClient, user?.id]);
 
-  // Handle payment verification on return from Paystack
   useEffect(() => {
     const shouldVerify = searchParams.get("verify") === "true";
     const reference = searchParams.get("reference") || searchParams.get("trxref");
@@ -75,7 +75,6 @@ export default function OrderDetail() {
             } else {
               toast.success("Payment verified successfully!");
             }
-            // Refetch orders to get updated status
             refetchOrders();
           } else {
             toast.error(result.error || "Payment verification failed");
@@ -83,21 +82,18 @@ export default function OrderDetail() {
         })
         .finally(() => {
           setIsVerifying(false);
-          // Clean up URL params
           window.history.replaceState({}, "", `/orders/${id}`);
         });
     }
   }, [searchParams, id, verifyPayment, refetchOrders, isVerifying]);
 
-  // Auto-verify stuck orders that have a payment_reference but are still pending
   useEffect(() => {
-    if (order && !hasAutoVerified && !isVerifying && 
-        order.payment_status === 'pending' && 
+    if (order && !hasAutoVerified && !isVerifying &&
+        order.payment_status === 'pending' &&
         order.payment_reference) {
-      console.log('Auto-verifying stuck order:', order.id, 'with reference:', order.payment_reference);
       setHasAutoVerified(true);
       setIsVerifying(true);
-      
+
       verifyPayment(order.payment_reference, order.id)
         .then((result) => {
           if (result.success) {
@@ -135,15 +131,12 @@ export default function OrderDetail() {
       return;
     }
 
-    console.log("Retrying payment for order:", order.id);
     const paymentResult = await initiatePayment(order.id, user.email);
-    console.log("Payment result:", paymentResult);
 
     if (paymentResult.success && paymentResult.authorization_url) {
       toast.success("Redirecting to payment...");
       window.location.href = paymentResult.authorization_url;
     } else {
-      console.error("Payment failed:", paymentResult.error);
       toast.error(paymentResult.error || "Failed to initialize payment");
     }
   };
@@ -155,7 +148,7 @@ export default function OrderDetail() {
           {isVerifying && (
             <div className="mb-4 flex items-center justify-center gap-2 rounded-lg bg-primary/10 p-4 text-primary">
               <Loader2 className="h-5 w-5 animate-spin" />
-              <span className="font-medium">Verifying payment...</span>
+              <span className="font-medium">{t("orders.verifyingPayment")}</span>
             </div>
           )}
           <Skeleton className="mb-6 h-8 w-48" />
@@ -172,9 +165,9 @@ export default function OrderDetail() {
       <MobileLayout>
         <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 py-6">
           <Package className="mb-4 h-12 w-12 text-muted-foreground" />
-          <h1 className="text-lg font-bold">Order not found</h1>
+          <h1 className="text-lg font-bold">{t("orders.notFound")}</h1>
           <Button asChild className="mt-4">
-            <Link to="/orders">View All Orders</Link>
+            <Link to="/orders">{t("orders.viewAllOrders")}</Link>
           </Button>
         </div>
       </MobileLayout>
@@ -183,13 +176,11 @@ export default function OrderDetail() {
 
   const status = statusConfig[order.status] || statusConfig.processing;
   const StatusIcon = status.icon;
-  // Only show pay button if truly pending and no payment_reference exists
-  const showPayButton = order.status === "pending_payment" && 
-                        order.payment_status === "pending" && 
+  const showPayButton = order.status === "pending_payment" &&
+                        order.payment_status === "pending" &&
                         !order.payment_reference;
-  // Show verify button if pending but has payment_reference (stuck order)
-  const showVerifyButton = order.payment_status === "pending" && 
-                           order.payment_reference && 
+  const showVerifyButton = order.payment_status === "pending" &&
+                           order.payment_reference &&
                            !isVerifying;
 
   const handleManualVerify = async () => {
@@ -219,7 +210,7 @@ export default function OrderDetail() {
             </Link>
           </Button>
           <div>
-            <h1 className="font-display text-lg font-bold">Order Details</h1>
+            <h1 className="font-display text-lg font-bold">{t("orders.orderDetails")}</h1>
             <p className="text-xs text-muted-foreground">
               #{order.id.slice(0, 8).toUpperCase()}
             </p>
@@ -231,43 +222,43 @@ export default function OrderDetail() {
           <div className="mb-4 rounded-xl bg-yellow-50 border border-yellow-200 p-4">
             <div className="flex items-center gap-2 text-yellow-800 mb-3">
               <CreditCard className="h-5 w-5" />
-              <span className="font-medium">Payment Required</span>
+              <span className="font-medium">{t("orders.paymentRequired")}</span>
             </div>
             <p className="text-sm text-yellow-700 mb-3">
-              Complete your payment to confirm this order.
+              {t("orders.paymentRequiredDesc")}
             </p>
-            <Button 
-              className="w-full" 
+            <Button
+              className="w-full"
               onClick={handleRetryPayment}
               disabled={isProcessing}
             >
               {isProcessing ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
+                  {t("checkout.processing")}
                 </>
               ) : (
                 <>
                   <CreditCard className="mr-2 h-4 w-4" />
-                  Pay {formatPrice(order.total)}
+                  {t("orders.pay")} {formatPrice(order.total)}
                 </>
               )}
             </Button>
           </div>
         )}
 
-        {/* Verify Payment Banner - for stuck orders */}
+        {/* Verify Payment Banner */}
         {showVerifyButton && (
           <div className="mb-4 rounded-xl bg-blue-50 border border-blue-200 p-4">
             <div className="flex items-center gap-2 text-blue-800 mb-3">
               <RefreshCw className="h-5 w-5" />
-              <span className="font-medium">Payment Processing</span>
+              <span className="font-medium">{t("orders.paymentProcessing")}</span>
             </div>
             <p className="text-sm text-blue-700 mb-3">
-              Your payment is being verified. Click below to check the status.
+              {t("orders.paymentProcessingDesc")}
             </p>
-            <Button 
-              className="w-full" 
+            <Button
+              className="w-full"
               variant="outline"
               onClick={handleManualVerify}
               disabled={isVerifying}
@@ -275,12 +266,12 @@ export default function OrderDetail() {
               {isVerifying ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Verifying...
+                  {t("orders.verifying")}
                 </>
               ) : (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4" />
-                  Verify Payment Status
+                  {t("orders.verifyPayment")}
                 </>
               )}
             </Button>
@@ -296,12 +287,11 @@ export default function OrderDetail() {
             <div>
               <p className="font-medium">{status.label}</p>
               <p className="text-sm text-muted-foreground">
-                Placed on {format(new Date(order.created_at), "MMM d, yyyy 'at' h:mm a")}
+                {t("orders.placedOn")} {format(new Date(order.created_at), "MMM d, yyyy 'at' h:mm a")}
               </p>
             </div>
           </div>
 
-          {/* Timeline */}
           {order.tracking_updates && order.tracking_updates.length > 0 && (
             <div className="mt-4 space-y-3 border-t pt-4">
               {order.tracking_updates.map((update, index) => (
@@ -324,11 +314,10 @@ export default function OrderDetail() {
             </div>
           )}
 
-          {/* Confirm Delivery Button */}
           {order.status === "delivered" && !order.confirmed_at && (
             <Button className="mt-4 w-full" onClick={handleConfirmDelivery}>
               <CheckCircle2 className="mr-2 h-4 w-4" />
-              Confirm Receipt
+              {t("orders.confirmReceipt")}
             </Button>
           )}
         </div>
@@ -337,7 +326,7 @@ export default function OrderDetail() {
         <div className="mt-4 rounded-xl bg-card p-4 shadow-sm">
           <div className="mb-3 flex items-center gap-2">
             <MapPin className="h-5 w-5 text-primary" />
-            <h2 className="font-medium">Delivery Address</h2>
+            <h2 className="font-medium">{t("orders.deliveryAddress")}</h2>
           </div>
           <p className="text-sm font-medium">{order.shipping_address.full_name}</p>
           <p className="text-sm text-muted-foreground">
@@ -348,7 +337,7 @@ export default function OrderDetail() {
           </p>
           {order.shipping_address.landmark && (
             <p className="text-sm text-muted-foreground">
-              Landmark: {order.shipping_address.landmark}
+              {t("orders.landmark")}: {order.shipping_address.landmark}
             </p>
           )}
           <div className="mt-2 flex items-center gap-1 text-sm text-muted-foreground">
@@ -359,7 +348,7 @@ export default function OrderDetail() {
 
         {/* Order Items */}
         <div className="mt-4 rounded-xl bg-card p-4 shadow-sm">
-          <h2 className="mb-3 font-medium">Order Items</h2>
+          <h2 className="mb-3 font-medium">{t("orders.orderItems")}</h2>
           <div className="space-y-3">
             {order.order_items?.map((item) => (
               <div key={item.id} className="flex justify-between text-sm">
@@ -368,7 +357,7 @@ export default function OrderDetail() {
                   {item.variant_name && (
                     <p className="text-xs text-muted-foreground">{item.variant_name}</p>
                   )}
-                  <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                  <p className="text-xs text-muted-foreground">{t("orders.qty")}: {item.quantity}</p>
                 </div>
                 <p className="font-medium">{formatPrice(item.total_price)}</p>
               </div>
@@ -379,14 +368,14 @@ export default function OrderDetail() {
 
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Subtotal</span>
+              <span className="text-muted-foreground">{t("orders.subtotal")}</span>
               <span>{formatPrice(order.subtotal)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Shipping</span>
+              <span className="text-muted-foreground">{t("orders.shipping")}</span>
               <span>
                 {order.shipping_fee === 0 ? (
-                  <span className="text-green-600">Free</span>
+                  <span className="text-green-600">{t("orders.free")}</span>
                 ) : (
                   formatPrice(order.shipping_fee)
                 )}
@@ -397,7 +386,7 @@ export default function OrderDetail() {
           <Separator className="my-3" />
 
           <div className="flex justify-between font-display font-bold">
-            <span>Total</span>
+            <span>{t("orders.total")}</span>
             <span>{formatPrice(order.total)}</span>
           </div>
         </div>
@@ -407,7 +396,7 @@ export default function OrderDetail() {
           <div className="mt-4 rounded-xl bg-card p-4 shadow-sm">
             <div className="mb-2 flex items-center gap-2">
               <MessageSquare className="h-4 w-4 text-primary" />
-              <h2 className="font-medium">Order Notes</h2>
+              <h2 className="font-medium">{t("orders.orderNotes")}</h2>
             </div>
             <p className="text-sm text-muted-foreground">{order.notes}</p>
           </div>
@@ -415,9 +404,9 @@ export default function OrderDetail() {
 
         {/* Help Section */}
         <div className="mt-6 text-center">
-          <p className="text-sm text-muted-foreground">Need help with your order?</p>
-          <Button variant="link" className="mt-1">
-            Contact Support
+          <p className="text-sm text-muted-foreground">{t("orders.needHelp")}</p>
+          <Button variant="link" className="mt-1" asChild>
+            <Link to="/help">{t("orders.contactSupport")}</Link>
           </Button>
         </div>
       </div>

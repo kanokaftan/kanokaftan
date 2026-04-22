@@ -11,6 +11,7 @@ import {
   getNextDiscountTier,
   getDiscountTierDescription,
 } from "@/lib/shipping";
+import { useTranslation } from "react-i18next";
 
 function formatPrice(amount: number): string {
   return new Intl.NumberFormat("en-NG", {
@@ -21,14 +22,14 @@ function formatPrice(amount: number): string {
 }
 
 export default function Cart() {
+  const { t } = useTranslation();
   const { items, total, addToCart, removeFromCart, clearCart } = useCart();
 
   const handleUpdateQuantity = (item: ReturnType<typeof useCart>["items"][number], newQuantity: number) => {
     if (newQuantity <= 0) {
       removeFromCart(item.product_id);
-      toast.success(`${item.name} removed from cart`);
+      toast.success(`${item.name} ${t("cart.remove").toLowerCase()}d`);
     } else {
-      // Replace with updated quantity by re-saving
       const updated = { ...item, quantity: newQuantity };
       removeFromCart(item.product_id);
       addToCart({ ...updated, quantity: newQuantity });
@@ -52,13 +53,13 @@ export default function Cart() {
           <div className="rounded-full bg-muted p-6">
             <ShoppingBag className="h-12 w-12 text-muted-foreground" />
           </div>
-          <h1 className="mt-6 text-lg font-bold">Your cart is empty</h1>
+          <h1 className="mt-6 text-lg font-bold">{t("cart.empty")}</h1>
           <p className="mt-2 text-sm text-muted-foreground text-center">
-            Looks like you haven't added anything yet
+            {t("cart.emptyDesc2")}
           </p>
           <Button asChild className="mt-6">
             <Link to="/products">
-              Start Shopping
+              {t("cart.startShopping")}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
@@ -74,9 +75,9 @@ export default function Cart() {
     <MobileLayout>
       <div className="px-4 py-6">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="font-display text-xl font-bold">Cart</h1>
+          <h1 className="font-display text-xl font-bold">{t("cart.title")}</h1>
           <Button variant="ghost" size="sm" onClick={handleClearCart}>
-            Clear
+            {t("cart.clear")}
           </Button>
         </div>
 
@@ -97,7 +98,7 @@ export default function Cart() {
                   />
                 ) : (
                   <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-                    No Image
+                    {t("products.noImage")}
                   </div>
                 )}
               </div>
@@ -182,22 +183,22 @@ export default function Cart() {
         <div className="mt-6 rounded-xl bg-muted/50 p-4">
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Subtotal</span>
+              <span className="text-muted-foreground">{t("cart.subtotal")}</span>
               <span>{formatPrice(total)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Shipping</span>
+              <span className="text-muted-foreground">{t("cart.shipping")}</span>
               <span className="text-muted-foreground">{formatShippingRange()}</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Calculated at checkout based on your location
+              {t("cart.shippingCalc")}
             </p>
           </div>
 
           <Separator className="my-3" />
 
           <div className="flex justify-between font-display font-bold">
-            <span>Subtotal</span>
+            <span>{t("cart.subtotal")}</span>
             <span>{formatPrice(total)}</span>
           </div>
         </div>
@@ -205,7 +206,7 @@ export default function Cart() {
         {/* Checkout Button */}
         <Button asChild className="mt-4 w-full" size="lg">
           <Link to="/checkout">
-            Proceed to Checkout
+            {t("cart.checkout")}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </Button>

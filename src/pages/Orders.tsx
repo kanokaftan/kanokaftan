@@ -11,6 +11,7 @@ import { useOrders } from "@/hooks/useOrders";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 function formatPrice(amount: number): string {
   return new Intl.NumberFormat("en-NG", {
@@ -20,23 +21,24 @@ function formatPrice(amount: number): string {
   }).format(amount);
 }
 
-const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: any }> = {
-  pending: { label: "Pending", variant: "outline", icon: CreditCard },
-  pending_payment: { label: "Pending Payment", variant: "outline", icon: CreditCard },
-  payment_confirmed: { label: "Confirmed", variant: "secondary", icon: CheckCircle2 },
-  processing: { label: "Processing", variant: "secondary", icon: Package },
-  shipped: { label: "Shipped", variant: "default", icon: Truck },
-  out_for_delivery: { label: "Out for Delivery", variant: "default", icon: Truck },
-  delivered: { label: "Delivered", variant: "default", icon: CheckCircle2 },
-  completed: { label: "Completed", variant: "default", icon: CheckCircle2 },
-  cancelled: { label: "Cancelled", variant: "destructive", icon: XCircle },
-};
-
 export default function Orders() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { orders, isLoading, refetch } = useOrders();
   const { user, isLoading: authLoading } = useAuth();
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+
+  const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: any }> = {
+    pending: { label: t("orders.status.pending"), variant: "outline", icon: CreditCard },
+    pending_payment: { label: t("orders.status.pending_payment"), variant: "outline", icon: CreditCard },
+    payment_confirmed: { label: t("orders.status.confirmed"), variant: "secondary", icon: CheckCircle2 },
+    processing: { label: t("orders.status.processing"), variant: "secondary", icon: Package },
+    shipped: { label: t("orders.status.shipped"), variant: "default", icon: Truck },
+    out_for_delivery: { label: t("orders.status.shipped"), variant: "default", icon: Truck },
+    delivered: { label: t("orders.status.delivered"), variant: "default", icon: CheckCircle2 },
+    completed: { label: t("orders.status.delivered"), variant: "default", icon: CheckCircle2 },
+    cancelled: { label: t("orders.status.cancelled"), variant: "destructive", icon: XCircle },
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -57,7 +59,7 @@ export default function Orders() {
 
       toast.success("Order cancelled successfully");
       refetch();
-    } catch (error) {
+    } catch {
       toast.error("Failed to cancel order");
     } finally {
       setCancellingOrderId(null);
@@ -82,19 +84,19 @@ export default function Orders() {
   return (
     <MobileLayout>
       <div className="px-4 py-6 pb-24">
-        <h1 className="mb-6 font-display text-xl font-bold">My Orders</h1>
+        <h1 className="mb-6 font-display text-xl font-bold">{t("orders.title")}</h1>
 
         {orders.length === 0 ? (
           <div className="mt-12 flex flex-col items-center justify-center text-center">
             <div className="mb-4 rounded-full bg-muted p-6">
               <Package className="h-12 w-12 text-muted-foreground" />
             </div>
-            <h2 className="text-lg font-medium">No orders yet</h2>
+            <h2 className="text-lg font-medium">{t("orders.empty")}</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              When you place orders, they will appear here.
+              {t("orders.emptyDesc2")}
             </p>
             <Button className="mt-6" asChild>
-              <Link to="/products">Start Shopping</Link>
+              <Link to="/products">{t("orders.shopNow")}</Link>
             </Button>
           </div>
         ) : (
@@ -110,10 +112,7 @@ export default function Orders() {
                   key={order.id}
                   className="rounded-xl bg-card p-4 shadow-sm border"
                 >
-                  <Link
-                    to={`/orders/${order.id}`}
-                    className="block"
-                  >
+                  <Link to={`/orders/${order.id}`} className="block">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -130,18 +129,18 @@ export default function Orders() {
                         </p>
                         <div className="mt-3 flex items-center gap-3">
                           <p className="text-sm text-muted-foreground">
-                            {itemCount} {itemCount === 1 ? "item" : "items"}
+                            {itemCount} {itemCount === 1 ? t("orders.item") : t("orders.items_plural")}
                           </p>
                           {order.payment_status === "pending" && (
                             <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">
                               <CreditCard className="h-3 w-3 mr-1" />
-                              Awaiting Payment
+                              {t("orders.awaitingPayment")}
                             </Badge>
                           )}
                           {order.payment_status === "paid" && (
                             <Badge variant="outline" className="text-green-600 border-green-300 bg-green-50">
                               <CheckCircle2 className="h-3 w-3 mr-1" />
-                              Paid
+                              {t("orders.paymentStatus.paid")}
                             </Badge>
                           )}
                         </div>
@@ -152,15 +151,14 @@ export default function Orders() {
                       </div>
                     </div>
                   </Link>
-                  
-                  {/* Cancel Order Button */}
+
                   {canCancel && (
                     <div className="mt-3 pt-3 border-t">
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             className="w-full text-destructive hover:text-destructive gap-2"
                             disabled={cancellingOrderId === order.id}
                           >
@@ -169,23 +167,23 @@ export default function Orders() {
                             ) : (
                               <XCircle className="h-4 w-4" />
                             )}
-                            Cancel Order
+                            {t("orders.cancelOrder")}
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Cancel this order?</AlertDialogTitle>
+                            <AlertDialogTitle>{t("orders.cancelTitle")}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This action cannot be undone. The order will be cancelled and you won't be charged.
+                              {t("orders.cancelDesc")}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Keep Order</AlertDialogCancel>
-                            <AlertDialogAction 
+                            <AlertDialogCancel>{t("orders.keepOrder")}</AlertDialogCancel>
+                            <AlertDialogAction
                               onClick={() => handleCancelOrder(order.id)}
                               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
-                              Yes, Cancel Order
+                              {t("orders.yesCancelOrder")}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>

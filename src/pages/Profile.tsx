@@ -18,15 +18,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "react-i18next";
 
 export default function Profile() {
+  const { t } = useTranslation();
   const { user, isAdmin, isLoading, signOut } = useAuth();
   const navigate = useNavigate();
 
-  // Fetch user profile data
   const { data: profile } = useQuery({
     queryKey: ["user-profile", user?.id],
     queryFn: async () => {
@@ -41,12 +41,11 @@ export default function Profile() {
     enabled: !!user?.id,
   });
 
-  // Fetch stats
   const { data: stats } = useQuery({
     queryKey: ["user-stats", user?.id],
     queryFn: async () => {
       if (!user?.id) return { orders: 0, wishlist: 0, addresses: 0 };
-      
+
       const [ordersRes, wishlistRes, addressesRes] = await Promise.all([
         supabase.from("orders").select("id", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("wishlists").select("id", { count: "exact", head: true }).eq("user_id", user.id),
@@ -95,22 +94,22 @@ export default function Profile() {
     return (
       <MobileLayout>
         <div className="px-4 py-6">
-          <h1 className="font-display text-2xl font-bold text-foreground">Profile</h1>
-          
+          <h1 className="font-display text-2xl font-bold text-foreground">{t("profile.title")}</h1>
+
           <div className="mt-16 flex flex-col items-center justify-center text-center">
             <div className="mb-6 h-24 w-24 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
               <User className="h-12 w-12 text-primary" />
             </div>
-            <h2 className="text-xl font-semibold text-foreground">Welcome to K² Kano</h2>
+            <h2 className="text-xl font-semibold text-foreground">{t("profile.welcomeTitle")}</h2>
             <p className="mt-2 text-muted-foreground max-w-xs">
-              Sign in to access your orders, wishlist, and personalized recommendations.
+              {t("profile.welcomeDesc")}
             </p>
             <div className="mt-8 flex gap-3 w-full max-w-xs">
               <Button asChild className="flex-1" size="lg">
-                <Link to="/auth">Sign In</Link>
+                <Link to="/auth">{t("auth.signIn")}</Link>
               </Button>
               <Button variant="outline" asChild className="flex-1" size="lg">
-                <Link to="/auth?mode=register">Register</Link>
+                <Link to="/auth?mode=register">{t("profile.register")}</Link>
               </Button>
             </div>
           </div>
@@ -120,22 +119,22 @@ export default function Profile() {
   }
 
   const quickActions = [
-    { icon: Package, label: "Orders", count: stats?.orders, href: "/orders" },
-    { icon: Heart, label: "Wishlist", count: stats?.wishlist, href: "/wishlist" },
-    { icon: MapPin, label: "Addresses", count: stats?.addresses, href: "/account" },
+    { icon: Package, label: t("profile.ordersLabel"), count: stats?.orders, href: "/orders" },
+    { icon: Heart, label: t("profile.wishlist"), count: stats?.wishlist, href: "/wishlist" },
+    { icon: MapPin, label: t("profile.addresses"), count: stats?.addresses, href: "/account" },
   ];
 
   const menuItems = [
-    { icon: User, label: "Account Settings", description: "Personal info & security", href: "/account" },
-    { icon: Bell, label: "Notifications", description: "Order updates & promos", href: "/settings" },
-    { icon: HelpCircle, label: "Help & Support", description: "FAQs & contact us", href: "/help" },
+    { icon: User, label: t("profile.accountSettings"), description: t("profile.accountSettingsDesc"), href: "/account" },
+    { icon: Bell, label: t("settings.notifications"), description: t("profile.notificationsDesc"), href: "/settings" },
+    { icon: HelpCircle, label: t("profile.help"), description: "FAQs & contact us", href: "/help" },
   ];
 
   if (isAdmin) {
     menuItems.unshift({
       icon: Shield,
-      label: "Admin Dashboard",
-      description: "Manage platform",
+      label: t("profile.adminDashboard"),
+      description: t("profile.adminDashboardDesc"),
       href: "/admin/dashboard"
     });
   }
@@ -143,8 +142,8 @@ export default function Profile() {
   return (
     <MobileLayout>
       <div className="px-4 py-6 space-y-6 pb-24">
-        <h1 className="font-display text-2xl font-bold text-foreground">Profile</h1>
-        
+        <h1 className="font-display text-2xl font-bold text-foreground">{t("profile.title")}</h1>
+
         {/* User Card */}
         <Card className="p-5 bg-gradient-to-br from-primary/5 via-background to-background border-primary/20 overflow-hidden relative">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
@@ -157,15 +156,15 @@ export default function Profile() {
             </Avatar>
             <div className="flex-1 min-w-0">
               <h2 className="font-semibold text-lg truncate">
-                {profile?.full_name || "Welcome!"}
+                {profile?.full_name || t("chat.welcome")}
               </h2>
               <p className="text-sm text-muted-foreground truncate">{user.email}</p>
               <div className="flex items-center gap-2 mt-1.5">
-                <Badge variant="secondary" className="text-xs">Customer</Badge>
+                <Badge variant="secondary" className="text-xs">{t("profile.customer")}</Badge>
                 {isAdmin && (
                   <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
                     <Shield className="h-3 w-3 mr-1" />
-                    Admin
+                    {t("profile.admin")}
                   </Badge>
                 )}
               </div>
@@ -220,7 +219,7 @@ export default function Profile() {
           onClick={handleLogout}
         >
           <LogOut className="h-4 w-4" />
-          Sign Out
+          {t("profile.signOut")}
         </Button>
       </div>
     </MobileLayout>

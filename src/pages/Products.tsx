@@ -9,15 +9,17 @@ import { QuickViewModal } from "@/components/products/QuickViewModal";
 import { RecentlyViewed } from "@/components/products/RecentlyViewed";
 import { useProducts, useCategories, type Product } from "@/hooks/useProducts";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 export default function Products() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const categorySlug = searchParams.get("category") || undefined;
   const search = searchParams.get("search") || undefined;
   const featured = searchParams.get("featured") === "true";
   const page = parseInt(searchParams.get("page") || "1", 10);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
-  
+
   // Grid density preference - persisted in localStorage
   const [isCompactGrid, setIsCompactGrid] = useState(() => {
     const saved = localStorage.getItem("products-page-compact");
@@ -42,6 +44,12 @@ export default function Products() {
   const totalPages = productsData?.totalPages || 1;
   const total = productsData?.total || 0;
 
+  const pageTitle = featured
+    ? t("products.featuredProducts")
+    : categorySlug
+    ? categories.find(c => c.slug === categorySlug)?.name || t("products.title")
+    : t("products.allProducts");
+
   return (
     <MobileLayout>
       {/* Header */}
@@ -49,29 +57,29 @@ export default function Products() {
         <div className="px-4">
           <div className="flex items-center justify-between">
             <div>
-            <h1 className="font-display text-lg font-bold text-foreground">
-              {featured ? 'Featured Products' : categorySlug ? categories.find(c => c.slug === categorySlug)?.name || 'Products' : 'All Products'}
-            </h1>
+              <h1 className="font-display text-lg font-bold text-foreground">
+                {pageTitle}
+              </h1>
               {search && (
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Results for "{search}"
+                  {t("products.resultsFor")} "{search}"
                 </p>
               )}
               {!productsLoading && (
                 <p className="text-xs text-muted-foreground">
-                  {total} {total === 1 ? 'product' : 'products'}
+                  {total} {total === 1 ? t("products.product") : t("products.results")}
                 </p>
               )}
             </div>
-            
+
             {/* Grid Toggle */}
             <div className="flex items-center rounded-lg border bg-muted/50 p-0.5">
               <button
                 onClick={() => setIsCompactGrid(true)}
                 className={cn(
                   "rounded-md p-1.5 transition-colors",
-                  isCompactGrid 
-                    ? "bg-background text-foreground shadow-sm" 
+                  isCompactGrid
+                    ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 )}
                 aria-label="Compact grid"
@@ -82,8 +90,8 @@ export default function Products() {
                 onClick={() => setIsCompactGrid(false)}
                 className={cn(
                   "rounded-md p-1.5 transition-colors",
-                  !isCompactGrid 
-                    ? "bg-background text-foreground shadow-sm" 
+                  !isCompactGrid
+                    ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 )}
                 aria-label="Large grid"
@@ -106,13 +114,13 @@ export default function Products() {
 
       {/* Products Grid */}
       <section className="px-4 py-4">
-        <ProductGrid 
-          products={products} 
+        <ProductGrid
+          products={products}
           isLoading={productsLoading}
           onQuickView={setQuickViewProduct}
           compact={isCompactGrid}
         />
-        
+
         {!productsLoading && products.length > 0 && (
           <div className="mt-4">
             <ProductPagination
