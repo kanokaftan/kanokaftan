@@ -257,6 +257,7 @@ export default function AuthPage() {
 
           {/* Login / Register form */}
           {(mode === "login" || mode === "register") && (
+          <>
           <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-6">
             {mode === "register" && (
               <div className="space-y-2">
@@ -353,6 +354,7 @@ export default function AuthPage() {
               </>
             )}
           </p>
+          </>
           )}
         </div>
       </div>
