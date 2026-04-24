@@ -48,8 +48,8 @@ const statusColor = (status: string) => {
     case "completed": return "bg-green-100 text-green-700";
     case "cancelled": return "bg-red-100 text-red-700";
     case "open": return "bg-green-100 text-green-700";
-    case "closed": return "bg-gray-100 text-gray-500";
-    default: return "bg-gray-100 text-gray-600";
+    case "closed": return "bg-muted text-muted-foreground";
+    default: return "bg-muted text-muted-foreground";
   }
 };
 
@@ -78,31 +78,23 @@ export default function AdminDashboard() {
         supabase.from("orders").select("id", { count: "exact" }),
       ]);
 
-      // Recent chats - fetch profiles separately to avoid FK join issues
       const { data: recentChatsData } = await supabase
         .from("chats")
-        .select("*")
+        .select(`*, profiles(full_name, email)`)
         .order("updated_at", { ascending: false })
         .limit(5);
 
-      const recentChatCustomerIds = [...new Set((recentChatsData || []).map((c: any) => c.customer_id).filter(Boolean))];
-      const { data: chatProfiles } = recentChatCustomerIds.length > 0
-        ? await supabase.from("profiles").select("id, full_name, email").in("id", recentChatCustomerIds)
-        : { data: [] };
-      const chatProfileMap = new Map((chatProfiles || []).map((p: any) => [p.id, p]));
-
       const recentChats = await Promise.all(
-        (recentChatsData || []).map(async (chat: any) => {
+        (recentChatsData || []).map(async (chat) => {
           const { data: msgs } = await supabase
             .from("messages")
             .select("content")
             .eq("chat_id", chat.id)
             .order("created_at", { ascending: false })
             .limit(1);
-          const profile = chatProfileMap.get(chat.customer_id);
           return {
             id: chat.id,
-            customer_name: profile?.full_name || profile?.email || "Customer",
+            customer_name: chat.profiles?.full_name || chat.profiles?.email || "Customer",
             last_message: msgs?.[0]?.content || "No messages",
             created_at: chat.updated_at || chat.created_at,
             status: chat.status,
@@ -110,21 +102,20 @@ export default function AdminDashboard() {
         })
       );
 
-      // Recent orders - fetch profiles separately
       const { data: recentOrdersData } = await supabase
         .from("orders")
-        .select("id, user_id, status, total, created_at")
+        .select("id, customer_id, status, total, created_at")
         .order("created_at", { ascending: false })
         .limit(5);
 
-      const orderUserIds = [...new Set((recentOrdersData || []).map((o: any) => o.user_id).filter(Boolean))];
+      const orderUserIds = [...new Set((recentOrdersData || []).map((o: any) => o.customer_id).filter(Boolean))];
       const { data: orderProfiles } = orderUserIds.length > 0
         ? await supabase.from("profiles").select("id, full_name, email").in("id", orderUserIds)
         : { data: [] };
       const orderProfileMap = new Map((orderProfiles || []).map((p: any) => [p.id, p]));
 
       const recentOrders = (recentOrdersData || []).map((order: any) => {
-        const profile = orderProfileMap.get(order.user_id);
+        const profile = orderProfileMap.get(order.customer_id);
         return {
           id: order.id,
           customer_name: profile?.full_name || profile?.email || "Customer",
@@ -160,7 +151,7 @@ export default function AdminDashboard() {
       label: "Open Chats",
       value: stats.openChats,
       icon: MessageCircle,
-      color: "bg-blue-50 text-blue-600",
+      color: "bg-primary/10 text-primary",
       href: "/admin/chats",
       urgent: stats.openChats > 0,
     },
@@ -168,7 +159,7 @@ export default function AdminDashboard() {
       label: "Total Users",
       value: stats.totalUsers,
       icon: Users,
-      color: "bg-purple-50 text-purple-600",
+      color: "bg-primary/10 text-primary",
       href: "/admin/users",
       urgent: false,
     },
@@ -176,7 +167,7 @@ export default function AdminDashboard() {
       label: "Products",
       value: stats.totalProducts,
       icon: Package,
-      color: "bg-amber-50 text-amber-600",
+      color: "bg-primary/10 text-primary",
       href: "/admin/products",
       urgent: false,
     },
@@ -184,7 +175,7 @@ export default function AdminDashboard() {
       label: "Pending Orders",
       value: stats.pendingOrders,
       icon: ShoppingCart,
-      color: "bg-green-50 text-green-600",
+      color: "bg-primary/10 text-primary",
       href: "/admin/orders",
       urgent: stats.pendingOrders > 0,
     },
@@ -195,10 +186,10 @@ export default function AdminDashboard() {
       <div className="space-y-5">
 
         {/* Greeting */}
-        <div className="bg-gray-900 rounded-2xl p-4 text-white">
-          <p className="text-gray-400 text-xs mb-1">Welcome back 👋</p>
+        <div className="bg-primary rounded-2xl p-4 text-primary-foreground animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+          <p className="text-primary-foreground/60 text-xs mb-1">Welcome back 👋</p>
           <h2 className="font-bold text-lg">Kano Kaftan</h2>
-          <p className="text-gray-400 text-sm mt-1">
+          <p className="text-primary-foreground/70 text-sm mt-1">
             {stats.openChats > 0
               ? `You have ${stats.openChats} open chat${stats.openChats > 1 ? "s" : ""} waiting`
               : "Everything looks good today"}
@@ -206,7 +197,7 @@ export default function AdminDashboard() {
           {stats.openChats > 0 && (
             <Link
               to="/admin/chats"
-              className="inline-flex items-center gap-1.5 mt-3 bg-white text-gray-900 text-xs font-semibold px-3 py-1.5 rounded-full"
+              className="inline-flex items-center gap-1.5 mt-3 bg-primary-foreground text-primary text-xs font-semibold px-3 py-1.5 rounded-full transition-opacity hover:opacity-90"
             >
               <MessageCircle className="w-3.5 h-3.5" />
               Reply Now
@@ -217,72 +208,71 @@ export default function AdminDashboard() {
 
         {/* Stat Cards */}
         <div className="grid grid-cols-2 gap-3">
-          {statCards.map((card) => (
+          {statCards.map((card, index) => (
             <Link
               key={card.label}
               to={card.href}
-              className={`bg-white rounded-2xl p-4 border transition-all active:scale-95 ${
-                card.urgent ? "border-gray-900 shadow-sm" : "border-gray-100"
-              }`}
+              className="bg-card rounded-2xl p-4 border border-border transition-all active:scale-95 animate-in fade-in-0 slide-in-from-bottom-4 duration-500 hover:border-primary/30 hover:shadow-sm"
+              style={{ animationDelay: `${index * 75}ms`, animationFillMode: "both" }}
             >
               <div className="flex items-center justify-between mb-3">
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${card.color}`}>
-                  <card.icon className="w-4.5 h-4.5" />
+                  <card.icon className="w-4 h-4" />
                 </div>
                 {card.urgent && (
                   <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                 )}
               </div>
               {loading ? (
-                <div className="h-7 w-12 bg-gray-100 rounded animate-pulse" />
+                <div className="h-7 w-12 bg-muted rounded animate-pulse" />
               ) : (
-                <p className="text-2xl font-bold text-gray-900">{card.value}</p>
+                <p className="text-2xl font-bold text-foreground">{card.value}</p>
               )}
-              <p className="text-xs text-gray-500 mt-0.5">{card.label}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{card.label}</p>
             </Link>
           ))}
         </div>
 
         {/* Quick Actions */}
-        <div>
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Quick Actions</h3>
+        <div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: "300ms", animationFillMode: "both" }}>
+          <h3 className="text-sm font-semibold text-foreground mb-3">Quick Actions</h3>
           <div className="grid grid-cols-2 gap-2">
             <Link
               to="/admin/products"
-              className="flex items-center gap-2 bg-white border border-gray-100 rounded-xl px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-2 bg-card border border-border rounded-xl px-3 py-3 text-sm font-medium text-foreground hover:bg-muted transition-colors"
             >
-              <Package className="w-4 h-4 text-amber-500" />
+              <Package className="w-4 h-4 text-primary" />
               Add Product
             </Link>
             <Link
               to="/admin/chats"
-              className="flex items-center gap-2 bg-white border border-gray-100 rounded-xl px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-2 bg-card border border-border rounded-xl px-3 py-3 text-sm font-medium text-foreground hover:bg-muted transition-colors"
             >
-              <MessageCircle className="w-4 h-4 text-blue-500" />
+              <MessageCircle className="w-4 h-4 text-primary" />
               View Chats
             </Link>
             <Link
               to="/admin/orders"
-              className="flex items-center gap-2 bg-white border border-gray-100 rounded-xl px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-2 bg-card border border-border rounded-xl px-3 py-3 text-sm font-medium text-foreground hover:bg-muted transition-colors"
             >
-              <ShoppingCart className="w-4 h-4 text-green-500" />
+              <ShoppingCart className="w-4 h-4 text-primary" />
               View Orders
             </Link>
             <Link
               to="/admin/users"
-              className="flex items-center gap-2 bg-white border border-gray-100 rounded-xl px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-2 bg-card border border-border rounded-xl px-3 py-3 text-sm font-medium text-foreground hover:bg-muted transition-colors"
             >
-              <Users className="w-4 h-4 text-purple-500" />
+              <Users className="w-4 h-4 text-primary" />
               View Users
             </Link>
           </div>
         </div>
 
         {/* Recent Chats */}
-        <div>
+        <div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: "375ms", animationFillMode: "both" }}>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-900">Recent Chats</h3>
-            <Link to="/admin/chats" className="text-xs text-gray-500 flex items-center gap-1">
+            <h3 className="text-sm font-semibold text-foreground">Recent Chats</h3>
+            <Link to="/admin/chats" className="text-xs text-muted-foreground flex items-center gap-1 hover:text-foreground transition-colors">
               See all <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
@@ -290,14 +280,14 @@ export default function AdminDashboard() {
             {loading && (
               <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />
+                  <div key={i} className="h-16 bg-muted rounded-xl animate-pulse" />
                 ))}
               </div>
             )}
             {!loading && stats.recentChats.length === 0 && (
-              <div className="bg-white border border-gray-100 rounded-xl p-4 text-center">
-                <MessageCircle className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm text-gray-400">No chats yet</p>
+              <div className="bg-card border border-border rounded-xl p-4 text-center">
+                <MessageCircle className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">No chats yet</p>
               </div>
             )}
             {stats.recentChats.map((chat) => (
@@ -305,17 +295,17 @@ export default function AdminDashboard() {
                 key={chat.id}
                 to="/admin/chats"
                 state={{ chatId: chat.id }}
-                className="flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3 hover:border-gray-200 transition-colors"
+                className="flex items-center gap-3 bg-card border border-border rounded-xl p-3 hover:border-primary/20 hover:bg-muted/30 transition-colors"
               >
-                <div className="w-9 h-9 rounded-full bg-gray-900 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+                <div className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold flex-shrink-0">
                   {chat.customer_name[0].toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-0.5">
-                    <p className="text-sm font-medium text-gray-900 truncate">{chat.customer_name}</p>
-                    <span className="text-[10px] text-gray-400 flex-shrink-0 ml-2">{formatTime(chat.created_at)}</span>
+                    <p className="text-sm font-medium text-foreground truncate">{chat.customer_name}</p>
+                    <span className="text-[10px] text-muted-foreground flex-shrink-0 ml-2">{formatTime(chat.created_at)}</span>
                   </div>
-                  <p className="text-xs text-gray-500 truncate">{chat.last_message}</p>
+                  <p className="text-xs text-muted-foreground truncate">{chat.last_message}</p>
                 </div>
                 <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${statusColor(chat.status)}`}>
                   {chat.status}
@@ -326,24 +316,24 @@ export default function AdminDashboard() {
         </div>
 
         {/* Recent Orders */}
-        <div>
+        <div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: "450ms", animationFillMode: "both" }}>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-900">Recent Orders</h3>
-            <Link to="/admin/orders" className="text-xs text-gray-500 flex items-center gap-1">
+            <h3 className="text-sm font-semibold text-foreground">Recent Orders</h3>
+            <Link to="/admin/orders" className="text-xs text-muted-foreground flex items-center gap-1 hover:text-foreground transition-colors">
               See all <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
           <div className="space-y-2">
             {!loading && stats.recentOrders.length === 0 && (
-              <div className="bg-white border border-gray-100 rounded-xl p-4 text-center">
-                <ShoppingCart className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm text-gray-400">No orders yet</p>
+              <div className="bg-card border border-border rounded-xl p-4 text-center">
+                <ShoppingCart className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">No orders yet</p>
               </div>
             )}
             {stats.recentOrders.map((order) => (
               <div
                 key={order.id}
-                className="flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3"
+                className="flex items-center gap-3 bg-card border border-border rounded-xl p-3"
               >
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                   order.status === "completed" ? "bg-green-100" :
@@ -358,12 +348,12 @@ export default function AdminDashboard() {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{order.customer_name}</p>
-                  <p className="text-xs text-gray-400">{formatTime(order.created_at)}</p>
+                  <p className="text-sm font-medium text-foreground truncate">{order.customer_name}</p>
+                  <p className="text-xs text-muted-foreground">{formatTime(order.created_at)}</p>
                 </div>
                 <div className="text-right flex-shrink-0">
                   {order.total && (
-                    <p className="text-sm font-semibold text-gray-900">
+                    <p className="text-sm font-semibold text-foreground">
                       ₦{order.total.toLocaleString()}
                     </p>
                   )}

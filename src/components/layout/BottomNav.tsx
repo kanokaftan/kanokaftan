@@ -1,16 +1,18 @@
 import { Link, useLocation } from "react-router-dom";
 import { Home, MessageCircle, Heart, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const navItems = [
-  { icon: Home, label: "Home", href: "/" },
-  { icon: MessageCircle, label: "Chat", href: "/chat" },
-  { icon: Heart, label: "Favorites", href: "/wishlist" },
-  { icon: User, label: "Profile", href: "/profile" },
-];
+import { useTranslation } from "react-i18next";
 
 export function BottomNav() {
   const location = useLocation();
+  const { t } = useTranslation();
+
+  const navItems = [
+    { icon: Home, label: t("nav.home"), href: "/" },
+    { icon: MessageCircle, label: t("nav.chat"), href: "/chat" },
+    { icon: Heart, label: t("nav.favorites"), href: "/wishlist" },
+    { icon: User, label: t("nav.profile"), href: "/profile" },
+  ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background safe-area-bottom">

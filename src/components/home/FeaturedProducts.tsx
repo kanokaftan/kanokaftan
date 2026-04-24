@@ -7,6 +7,7 @@ import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 import kaftanBlue from "@/assets/products/kaftan-blue.jpg";
 import kaftanWhite from "@/assets/products/kaftan-white.jpg";
@@ -24,6 +25,7 @@ function formatPrice(amount: number): string {
 }
 
 export function FeaturedProducts() {
+  const { t } = useTranslation();
   const { data, isLoading } = useProducts({ featured: true, limit: 4 });
   const { addToCart } = useCart();
   const { userId, addToWishlist, isInWishlist } = useWishlist();
@@ -59,10 +61,10 @@ export function FeaturedProducts() {
         <div className="mb-12 flex items-end justify-between">
           <div>
             <h2 className="font-display text-3xl font-bold text-primary md:text-4xl">
-              Featured Products
+              {t("home.featuredTitle")}
             </h2>
             <p className="mt-4 text-muted-foreground">
-              Handpicked selections from our best vendors
+              {t("home.featuredSubtitle")}
             </p>
           </div>
           <Button variant="link" asChild className="hidden sm:flex">
@@ -121,7 +123,7 @@ export function FeaturedProducts() {
                   </div>
                   <CardContent className="p-4">
                     <p className="text-xs text-muted-foreground">
-                      {product.vendor?.store_name || product.vendor?.full_name || "Vendor"}
+                      {product.category?.name || "Kano Kaftan"}
                     </p>
                     <Link 
                       to={`/products/${product.slug}`}

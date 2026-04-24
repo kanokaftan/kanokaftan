@@ -36,7 +36,8 @@ function formatPrice(amount: number): string {
 export default function Checkout() {
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
-  const { items, isLoading: cartLoading, total } = useCart();
+  const { items, total } = useCart();
+  const cartLoading = false;
   const { addresses, isLoading: addressesLoading, defaultAddress } = useAddresses();
   const { createOrder } = useOrders();
   const { initiatePayment, isProcessing } = usePayment();
@@ -373,9 +374,9 @@ export default function Checkout() {
             {items.map((item) => (
               <div key={item.id} className="flex justify-between text-sm">
                 <span className="text-muted-foreground">
-                  {item.product.name} × {item.quantity}
+                  {item.name} × {item.quantity}
                 </span>
-                <span>{formatPrice(item.product.price * item.quantity)}</span>
+                <span>{formatPrice(item.price * item.quantity)}</span>
               </div>
             ))}
           </div>

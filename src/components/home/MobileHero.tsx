@@ -43,7 +43,7 @@ export function MobileHero() {
         image: product.product_images?.[0]?.url || fallbackSlides[index % fallbackSlides.length].image,
         tag: "Featured",
         title: product.name?.toUpperCase().replace(/ /g, '\n') || "FEATURED\nPRODUCT",
-        description: product.description?.slice(0, 80) || `Premium ${product.category?.name || 'attire'} from ${product.vendor?.store_name || 'our vendors'}.`,
+        description: product.description?.slice(0, 80) || `Premium ${product.category?.name || 'attire'} from our collection.`,
         slug: product.slug,
       }))
     : fallbackSlides.map(slide => ({ ...slide, slug: undefined }));

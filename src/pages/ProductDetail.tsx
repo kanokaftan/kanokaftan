@@ -13,6 +13,7 @@ import { ReviewsList } from "@/components/reviews/ReviewsList";
 import { RecentlyViewed } from "@/components/products/RecentlyViewed";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 function formatPrice(amount: number): string {
   return new Intl.NumberFormat("en-NG", {
@@ -23,6 +24,7 @@ function formatPrice(amount: number): string {
 }
 
 export default function ProductDetail() {
+  const { t } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { data: product, isLoading, error } = useProduct(slug || "");
@@ -63,12 +65,12 @@ export default function ProductDetail() {
     return (
       <MobileLayout>
         <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 py-6">
-          <h1 className="text-lg font-bold">Product Not Found</h1>
+          <h1 className="text-lg font-bold">{t("products.notFound")}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            The product you're looking for doesn't exist.
+            {t("products.notFoundDesc")}
           </p>
           <Button asChild className="mt-4">
-            <Link to="/products">Browse Products</Link>
+            <Link to="/products">{t("products.browseProducts")}</Link>
           </Button>
         </div>
       </MobileLayout>
@@ -111,12 +113,12 @@ export default function ProductDetail() {
         await navigator.share(shareData);
       } else {
         await navigator.clipboard.writeText(productUrl);
-        toast.success("Product link copied! 🎉");
+        toast.success("Product link copied!");
       }
     } catch (err) {
       if ((err as Error).name !== "AbortError") {
         await navigator.clipboard.writeText(productUrl);
-        toast.success("Product link copied! 🎉");
+        toast.success("Product link copied!");
       }
     }
   };
@@ -134,7 +136,7 @@ export default function ProductDetail() {
             />
           ) : (
             <div className="flex h-full items-center justify-center text-muted-foreground">
-              No Image Available
+              {t("products.noImage")}
             </div>
           )}
         </div>
@@ -215,10 +217,10 @@ export default function ProductDetail() {
           <div className="flex items-center gap-2 mt-2">
             {product.stock_quantity > 0 ? (
               <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
-                ✓ Available
+                ✓ {t("products.available")}
               </Badge>
             ) : (
-              <Badge variant="destructive">Out of Stock</Badge>
+              <Badge variant="destructive">{t("products.outOfStock")}</Badge>
             )}
           </div>
         </div>
@@ -240,7 +242,7 @@ export default function ProductDetail() {
         {/* Description */}
         {product.description && (
           <div className="space-y-2">
-            <h3 className="font-semibold text-sm">Description</h3>
+            <h3 className="font-semibold text-sm">{t("products.description")}</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
               {product.description}
             </p>
@@ -250,7 +252,7 @@ export default function ProductDetail() {
         {/* Sizes */}
         {sizes.length > 0 && (
           <div>
-            <p className="mb-2 text-sm font-semibold">Size</p>
+            <p className="mb-2 text-sm font-semibold">{t("products.sizes")}</p>
             <div className="flex flex-wrap gap-2">
               {sizes.map((size) => (
                 <Button
@@ -270,7 +272,7 @@ export default function ProductDetail() {
         {/* Colors */}
         {colors.length > 0 && (
           <div>
-            <p className="mb-2 text-sm font-semibold">Color</p>
+            <p className="mb-2 text-sm font-semibold">{t("products.colors")}</p>
             <div className="flex flex-wrap gap-2">
               {colors.map((color) => (
                 <Button
@@ -294,8 +296,8 @@ export default function ProductDetail() {
               <Truck className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-xs font-semibold">Fast Delivery</p>
-              <p className="text-[10px] text-muted-foreground">2-5 days</p>
+              <p className="text-xs font-semibold">{t("products.fastDelivery")}</p>
+              <p className="text-[10px] text-muted-foreground">{t("products.deliveryDays")}</p>
             </div>
           </div>
           <div className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/50 text-center">
@@ -303,8 +305,8 @@ export default function ProductDetail() {
               <Shield className="h-5 w-5 text-green-600" />
             </div>
             <div>
-              <p className="text-xs font-semibold">Secure</p>
-              <p className="text-[10px] text-muted-foreground">Protected</p>
+              <p className="text-xs font-semibold">{t("products.secure")}</p>
+              <p className="text-[10px] text-muted-foreground">{t("products.secureDesc")}</p>
             </div>
           </div>
           <div className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/50 text-center">
@@ -312,8 +314,8 @@ export default function ProductDetail() {
               <RotateCcw className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-xs font-semibold">Easy Returns</p>
-              <p className="text-[10px] text-muted-foreground">7 days</p>
+              <p className="text-xs font-semibold">{t("products.easyReturns")}</p>
+              <p className="text-[10px] text-muted-foreground">{t("products.returnDays")}</p>
             </div>
           </div>
         </div>
@@ -327,7 +329,7 @@ export default function ProductDetail() {
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t z-40">
         <div className="flex items-center gap-3 max-w-lg mx-auto">
           <div className="text-left">
-            <p className="text-xs text-muted-foreground">Price</p>
+            <p className="text-xs text-muted-foreground">{t("products.price")}</p>
             <p className="font-bold text-lg">{formatPrice(product.price)}</p>
           </div>
           <Button
@@ -336,7 +338,7 @@ export default function ProductDetail() {
             onClick={() => navigate(`/chat?product=${product.id}`)}
             disabled={product.stock_quantity === 0}
           >
-            💬 Chat to Order
+            💬 {t("products.chatToOrder")}
           </Button>
         </div>
       </div>

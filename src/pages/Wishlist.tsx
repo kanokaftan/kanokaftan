@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useWishlist } from "@/hooks/useWishlist";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 function formatPrice(amount: number): string {
   return new Intl.NumberFormat("en-NG", {
@@ -15,13 +16,14 @@ function formatPrice(amount: number): string {
 }
 
 export default function Wishlist() {
+  const { t } = useTranslation();
   const { items, isLoading, userId, removeFromWishlist } = useWishlist();
 
   const handleRemove = async (itemId: string, productName: string) => {
     try {
       await removeFromWishlist.mutateAsync(itemId);
       toast.success(`${productName} removed from favorites`);
-    } catch (error) {
+    } catch {
       toast.error("Failed to remove from favorites");
     }
   };
@@ -30,22 +32,22 @@ export default function Wishlist() {
     return (
       <MobileLayout>
         <div className="px-4 py-6">
-          <h1 className="font-display text-xl font-bold text-foreground">Favorites</h1>
-          
+          <h1 className="font-display text-xl font-bold text-foreground">{t("wishlist.title")}</h1>
+
           <div className="mt-12 flex flex-col items-center justify-center text-center">
             <div className="mb-4 rounded-full bg-muted p-6">
               <Heart className="h-12 w-12 text-muted-foreground" />
             </div>
-            <h2 className="text-lg font-medium text-foreground">Sign in to save favorites</h2>
+            <h2 className="text-lg font-medium text-foreground">{t("wishlist.signInTitle")}</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Create an account to save your favorite products.
+              {t("wishlist.signInDesc")}
             </p>
             <div className="mt-6 flex gap-3">
               <Button asChild>
-                <Link to="/auth">Sign In</Link>
+                <Link to="/auth">{t("auth.signIn")}</Link>
               </Button>
               <Button variant="outline" asChild>
-                <Link to="/auth?mode=register">Register</Link>
+                <Link to="/auth?mode=register">{t("auth.signUp")}</Link>
               </Button>
             </div>
           </div>
@@ -58,7 +60,7 @@ export default function Wishlist() {
     return (
       <MobileLayout>
         <div className="px-4 py-6">
-          <h1 className="font-display text-xl font-bold text-foreground">Favorites</h1>
+          <h1 className="font-display text-xl font-bold text-foreground">{t("wishlist.title")}</h1>
           <div className="mt-4 grid grid-cols-2 gap-3">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="space-y-2">
@@ -77,18 +79,18 @@ export default function Wishlist() {
     return (
       <MobileLayout>
         <div className="px-4 py-6">
-          <h1 className="font-display text-xl font-bold text-foreground">Favorites</h1>
-          
+          <h1 className="font-display text-xl font-bold text-foreground">{t("wishlist.title")}</h1>
+
           <div className="mt-12 flex flex-col items-center justify-center text-center">
             <div className="mb-4 rounded-full bg-muted p-6">
               <Heart className="h-12 w-12 text-muted-foreground" />
             </div>
-            <h2 className="text-lg font-medium text-foreground">No favorites yet</h2>
+            <h2 className="text-lg font-medium text-foreground">{t("wishlist.empty")}</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Tap the heart icon on products to save them here.
+              {t("wishlist.emptyHint")}
             </p>
             <Button className="mt-6" asChild>
-              <Link to="/products">Browse Products</Link>
+              <Link to="/products">{t("wishlist.browseProducts")}</Link>
             </Button>
           </div>
         </div>
@@ -100,12 +102,12 @@ export default function Wishlist() {
     <MobileLayout>
       <div className="px-4 py-6">
         <h1 className="font-display text-xl font-bold text-foreground">
-          Favorites ({items.length})
+          {t("wishlist.title")} ({items.length})
         </h1>
-        
+
         <div className="mt-4 grid grid-cols-2 gap-3">
           {items.map((item) => {
-            const primaryImage = item.product.product_images?.find(img => img.is_primary)?.url 
+            const primaryImage = item.product.product_images?.find(img => img.is_primary)?.url
               || item.product.product_images?.[0]?.url;
             const discount = item.product.compare_at_price && item.product.compare_at_price > item.product.price
               ? Math.round(((item.product.compare_at_price - item.product.price) / item.product.compare_at_price) * 100)
@@ -123,18 +125,17 @@ export default function Wishlist() {
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center bg-muted">
-                        <span className="text-muted-foreground">No image</span>
+                        <span className="text-muted-foreground">{t("products.noImage")}</span>
                       </div>
                     )}
-                    
-                    {/* Discount Badge */}
+
                     {discount && (
                       <span className="absolute left-2 top-2 rounded-md bg-destructive px-2 py-0.5 text-[10px] font-bold text-destructive-foreground">
                         {discount}% OFF
                       </span>
                     )}
                   </div>
-                  
+
                   <div className="mt-2 space-y-0.5">
                     <h3 className="line-clamp-2 text-sm font-medium text-foreground">
                       {item.product.name}
@@ -151,8 +152,7 @@ export default function Wishlist() {
                     </div>
                   </div>
                 </Link>
-                
-                {/* Remove Button */}
+
                 <Button
                   size="icon"
                   variant="secondary"

@@ -180,7 +180,7 @@ export function AllProductsSection() {
                       {product.name}
                     </h3>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {product.vendor?.store_name || product.vendor?.full_name || "Vendor"}
+                      {product.category?.name || "Kano Kaftan"}
                     </p>
                   </div>
                   <div className="flex items-center justify-between">
