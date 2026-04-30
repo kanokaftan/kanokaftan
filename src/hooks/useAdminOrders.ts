@@ -67,6 +67,7 @@ export function useAdminOrders() {
         };
       });
     },
+    staleTime: 30_000,
   });
 
   const updateOrderStatus = useMutation({

@@ -382,7 +382,7 @@ export default function Chat() {
   const canSend = !isClosed && !uploading;
 
   return (
-    <div className="flex flex-col h-screen bg-muted/30">
+    <div className="relative flex flex-col h-screen bg-muted/30">
       {/* Header */}
       <div className="bg-card border-b px-4 py-3 flex items-center gap-3 shadow-sm shrink-0">
         <button onClick={() => navigate(-1)} className="p-1.5 rounded-full hover:bg-muted transition-colors">

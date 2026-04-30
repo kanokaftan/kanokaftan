@@ -152,46 +152,73 @@ export default function AdminChats() {
     setShowScrollBtn(false);
   };
 
+  const formatLastMessage = (msg: { content: string; message_type?: string } | null) => {
+    if (!msg) return "No messages yet";
+    if (msg.message_type === "voice") return "🎤 Voice note";
+    if (msg.message_type === "image") return "📷 Image";
+    return msg.content;
+  };
+
   const loadChats = async () => {
     setLoadingChats(true);
-    const { data, error } = await supabase
-      .from("chats")
-      .select(`*, profiles(full_name, email, phone)`)
-      .order("updated_at", { ascending: false });
+    try {
+      const { data: chatsData, error } = await supabase
+        .from("chats")
+        .select(`*, profiles(full_name, email, phone)`)
+        .order("updated_at", { ascending: false });
 
-    if (error) { console.error("Error loading chats:", error); setLoadingChats(false); return; }
+      if (error) throw error;
+      if (!chatsData?.length) { setChats([]); return; }
 
-    if (data) {
-      const chatsWithLastMessage = await Promise.all(
-        data.map(async (chat) => {
-          const { data: msgs } = await supabase
-            .from("messages")
-            .select("content, message_type")
-            .eq("chat_id", chat.id)
-            .order("created_at", { ascending: false })
-            .limit(1);
-          const last = msgs?.[0];
-          const lastText = last
-            ? last.message_type === "voice"
-              ? "🎤 Voice note"
-              : last.message_type === "image"
-              ? "📷 Image"
-              : last.content
-            : "No messages yet";
-          return { ...chat, last_message: lastText };
-        })
+      // Single batch query for last messages — eliminates N+1
+      const chatIds = chatsData.map((c) => c.id);
+      const { data: messagesData } = await supabase
+        .from("messages")
+        .select("chat_id, content, message_type, created_at")
+        .in("chat_id", chatIds)
+        .order("created_at", { ascending: false });
+
+      const lastMsgMap = new Map<string, { content: string; message_type?: string }>();
+      for (const msg of messagesData || []) {
+        if (!lastMsgMap.has(msg.chat_id)) lastMsgMap.set(msg.chat_id, msg);
+      }
+
+      setChats(
+        chatsData.map((chat) => ({
+          ...chat,
+          last_message: formatLastMessage(lastMsgMap.get(chat.id) ?? null),
+        })) as Chat[]
       );
-      setChats(chatsWithLastMessage as Chat[]);
+    } catch (err) {
+      console.error("Error loading chats:", err);
+    } finally {
+      setLoadingChats(false);
     }
-    setLoadingChats(false);
   };
 
   const subscribeToNewChats = () => {
     if (chatChannelRef.current) supabase.removeChannel(chatChannelRef.current);
     chatChannelRef.current = supabase
       .channel("admin-new-chats")
-      .on("postgres_changes", { event: "*", schema: "public", table: "chats" }, () => loadChats())
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, () => loadChats())
+      // Only full-reload on chat create/delete — not on every message
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chats" }, () => loadChats())
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "chats" }, () => loadChats())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
+        const newMsg = payload.new as any;
+        const lastText = formatLastMessage(newMsg);
+        // Update only the affected chat in-place — no re-fetch
+        setChats((prev) =>
+          [...prev.map((chat) =>
+            chat.id === newMsg.chat_id
+              ? { ...chat, last_message: lastText, updated_at: newMsg.created_at }
+              : chat
+          )].sort(
+            (a, b) =>
+              new Date(b.updated_at || b.created_at).getTime() -
+              new Date(a.updated_at || a.created_at).getTime()
+          )
+        );
+      })
       .subscribe();
   };
 

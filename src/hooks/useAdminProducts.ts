@@ -22,11 +22,17 @@ export function useAdminProducts() {
     queryFn: async (): Promise<AdminProduct[]> => {
       const { data, error } = await supabase
         .from("products")
-        .select(`*, category:categories(name), product_images(url)`)
+        .select(`*, category:categories(name), product_images(url, is_primary, display_order)`)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data || [];
+      return (data || []).map((p) => ({
+        ...p,
+        product_images: (p.product_images || []).sort(
+          (a: any, b: any) => (a.display_order ?? 99) - (b.display_order ?? 99)
+        ),
+      }));
     },
+    staleTime: 30_000,
   });
 
   const toggleFeatured = useMutation({

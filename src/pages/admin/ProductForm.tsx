@@ -80,11 +80,20 @@ export default function AdminProductForm() {
     load();
   }, [id, isEditing]);
 
+  const ensureBucket = async () => {
+    const { data: buckets } = await supabase.storage.listBuckets();
+    if (!buckets?.find((b) => b.id === "product-images")) {
+      await supabase.storage.createBucket("product-images", { public: true });
+    }
+  };
+
   const uploadImage = async (file: File): Promise<string> => {
-    const ext = file.name.split(".").pop();
-    const fileName = `${user?.id}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("product-images").upload(fileName, file, { upsert: true });
-    if (error) throw error;
+    const ext = file.name.split(".").pop() || "jpg";
+    const fileName = `products/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage
+      .from("product-images")
+      .upload(fileName, file, { upsert: true, contentType: file.type });
+    if (error) throw new Error(error.message);
     return supabase.storage.from("product-images").getPublicUrl(fileName).data.publicUrl;
   };
 
@@ -93,17 +102,20 @@ export default function AdminProductForm() {
     if (!files?.length) return;
     setUploading(true);
     try {
+      await ensureBucket();
+      const currentCount = images.length;
       const uploads = await Promise.all(
-        Array.from(files).map(async (file) => ({
+        Array.from(files).map(async (file, i) => ({
           url: await uploadImage(file),
-          is_primary: images.length === 0,
+          is_primary: currentCount === 0 && i === 0,
         }))
       );
       setImages((prev) => [...prev, ...uploads]);
-    } catch {
-      toast.error("Image upload failed");
+    } catch (err: any) {
+      toast.error(`Upload failed: ${err.message}`);
     } finally {
       setUploading(false);
+      e.target.value = "";
     }
   };
 

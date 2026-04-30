@@ -40,9 +40,10 @@ export function useAdminUsers() {
 
       return profiles?.map(p => ({
         ...p,
-        roles: rolesByUser[p.id] || ["customer"],
+        roles: (rolesByUser[p.id] || ["customer"]).filter((r: string) => r !== "vendor"),
       })) || [];
     },
+    staleTime: 30_000,
   });
 
   const updateUserVerification = useMutation({
