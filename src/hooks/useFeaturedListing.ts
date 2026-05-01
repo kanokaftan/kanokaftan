@@ -37,7 +37,7 @@ export function useFeaturedListing({ onSuccess }: UseFeaturedListingOptions = {}
           title: "Product featured! 🎉",
           description: "Your product is now featured using the promo code.",
         });
-        queryClient.invalidateQueries({ queryKey: ["vendor-products"] });
+        queryClient.invalidateQueries({ queryKey: ["admin-products"] });
         onSuccess?.();
         return true;
       }
@@ -94,7 +94,7 @@ export function useFeaturedListing({ onSuccess }: UseFeaturedListingOptions = {}
           title: "Product featured! 🎉",
           description: "Your payment was successful. Your product is now featured.",
         });
-        queryClient.invalidateQueries({ queryKey: ["vendor-products"] });
+        queryClient.invalidateQueries({ queryKey: ["admin-products"] });
         return true;
       }
 

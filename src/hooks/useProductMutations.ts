@@ -50,7 +50,6 @@ export function useProductMutations(userId: string | null) {
         .insert({
           ...product,
           slug,
-          vendor_id: userId,
         })
         .select()
         .single();
@@ -134,7 +133,6 @@ export function useProductMutations(userId: string | null) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
-      queryClient.invalidateQueries({ queryKey: ["vendor-product"] });
       toast({
         title: "Product updated",
         description: "Your changes have been saved",

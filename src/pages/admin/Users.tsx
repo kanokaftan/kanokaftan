@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, BadgeCheck, Shield, Store } from "lucide-react";
+import { Search, BadgeCheck, Shield } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -42,8 +42,6 @@ export default function AdminUsers() {
     switch (role) {
       case "admin":
         return <Badge variant="destructive" className="gap-1"><Shield className="h-3 w-3" />Admin</Badge>;
-      case "vendor":
-        return <Badge variant="secondary" className="gap-1"><Store className="h-3 w-3" />Vendor</Badge>;
       default:
         return <Badge variant="outline">Customer</Badge>;
     }

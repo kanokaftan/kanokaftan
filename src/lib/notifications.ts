@@ -60,7 +60,7 @@ export async function createBulkNotifications(
  * Notify all users with a specific role
  */
 export async function notifyRole(
-  role: 'customer' | 'vendor' | 'admin',
+  role: 'customer' | 'admin',
   notification: Omit<CreateNotificationParams, 'userId'>
 ) {
   const { data, error } = await supabase.functions.invoke('create-notification', {

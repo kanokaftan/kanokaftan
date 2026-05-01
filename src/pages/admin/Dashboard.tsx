@@ -84,23 +84,27 @@ export default function AdminDashboard() {
         .order("updated_at", { ascending: false })
         .limit(5);
 
-      const recentChats = await Promise.all(
-        (recentChatsData || []).map(async (chat) => {
-          const { data: msgs } = await supabase
+      const chatIds = (recentChatsData || []).map((c: any) => c.id);
+      const { data: lastMsgsData } = chatIds.length > 0
+        ? await supabase
             .from("messages")
-            .select("content")
-            .eq("chat_id", chat.id)
+            .select("chat_id, content, created_at")
+            .in("chat_id", chatIds)
             .order("created_at", { ascending: false })
-            .limit(1);
-          return {
-            id: chat.id,
-            customer_name: chat.profiles?.full_name || chat.profiles?.email || "Customer",
-            last_message: msgs?.[0]?.content || "No messages",
-            created_at: chat.updated_at || chat.created_at,
-            status: chat.status,
-          };
-        })
-      );
+        : { data: [] };
+
+      const lastMsgMap = new Map<string, string>();
+      for (const msg of lastMsgsData || []) {
+        if (!lastMsgMap.has(msg.chat_id)) lastMsgMap.set(msg.chat_id, msg.content);
+      }
+
+      const recentChats = (recentChatsData || []).map((chat: any) => ({
+        id: chat.id,
+        customer_name: chat.profiles?.full_name || chat.profiles?.email || "Customer",
+        last_message: lastMsgMap.get(chat.id) || "No messages",
+        created_at: chat.updated_at || chat.created_at,
+        status: chat.status,
+      }));
 
       const { data: recentOrdersData } = await supabase
         .from("orders")
