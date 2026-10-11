@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { Facebook, Instagram, Twitter } from "lucide-react";
 
 export function Footer() {
@@ -9,12 +10,11 @@ export function Footer() {
           {/* Brand */}
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2">
-              <span className="font-display text-2xl font-bold">
-                K<sup className="text-sm">2</sup>
-              </span>
+              <BrandLogo tile className="h-11 w-11" />
+              <span className="font-display text-xl font-bold">Kano Kaftan</span>
             </Link>
             <p className="text-sm text-primary-foreground/80">
-              Authentic Nigerian traditional attire, handcrafted with love from Kano.
+              Clothing, fabrics, shoes, caps and accessories from trusted sellers, with safe payments and delivery.
             </p>
             <div className="flex gap-4">
               <a 
@@ -46,23 +46,23 @@ export function Footer() {
             <h4 className="font-display text-lg font-semibold">Shop</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/products?category=agbada" className="text-primary-foreground/80 hover:text-primary-foreground">
-                  Agbada
-                </Link>
-              </li>
-              <li>
                 <Link to="/products?category=kaftan" className="text-primary-foreground/80 hover:text-primary-foreground">
                   Kaftan
                 </Link>
               </li>
               <li>
-                <Link to="/products?category=dashiki" className="text-primary-foreground/80 hover:text-primary-foreground">
-                  Dashiki
+                <Link to="/products?category=shoes" className="text-primary-foreground/80 hover:text-primary-foreground">
+                  Shoes
                 </Link>
               </li>
               <li>
-                <Link to="/products?category=aso-oke" className="text-primary-foreground/80 hover:text-primary-foreground">
-                  Aso Oke
+                <Link to="/products?category=bags" className="text-primary-foreground/80 hover:text-primary-foreground">
+                  Bags
+                </Link>
+              </li>
+              <li>
+                <Link to="/products?category=caps" className="text-primary-foreground/80 hover:text-primary-foreground">
+                  Caps
                 </Link>
               </li>
               <li>

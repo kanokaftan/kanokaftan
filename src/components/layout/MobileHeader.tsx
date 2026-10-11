@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { ShoppingCart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/hooks/useCart";
@@ -16,9 +17,7 @@ export function MobileHeader() {
     <header className="liquid-glass sticky top-0 z-50 w-full border-b border-white/30 dark:border-white/10">
       <div className="flex h-14 items-center gap-3 px-4">
         <Link to="/" className="flex-shrink-0">
-          <span className="font-display text-xl font-bold text-primary">
-            K<sup className="text-xs">2</sup>
-          </span>
+          <BrandLogo tile className="h-9 w-9 rounded-lg" alt="Kano Kaftan home" />
         </Link>
 
         <LiveSearch className="flex-1" placeholder={t("products.searchPlaceholder")} />

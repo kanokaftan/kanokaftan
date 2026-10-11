@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { useTranslation } from "react-i18next";
 import { BadgeCheck, Megaphone, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,8 +16,8 @@ import { cn } from "@/lib/utils";
 const BRAND_SLIDE = {
   image: null,
   tag: "Kano Kaftan",
-  title: "AUTHENTIC\nKANO TAILORING",
-  description: "Agbada, kaftan and dashiki from master tailors in Kano.",
+  title: "FASHION FROM\nTRUSTED SELLERS",
+  description: "Clothing, fabrics, shoes, caps and accessories, all in one place.",
 };
 
 const HERO_PRODUCT_LIMIT = 5;
@@ -110,7 +111,9 @@ export function MobileHero() {
                 {slide.image ? (
                   <HeroImage src={slide.image} alt={slide.title.replace(/\n/g, " ")} eager={index === 0} />
                 ) : (
-                  <div className="h-full w-full bg-gradient-to-br from-neutral-900 via-neutral-800 to-[#5C4300]" />
+                  <div className="flex h-full w-full items-start justify-center bg-gradient-to-br from-neutral-900 via-neutral-800 to-[#5C4300] pt-[18%]">
+                    <BrandLogo tile className="relative z-10 h-28 w-28 rounded-3xl sm:h-32 sm:w-32" alt="" />
+                  </div>
                 )}
                 
                 {/* Overlay Gradient */}

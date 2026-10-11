@@ -72,7 +72,7 @@ export default function VendorProfile() {
     title: shop ? `${shop.store_name} - Kano Kaftan` : "Shop - Kano Kaftan",
     description:
       shop?.store_description ||
-      `Shop authentic Nigerian Agbada, Kaftan, and Dashiki from ${shop?.store_name ?? "our sellers"} on Kano Kaftan.`,
+      `Shop clothing, fabrics, shoes, caps and accessories from ${shop?.store_name ?? "our sellers"} on Kano Kaftan.`,
     image: shop?.store_banner_url || shop?.avatar_url || DEFAULT_SHARE_IMAGE,
     url: shopUrl,
   });
@@ -115,7 +115,7 @@ export default function VendorProfile() {
   const handleShare = async () => {
     const shareData = {
       title: `${shop.store_name} - Kano Kaftan`,
-      text: `Check out ${shop.store_name} on Kano Kaftan! Shop authentic Nigerian traditional attire.`,
+      text: `Check out ${shop.store_name} on Kano Kaftan! Clothing, fabrics, shoes, caps and accessories.`,
       url: shopUrl,
     };
     try {

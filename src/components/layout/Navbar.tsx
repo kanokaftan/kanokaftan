@@ -36,7 +36,7 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <img src="/logo.png" alt="Kano Kaftan" className="h-8 w-8 object-contain" />
+          <img src="/logo.svg" alt="Kano Kaftan" className="h-8 w-8 object-contain" />
           <span className="font-display text-lg font-bold text-primary">
             Kano Kaftan
           </span>
@@ -45,9 +45,10 @@ export function Navbar() {
         <div className="hidden items-center gap-8 md:flex">
           <Link to="/products" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Shop</Link>
           <Link to="/shops" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">{t("nav.sellers")}</Link>
-          <Link to="/products?category=agbada" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Agbada</Link>
           <Link to="/products?category=kaftan" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Kaftan</Link>
-          <Link to="/products?category=dashiki" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Dashiki</Link>
+          <Link to="/products?category=shoes" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Shoes</Link>
+          <Link to="/products?category=caps" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Caps</Link>
+          <Link to="/products?category=accessories" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Accessories</Link>
         </div>
 
         <div className="flex items-center gap-2">
@@ -83,9 +84,10 @@ export function Navbar() {
           <div className="container flex flex-col gap-4 py-4">
             <Link to="/products" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Shop All</Link>
             <Link to="/shops" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>{t("nav.sellers")}</Link>
-            <Link to="/products?category=agbada" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Agbada</Link>
             <Link to="/products?category=kaftan" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Kaftan</Link>
-            <Link to="/products?category=dashiki" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Dashiki</Link>
+            <Link to="/products?category=shoes" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Shoes</Link>
+            <Link to="/products?category=caps" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Caps</Link>
+            <Link to="/products?category=accessories" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Accessories</Link>
             <Link to="/wishlist" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Wishlist</Link>
             <Link to="/chat" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>💬 Chat to Order</Link>
             {user ? (

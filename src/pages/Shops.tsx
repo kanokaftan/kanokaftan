@@ -19,7 +19,7 @@ export default function Shops() {
 
   useDocumentMeta({
     title: "Shops - Kano Kaftan",
-    description: "Browse tailors and sellers of Agbada, Kaftan and Dashiki on Kano Kaftan.",
+    description: "Browse shops selling clothing, fabrics, shoes, caps and accessories on Kano Kaftan.",
   });
 
   return (

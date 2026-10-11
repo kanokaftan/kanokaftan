@@ -242,7 +242,7 @@ export default function AuthPage() {
         <div className="mx-auto w-full max-w-md">
           {/* Logo */}
           <Link to="/" className="mb-8 flex items-center gap-3">
-            <img src="/logo.png" alt="K² Kano Kaftan" className="h-12 w-12 object-contain" />
+            <img src="/logo.svg" alt="K² Kano Kaftan" className="h-12 w-12 object-contain" />
             <div>
               <span className="font-display text-2xl font-bold text-primary">K²</span>
               <span className="font-display text-lg ml-1">Kano Kaftan</span>

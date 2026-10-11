@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { FadeInImage } from "@/components/ui/fade-in-image";
 import useEmblaCarousel from "embla-carousel-react";
 import { cn } from "@/lib/utils";
@@ -111,9 +112,7 @@ export function ProductImageCarousel({
       <FadeInImage src={fallbackUrl} alt={alt} loading="lazy" className={cn("h-full w-full object-cover", imageClassName, className)} />
     ) : (
       <div className={cn("flex h-full w-full items-center justify-center bg-muted", className)} aria-label={alt} role="img">
-        <span className="font-display text-3xl font-bold text-muted-foreground/25">
-          K<sup className="text-sm">2</sup>
-        </span>
+        <BrandLogo className="h-1/3 w-1/3 opacity-15 grayscale" alt="" />
       </div>
     );
   }

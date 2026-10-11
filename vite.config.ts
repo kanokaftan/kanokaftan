@@ -21,11 +21,11 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       // Registered in src/lib/registerServiceWorker.ts, which handles browsers that refuse it.
       injectRegister: null,
-      includeAssets: ["favicon.ico", "robots.txt"],
+      includeAssets: ["favicon.ico", "robots.txt", "logo.svg"],
       manifest: {
         name: "K² Kano Kaftan",
         short_name: "K² Kaftan",
-        description: "Shop authentic Nigerian Agbada, Kaftan, and Dashiki from master tailors in Kano",
+        description: "Clothing, fabrics, shoes, caps and accessories from trusted sellers",
         theme_color: "#2A0800",
         background_color: "#FAF9F7",
         display: "standalone",
@@ -43,7 +43,8 @@ export default defineConfig(({ mode }) => ({
             type: "image/png",
           },
           {
-            src: "/pwa-512x512.png",
+            // Extra padding so Android's round/squircle masks never cut the logo.
+            src: "/pwa-maskable-512x512.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable",

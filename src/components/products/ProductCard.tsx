@@ -96,7 +96,7 @@ export function ProductCard({ product, onQuickView, hideFloatingCart = false, co
     const productUrl = `https://kanokaftan.shop/products/${product.slug}`;
     const shareData = {
       title: `${product.name} - Kano Kaftan`,
-      text: `Check out ${product.name} on Kano Kaftan! Authentic Nigerian traditional attire.`,
+      text: `Check out ${product.name} on Kano Kaftan! Clothing, fabrics, shoes, caps and accessories from trusted sellers.`,
       url: productUrl,
     };
 
