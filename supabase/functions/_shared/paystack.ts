@@ -6,9 +6,26 @@ export interface PaystackResponse<T> {
   data: T;
 }
 
+/** Thrown whenever Paystack is needed but PAYSTACK_SECRET_KEY isn't set yet. */
+export class PaystackNotConfiguredError extends Error {
+  constructor() {
+    super('Paystack secret key not configured');
+    this.name = 'PaystackNotConfiguredError';
+  }
+}
+
+/** True once the PAYSTACK_SECRET_KEY secret has been added (no restart or redeploy needed). */
+export function paystackConfigured(): boolean {
+  return !!Deno.env.get('PAYSTACK_SECRET_KEY');
+}
+
+export function isPaystackNotConfigured(error: unknown): boolean {
+  return error instanceof PaystackNotConfiguredError || (error instanceof Error && error.message === 'Paystack secret key not configured');
+}
+
 function secretKey(): string {
   const key = Deno.env.get('PAYSTACK_SECRET_KEY');
-  if (!key) throw new Error('Paystack secret key not configured');
+  if (!key) throw new PaystackNotConfiguredError();
   return key;
 }
 

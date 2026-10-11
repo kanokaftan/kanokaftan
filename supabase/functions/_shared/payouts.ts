@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { paystack } from "./paystack.ts";
+import { paystack, paystackConfigured } from "./paystack.ts";
 
 interface PayoutRow {
   id: string;
@@ -32,6 +32,9 @@ export async function processPendingPayouts(
   filter: { orderId?: string; vendorId?: string } = {},
 ): Promise<PayoutRunSummary> {
   const summary: PayoutRunSummary = { sent: 0, waitingForBankAccount: 0, failed: 0 };
+  // Without Paystack nothing can be sent: leave every payout "pending" so the
+  // first run after the key is added sends them all.
+  if (!paystackConfigured()) return summary;
 
   let query = supabase
     .from('payouts')
@@ -123,6 +126,7 @@ export async function processPendingPayouts(
  * webhook was missed or the original request timed out.
  */
 export async function reconcileProcessingPayouts(supabase: SupabaseClient): Promise<number> {
+  if (!paystackConfigured()) return 0;
   const cutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString();
   const { data: stale, error } = await supabase
     .from('payouts')

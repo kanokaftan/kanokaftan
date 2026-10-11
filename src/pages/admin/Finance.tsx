@@ -3,6 +3,7 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { PayoutLedger } from "@/components/admin/PayoutLedger";
 import { DisputesPanel } from "@/components/admin/DisputesPanel";
+import { PaymentsStatusCard } from "@/components/admin/PaymentsStatusCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -57,6 +58,7 @@ export default function AdminFinance() {
 
   return (
     <AdminLayout title="Finance & Payouts">
+      <PaymentsStatusCard />
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">

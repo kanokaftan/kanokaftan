@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.story-cleanup]
 verify_jwt = false
+
+[functions.payments-status]
+verify_jwt = false

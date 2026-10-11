@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCaller } from "../_shared/supabase.ts";
+import { paymentsNotConfigured } from "../_shared/cors.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,7 +17,9 @@ serve(async (req) => {
   try {
     const paystackSecretKey = Deno.env.get('PAYSTACK_SECRET_KEY');
     if (!paystackSecretKey) {
-      throw new Error('Paystack secret key not configured');
+      return paymentsNotConfigured(
+        "Card payments aren't switched on yet. Your order is saved; please try paying again a little later, or chat with us.",
+      );
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;

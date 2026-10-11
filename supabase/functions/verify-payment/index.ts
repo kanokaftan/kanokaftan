@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders, json } from "../_shared/cors.ts";
+import { corsHeaders, json, paymentsNotConfigured } from "../_shared/cors.ts";
+import { isPaystackNotConfigured } from "../_shared/paystack.ts";
 import { serviceClient } from "../_shared/supabase.ts";
 import { confirmOrderPayment } from "../_shared/payments.ts";
 
@@ -25,6 +26,7 @@ serve(async (req) => {
       paidAt: result.transaction.paid_at,
     });
   } catch (error: unknown) {
+    if (isPaystackNotConfigured(error)) return paymentsNotConfigured();
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('Verification error:', error);
     return json({ success: false, error: message }, 400);

@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { verifySignature } from "../_shared/paystack.ts";
+import { isPaystackNotConfigured, verifySignature } from "../_shared/paystack.ts";
 import { serviceClient } from "../_shared/supabase.ts";
 import { confirmOrderPayment } from "../_shared/payments.ts";
 import { applyTransferStatus } from "../_shared/payouts.ts";
@@ -50,6 +50,11 @@ serve(async (req) => {
 
     return new Response('OK', { status: 200, headers: { ...corsHeaders, 'Content-Type': 'text/plain' } });
   } catch (error) {
+    if (isPaystackNotConfigured(error)) {
+      // Paystack keeps retrying for a while, so events arriving before the key is added aren't lost.
+      console.error('Webhook received but PAYSTACK_SECRET_KEY is not set yet; Paystack will retry');
+      return new Response('Payments not configured yet', { status: 503, headers: { ...corsHeaders, 'Content-Type': 'text/plain' } });
+    }
     console.error('Webhook error:', error);
     // Non-2xx makes Paystack retry the event later.
     return new Response('Webhook error', { status: 500, headers: { ...corsHeaders, 'Content-Type': 'text/plain' } });

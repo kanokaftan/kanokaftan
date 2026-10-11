@@ -168,13 +168,20 @@ export function MobileHero() {
 /** A banner photo that fades in once it has loaded (grey shimmer until then). */
 function HeroImage({ src, alt, eager }: { src: string; alt: string; eager: boolean }) {
   const [loaded, setLoaded] = useState(false);
+  // Photos already in the browser cache (e.g. reopening the app) show at once, without the fade.
+  const markIfCached = useCallback((img: HTMLImageElement | null) => {
+    if (img?.complete && img.naturalWidth > 0) setLoaded(true);
+  }, []);
   return (
     <>
       {!loaded && <Skeleton className="absolute inset-0 rounded-none bg-foreground/[0.07]" />}
       <img
+        ref={markIfCached}
         src={src}
         alt={alt}
         loading={eager ? "eager" : "lazy"}
+        // The first banner is the most important picture on the page: fetch it before anything else.
+        {...{ fetchpriority: eager ? "high" : "auto" }}
         decoding="async"
         onLoad={() => setLoaded(true)}
         onError={() => setLoaded(true)}

@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders, json } from "../_shared/cors.ts";
+import { corsHeaders, json, paymentsNotConfigured } from "../_shared/cors.ts";
 import { getCaller, serviceClient } from "../_shared/supabase.ts";
-import { paystack } from "../_shared/paystack.ts";
+import { isPaystackNotConfigured, paystack } from "../_shared/paystack.ts";
 import { processPendingPayouts } from "../_shared/payouts.ts";
 
 interface Bank {
@@ -118,10 +118,7 @@ serve(async (req) => {
     throw new Error('Unknown action');
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    if (message === 'Paystack secret key not configured') {
-      console.error('[vendor-payout-account] PAYSTACK_SECRET_KEY is not set in Edge Function secrets');
-      return json({ success: false, error: NOT_CONFIGURED_MESSAGE, code: 'payouts_not_configured' }, 503);
-    }
+    if (isPaystackNotConfigured(error)) return paymentsNotConfigured(NOT_CONFIGURED_MESSAGE);
     console.error('[vendor-payout-account] request failed:', message);
     return json({ success: false, error: message }, 400);
   }

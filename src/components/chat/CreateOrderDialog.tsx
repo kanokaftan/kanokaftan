@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { AddressAutocomplete } from "@/components/address/AddressAutocomplete";
 
 interface PickedItem {
   product_id: string;
@@ -194,7 +195,15 @@ export function CreateOrderDialog({
             <div className="grid grid-cols-2 gap-2">
               <Input placeholder="Full name" value={address.full_name} onChange={(e) => setAddress({ ...address, full_name: e.target.value })} />
               <Input placeholder="Phone" value={address.phone} onChange={(e) => setAddress({ ...address, phone: e.target.value })} />
-              <Input className="col-span-2" placeholder="Street address" value={address.street_address} onChange={(e) => setAddress({ ...address, street_address: e.target.value })} />
+              <div className="col-span-2">
+                <AddressAutocomplete
+                  placeholder="Street address (start typing)"
+                  value={address.street_address}
+                  onChange={(v) => setAddress((a) => ({ ...a, street_address: v }))}
+                  onSelectSuggestion={(s) => setAddress((a) => ({ ...a, city: s.city || a.city, state: s.state || a.state }))}
+                  stateHint={address.state || undefined}
+                />
+              </div>
               <Input placeholder="City" value={address.city} onChange={(e) => setAddress({ ...address, city: e.target.value })} />
               <Input placeholder="State" value={address.state} onChange={(e) => setAddress({ ...address, state: e.target.value })} />
               <Input className="col-span-2" placeholder="Landmark (optional)" value={address.landmark} onChange={(e) => setAddress({ ...address, landmark: e.target.value })} />

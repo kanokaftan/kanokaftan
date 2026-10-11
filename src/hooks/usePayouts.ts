@@ -51,7 +51,7 @@ async function invokePayoutAccount<T>(body: Record<string, unknown>): Promise<T>
       // Body wasn't JSON; fall back to the generic message.
     }
     console.error("[payouts] vendor-payout-account failed", { action: body.action, details, error });
-    if (details?.code === "payouts_not_configured") throw new PayoutsNotConfiguredError(details.error);
+    if (details?.code === "payments_not_configured" || details?.code === "payouts_not_configured") throw new PayoutsNotConfiguredError(details.error);
     throw new Error(details?.error || "Something went wrong. Please try again.");
   }
   if (!data?.success) throw new Error(data?.error || "Request failed");

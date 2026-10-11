@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { FadeInImage } from "@/components/ui/fade-in-image";
 import useEmblaCarousel from "embla-carousel-react";
 import { cn } from "@/lib/utils";
 
@@ -107,7 +108,7 @@ export function ProductImageCarousel({
 
   if (urls.length === 0) {
     return fallbackUrl ? (
-      <img src={fallbackUrl} alt={alt} loading="lazy" className={cn("h-full w-full object-cover", imageClassName, className)} />
+      <FadeInImage src={fallbackUrl} alt={alt} loading="lazy" className={cn("h-full w-full object-cover", imageClassName, className)} />
     ) : (
       <div className={cn("flex h-full w-full items-center justify-center bg-muted", className)} aria-label={alt} role="img">
         <span className="font-display text-3xl font-bold text-muted-foreground/25">
@@ -118,7 +119,7 @@ export function ProductImageCarousel({
   }
 
   if (urls.length === 1) {
-    return <img src={urls[0]} alt={alt} loading="lazy" className={cn("h-full w-full object-cover", imageClassName, className)} />;
+    return <FadeInImage src={urls[0]} alt={alt} loading="lazy" className={cn("h-full w-full object-cover", imageClassName, className)} />;
   }
 
   const firstDot = Math.min(Math.max(selected - Math.floor(MAX_DOTS / 2), 0), Math.max(urls.length - MAX_DOTS, 0));
@@ -130,7 +131,7 @@ export function ProductImageCarousel({
         <div className="flex h-full touch-pan-y">
           {urls.map((url, index) => (
             <div key={url} className="h-full min-w-0 flex-[0_0_100%]">
-              <img
+              <FadeInImage
                 src={url}
                 alt={index === 0 ? alt : `${alt} (${index + 1} of ${urls.length})`}
                 loading="lazy"

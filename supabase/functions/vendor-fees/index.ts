@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders, json } from "../_shared/cors.ts";
+import { corsHeaders, json, paymentsNotConfigured } from "../_shared/cors.ts";
 import { getCaller, serviceClient } from "../_shared/supabase.ts";
-import { paystack } from "../_shared/paystack.ts";
+import { isPaystackNotConfigured, paystack } from "../_shared/paystack.ts";
 import { confirmFeePayment } from "../_shared/fees.ts";
 
 // Vendor fees paid through Paystack.
@@ -136,6 +136,9 @@ serve(async (req) => {
 
     return json({ success: false, error: 'Unknown action' }, 400);
   } catch (error: unknown) {
+    if (isPaystackNotConfigured(error)) {
+      return paymentsNotConfigured("Card payments aren't switched on yet. Please try again a little later.");
+    }
     const message = error instanceof Error ? error.message : 'Something went wrong';
     console.error('vendor-fees error:', error);
     return json({ success: false, error: message }, 400);

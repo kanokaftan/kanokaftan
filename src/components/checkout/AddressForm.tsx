@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { AddressAutocomplete, type AddressSuggestion } from "@/components/address/AddressAutocomplete";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { MapPin, Loader2 } from "lucide-react";
@@ -55,6 +56,19 @@ export function AddressForm({ onSuccess, editAddress }: AddressFormProps) {
   });
 
   const selectedState = watch("state");
+  const streetValue = watch("street_address");
+  // The street box is a custom input, so register the field by hand for validation.
+  useEffect(() => {
+    register("street_address");
+  }, [register]);
+  /** Coordinates from a picked suggestion (exact), used instead of looking the address up again. */
+  const [picked, setPicked] = useState<{ street: string; latitude: number; longitude: number } | null>(null);
+
+  const applySuggestion = (s: AddressSuggestion) => {
+    if (s.city) setValue("city", s.city, { shouldValidate: true });
+    if (s.state) setValue("state", s.state, { shouldValidate: true });
+    setPicked({ street: s.street, latitude: s.latitude, longitude: s.longitude });
+  };
 
   const geocodeAddress = async (street_address: string, city: string, state: string) => {
     try {
@@ -83,8 +97,11 @@ export function AddressForm({ onSuccess, editAddress }: AddressFormProps) {
 
   const onSubmit = async (data: AddressFormData) => {
     try {
-      // Geocode the address to get coordinates
-      const coords = await geocodeAddress(data.street_address, data.city, data.state);
+      // A picked suggestion already has exact coordinates; otherwise look the address up.
+      const coords =
+        picked && picked.street === data.street_address
+          ? { latitude: picked.latitude, longitude: picked.longitude }
+          : await geocodeAddress(data.street_address, data.city, data.state);
       
       const addressData: AddressFormData = {
         ...data,
@@ -143,10 +160,13 @@ export function AddressForm({ onSuccess, editAddress }: AddressFormProps) {
 
       <div>
         <Label htmlFor="street_address">Street Address</Label>
-        <Input
+        <AddressAutocomplete
           id="street_address"
-          {...register("street_address")}
-          placeholder="123 Main Street, Ikeja"
+          value={streetValue ?? ""}
+          onChange={(v) => setValue("street_address", v, { shouldValidate: !!errors.street_address })}
+          onSelectSuggestion={applySuggestion}
+          stateHint={selectedState || undefined}
+          placeholder="Start typing your street, e.g. Zoo Road"
         />
         {errors.street_address && (
           <p className="mt-1 text-xs text-destructive">{errors.street_address.message}</p>

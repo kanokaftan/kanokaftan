@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { AVATAR_MAX_DIMENSION, compressImage } from "@/lib/compressImage";
+import { AddressAutocomplete } from "@/components/address/AddressAutocomplete";
 
 
 const settingsSchema = z.object({
@@ -54,6 +55,8 @@ export default function VendorSettings() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isVerified, setIsVerified] = useState(false);
   const [isGeocodingStore, setIsGeocodingStore] = useState(false);
+  /** Exact spot from a picked address suggestion. */
+  const [pickedStoreSpot, setPickedStoreSpot] = useState<{ street: string; latitude: number; longitude: number } | null>(null);
 
   const form = useForm<SettingsFormData>({
     resolver: zodResolver(settingsSchema),
@@ -179,7 +182,11 @@ export default function VendorSettings() {
       if (data.store_street && data.store_city && data.store_state) {
         setIsGeocodingStore(true);
         try {
-          const { data: geoData } = await supabase.functions.invoke('geocode-address', {
+          // A picked suggestion already has the exact spot; otherwise look it up.
+          const exact = pickedStoreSpot && pickedStoreSpot.street === data.store_street ? pickedStoreSpot : null;
+          const { data: geoData } = exact
+            ? { data: { latitude: exact.latitude, longitude: exact.longitude } }
+            : await supabase.functions.invoke('geocode-address', {
             body: { 
               street_address: data.store_street, 
               city: data.store_city, 
@@ -400,10 +407,17 @@ export default function VendorSettings() {
 
               <div className="space-y-2">
                 <Label htmlFor="store_street" className="text-sm">Street Address *</Label>
-                <Input
+                <AddressAutocomplete
                   id="store_street"
-                  {...form.register("store_street")}
-                  placeholder="e.g., 25 Ibrahim Taiwo Road"
+                  value={form.watch("store_street") ?? ""}
+                  onChange={(v) => form.setValue("store_street", v, { shouldDirty: true })}
+                  onSelectSuggestion={(s) => {
+                    if (s.city) form.setValue("store_city", s.city, { shouldDirty: true });
+                    if (s.state) form.setValue("store_state", s.state, { shouldDirty: true });
+                    setPickedStoreSpot({ street: s.street, latitude: s.latitude, longitude: s.longitude });
+                  }}
+                  stateHint={form.watch("store_state") || undefined}
+                  placeholder="Start typing, e.g. Ibrahim Taiwo Road"
                 />
               </div>
 
