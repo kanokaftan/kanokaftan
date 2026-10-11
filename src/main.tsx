@@ -8,9 +8,11 @@ import "./i18n/index";
 import App from "./App.tsx";
 import { AppErrorBoundary } from "./components/AppErrorBoundary";
 import { installErrorReporter } from "./lib/errorReporter";
+import { registerServiceWorker } from "./lib/registerServiceWorker";
 import "./index.css";
 
 installErrorReporter();
+registerServiceWorker();
 
 createRoot(document.getElementById("root")!).render(
   <AppErrorBoundary>

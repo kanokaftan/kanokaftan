@@ -19,6 +19,8 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
+      // Registered in src/lib/registerServiceWorker.ts, which handles browsers that refuse it.
+      injectRegister: null,
       includeAssets: ["favicon.ico", "robots.txt"],
       manifest: {
         name: "K² Kano Kaftan",

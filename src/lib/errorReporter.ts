@@ -20,7 +20,17 @@ const IGNORED = [
   /Failed to fetch$/i,
   /webkit-masked-url/i,
   /extension:\/\//i,
+  /serviceWorker\.register|ServiceWorkerContainer\.register|registerSW\.js/i, // browser refused offline support
 ];
+
+/** Search-engine robots and testing tools run the site in odd browsers; their errors aren't customers'. */
+const BOT_USER_AGENT = /bot\b|bot\/|crawler|spider|HeadlessChrome|Chrome-Lighthouse|PageSpeed|facebookexternalhit|bingpreview/i;
+
+function isBot(): boolean {
+  const ua = navigator.userAgent || "";
+  // Google's renderer reports itself as just "Google".
+  return BOT_USER_AGENT.test(ua) || ua === "Google" || navigator.webdriver === true;
+}
 
 const lastSent = new Map<string, number>();
 let sentThisSession = 0;
@@ -66,7 +76,7 @@ export function reportError(error: unknown, extra?: { componentStack?: string })
 
 /** Listens for uncaught errors and rejected promises (call once at start-up). */
 export function installErrorReporter() {
-  if (installed || typeof window === "undefined" || import.meta.env.DEV) return;
+  if (installed || typeof window === "undefined" || import.meta.env.DEV || isBot()) return;
   installed = true;
   window.addEventListener("error", (event) => reportError(event.error ?? event.message));
   window.addEventListener("unhandledrejection", (event) => reportError(event.reason));
