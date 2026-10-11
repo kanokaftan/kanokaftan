@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { VendorDetailModal } from "@/components/admin/VendorDetailModal";
 import { TodayTrafficCard } from "@/components/admin/TodayTrafficCard";
 import { useAdminStats } from "@/hooks/useAdminStats";
 import { useAdminAnalytics } from "@/hooks/useAdminAnalytics";
@@ -81,8 +80,7 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const pendingApplications = usePendingApplicationCount();
   const { data: pendingVerifications = 0 } = usePendingVerificationCount();
-  const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null);
-  const selectedVendor = vendors.find((v) => v.id === selectedVendorId) ?? null;
+  const navigate = useNavigate();
   const adminName = (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0];
 
   // Admins see every support conversation through list_inbox.
@@ -416,7 +414,7 @@ export default function AdminDashboard() {
                     type="button"
                     key={vendor.id}
                     className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-muted/50 transition-colors text-left"
-                    onClick={() => fullVendor && setSelectedVendorId(fullVendor.id)}
+                    onClick={() => fullVendor && navigate(`/admin/vendors/${fullVendor.id}`)}
                   >
                     <span className="text-xs font-medium text-muted-foreground w-4">{i + 1}</span>
                     <Avatar className="h-9 w-9 border">
@@ -438,13 +436,6 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
-
-      <VendorDetailModal
-        vendor={selectedVendor}
-        open={!!selectedVendor}
-        onOpenChange={(open) => !open && setSelectedVendorId(null)}
-        canChangeBadge
-      />
     </AdminLayout>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useAdminVendors, badgeTierOf, type BadgeTier } from "@/hooks/useAdminVendors";
@@ -12,7 +12,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { Search, Package, Eye } from "lucide-react";
 import { format } from "date-fns";
-import { VendorDetailModal } from "@/components/admin/VendorDetailModal";
 import { VerificationRequests } from "@/components/admin/VerificationRequests";
 import { VendorApplications } from "@/components/admin/VendorApplications";
 import { usePendingApplicationCount } from "@/hooks/useVendorApplication";
@@ -28,9 +27,9 @@ export default function AdminVendors() {
   const { vendors, isLoading } = useAdminVendors();
   const [search, setSearch] = useState("");
   const [tierFilter, setTierFilter] = useState<TierFilter>("all");
-  // Keep the id, not a copy, so the panel shows the badge right after it changes.
-  const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null);
-  const selectedVendor = vendors.find((v) => v.id === selectedVendorId) ?? null;
+  const navigate = useNavigate();
+  /** Full page with the seller's details, chats with customers, products, orders and payouts. */
+  const openVendor = (vendorId: string) => navigate(`/admin/vendors/${vendorId}`);
   const { data: pendingReviewCount = 0 } = usePendingVerificationCount();
   const [searchParams, setSearchParams] = useSearchParams();
   const pendingApplications = usePendingApplicationCount();
@@ -154,7 +153,7 @@ export default function AdminVendors() {
                 <Card 
                   key={vendor.id} 
                   className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => setSelectedVendorId(vendor.id)}
+                  onClick={() => openVendor(vendor.id)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
@@ -197,14 +196,16 @@ export default function AdminVendors() {
                           variant="ghost"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedVendorId(vendor.id);
+                            openVendor(vendor.id);
                           }}
                         >
                           <Eye className="h-4 w-4 mr-1" />
                           View
                         </Button>
                       </div>
-                      <BadgeTierControl vendorId={vendor.id} tier={badgeTierOf(vendor)} className="flex w-full" />
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <BadgeTierControl vendorId={vendor.id} tier={badgeTierOf(vendor)} className="flex w-full" />
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -250,7 +251,7 @@ export default function AdminVendors() {
                       <TableRow 
                         key={vendor.id}
                         className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => setSelectedVendorId(vendor.id)}
+                        onClick={() => openVendor(vendor.id)}
                       >
                         <TableCell>
                           <div className="flex items-center gap-3">
@@ -294,13 +295,13 @@ export default function AdminVendors() {
                           {format(new Date(vendor.created_at), "MMM dd, yyyy")}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                             <Button
                               size="sm"
                               variant="ghost"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setSelectedVendorId(vendor.id);
+                                openVendor(vendor.id);
                               }}
                             >
                               <Eye className="h-4 w-4" />
@@ -320,12 +321,6 @@ export default function AdminVendors() {
       </Tabs>
 
       {/* Vendor Detail Modal */}
-      <VendorDetailModal
-        vendor={selectedVendor}
-        open={!!selectedVendor}
-        onOpenChange={(open) => !open && setSelectedVendorId(null)}
-        canChangeBadge
-      />
     </AdminLayout>
   );
 }

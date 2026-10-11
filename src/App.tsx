@@ -36,6 +36,9 @@ import AdminAnnouncements from "./pages/admin/Announcements";
 import AdminModeration from "./pages/admin/Moderation";
 import AdminErrors from "./pages/admin/Errors";
 import AdminAnalytics from "./pages/admin/Analytics";
+import AdminVendorDetail from "./pages/admin/VendorDetail";
+import AdminCustomerDetail from "./pages/admin/CustomerDetail";
+import AdminChatTranscript from "./pages/admin/ChatTranscript";
 import AdminProductForm from "./pages/admin/ProductForm";
 import AdminLogin from "./pages/admin/AdminLogin";
 import VendorDashboard from "./pages/vendor/Dashboard";
@@ -135,6 +138,9 @@ const App = () => (
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/vendors" element={<AdminVendors />} />
+            <Route path="/admin/vendors/:id" element={<AdminVendorDetail />} />
+            <Route path="/admin/users/:id" element={<AdminCustomerDetail />} />
+            <Route path="/admin/chats/:id" element={<AdminChatTranscript />} />
             <Route path="/admin/products" element={<AdminProducts />} />
             <Route path="/admin/products/new" element={<AdminProductForm />} />
             <Route path="/admin/products/:id/edit" element={<AdminProductForm />} />

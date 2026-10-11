@@ -1486,6 +1486,27 @@ export type Database = {
       admin_analytics: { Args: { p_from: string; p_to: string }; Returns: Json }
       admin_live_visitors: { Args: Record<PropertyKey, never>; Returns: Json }
       admin_today_overview: { Args: Record<PropertyKey, never>; Returns: Json }
+      admin_vendor_overview: { Args: { p_vendor_id: string }; Returns: Json }
+      admin_customer_overview: { Args: { p_user_id: string }; Returns: Json }
+      admin_list_conversations: {
+        Args: { p_vendor_id?: string; p_customer_id?: string }
+        Returns: {
+          id: string
+          kind: string
+          customer_id: string
+          customer_name: string
+          customer_avatar: string | null
+          vendor_id: string
+          vendor_name: string
+          vendor_avatar: string | null
+          product_name: string | null
+          last_message_at: string | null
+          last_message_preview: string | null
+          last_sender_id: string | null
+          message_count: number
+          created_at: string
+        }[]
+      }
       vendor_analytics: { Args: { p_days?: number }; Returns: Json }
       story_rings: {
         Args: { p_limit?: number }

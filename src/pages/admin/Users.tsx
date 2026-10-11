@@ -1,28 +1,34 @@
 import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { useAdminUsers } from "@/hooks/useAdminUsers";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, BadgeCheck, Shield, Store } from "lucide-react";
+import { ChevronRight, Search, Store } from "lucide-react";
 import { format } from "date-fns";
-import { toast } from "sonner";
-import { VerifiedBadge } from "@/components/shop/VerifiedBadge";
 
 const PAGE_SIZE = 20;
+/** Sellers live on the Vendors page and admins aren't customers. */
+const NOT_CUSTOMER_ROLES = new Set(["admin", "vendor"]);
 
+/** Customers only. Tap one for their orders, spending and chats with sellers. */
 export default function AdminUsers() {
-  const { users, isLoading, updateUserVerification } = useAdminUsers();
+  const navigate = useNavigate();
+  const { users, isLoading } = useAdminUsers();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
-  const filteredUsers = users.filter(user =>
-    user.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-    user.email.toLowerCase().includes(search.toLowerCase())
+  const customers = users.filter((user) => !user.roles.some((role) => NOT_CUSTOMER_ROLES.has(role)));
+  const sellerCount = users.filter((user) => user.roles.includes("vendor")).length;
+  const query = search.trim().toLowerCase();
+  const filteredUsers = customers.filter((user) =>
+    !query ||
+    user.full_name?.toLowerCase().includes(query) ||
+    user.email.toLowerCase().includes(query) ||
+    user.phone?.includes(query)
   );
 
   const totalPages = Math.ceil(filteredUsers.length / PAGE_SIZE);
@@ -30,158 +36,103 @@ export default function AdminUsers() {
 
   useEffect(() => { setPage(1); }, [search]);
 
-  const handleVerify = async (userId: string, currentStatus: boolean) => {
-    try {
-      await updateUserVerification.mutateAsync({ userId, isVerified: !currentStatus });
-      toast.success(currentStatus ? "User unverified" : "User verified");
-    } catch (error) {
-      toast.error("Failed to update user verification");
-    }
-  };
-
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case "admin":
-        return <Badge variant="destructive" className="gap-1"><Shield className="h-3 w-3" />Admin</Badge>;
-      case "vendor":
-        return <Badge variant="secondary" className="gap-1"><Store className="h-3 w-3" />Vendor</Badge>;
-      default:
-        return <Badge variant="outline">Customer</Badge>;
-    }
-  };
+  const open = (userId: string) => navigate(`/admin/users/${userId}`);
+  const initial = (user: { full_name: string | null; email: string }) => (user.full_name?.charAt(0) || user.email.charAt(0)).toUpperCase();
 
   return (
-    <AdminLayout title="Users">
-      {/* Search */}
-      <div className="mb-6">
-        <div className="relative max-w-sm">
+    <AdminLayout title="Customers">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search users..."
+            placeholder="Search name, email or phone"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
           />
         </div>
+        <p className="text-xs text-muted-foreground">
+          {isLoading ? "…" : `${customers.length} ${customers.length === 1 ? "customer" : "customers"}`} ·{" "}
+          <Link to="/admin/vendors" className="inline-flex items-center gap-1 font-medium text-primary hover:underline">
+            <Store className="h-3 w-3" />{sellerCount === 1 ? "1 seller is" : `${sellerCount} sellers are`} on the Sellers page
+          </Link>
+        </p>
       </div>
 
-      {/* Mobile View */}
-      <div className="md:hidden space-y-3">
+      {/* Mobile: WhatsApp-style list */}
+      <div className="md:hidden">
         {isLoading ? (
-          [...Array(5)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)
+          [...Array(6)].map((_, i) => <Skeleton key={i} className="mb-3 h-14 w-full rounded-xl" />)
         ) : filteredUsers.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8">No users found</p>
+          <p className="text-center text-muted-foreground py-8">No customers found</p>
         ) : (
-          paginatedUsers.map((user) => (
-            <div key={user.id} className="bg-card rounded-lg p-4 border">
-              <div className="flex items-start gap-3">
-                <Avatar>
-                  <AvatarImage src={user.avatar_url || undefined} />
-                  <AvatarFallback>{user.full_name?.charAt(0) || user.email.charAt(0).toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium truncate">{user.full_name || "No name"}</p>
-                    {user.is_verified && <VerifiedBadge tier={user.verification_tier} />}
+          <ul>
+            {paginatedUsers.map((user) => (
+              <li key={user.id}>
+                <button type="button" onClick={() => open(user.id)} className="flex w-full items-center gap-3 py-2.5 text-left active:bg-muted/60">
+                  <Avatar className="h-11 w-11">
+                    <AvatarImage src={user.avatar_url || undefined} />
+                    <AvatarFallback>{initial(user)}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1 border-b border-border/60 pb-2.5">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="truncate font-medium">{user.full_name || "No name"}</p>
+                      <span className="shrink-0 text-[11px] text-muted-foreground">{format(new Date(user.created_at), "d MMM yyyy")}</span>
+                    </div>
+                    <p className="truncate text-sm text-muted-foreground">{user.email}</p>
                   </div>
-                  <p className="text-sm text-muted-foreground truncate">{user.email}</p>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {user.roles.map((role) => (
-                      <span key={role}>{getRoleBadge(role)}</span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                <span className="text-xs text-muted-foreground">
-                  Joined {format(new Date(user.created_at), "MMM dd, yyyy")}
-                </span>
-                <Button
-                  size="sm"
-                  variant={user.is_verified ? "outline" : "default"}
-                  onClick={() => handleVerify(user.id, user.is_verified)}
-                  disabled={updateUserVerification.isPending}
-                >
-                  {user.is_verified ? "Unverify" : "Verify"}
-                </Button>
-              </div>
-            </div>
-          ))
+                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
 
-      {/* Mobile pagination */}
       <div className="md:hidden mb-20">
         <AdminPagination page={page} totalPages={totalPages} totalItems={filteredUsers.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </div>
 
-      {/* Desktop Table */}
+      {/* Desktop table */}
       <div className="hidden md:block">
         <div className="rounded-lg border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>User</TableHead>
+                <TableHead>Customer</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Roles</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Phone</TableHead>
                 <TableHead>Joined</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 [...Array(5)].map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell colSpan={6}><Skeleton className="h-10 w-full" /></TableCell>
+                    <TableCell colSpan={5}><Skeleton className="h-10 w-full" /></TableCell>
                   </TableRow>
                 ))
               ) : filteredUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    No users found
-                  </TableCell>
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No customers found</TableCell>
                 </TableRow>
               ) : (
                 paginatedUsers.map((user) => (
-                  <TableRow key={user.id}>
+                  <TableRow key={user.id} className="cursor-pointer" onClick={() => open(user.id)}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar>
                           <AvatarImage src={user.avatar_url || undefined} />
-                          <AvatarFallback>{user.full_name?.charAt(0) || user.email.charAt(0).toUpperCase()}</AvatarFallback>
+                          <AvatarFallback>{initial(user)}</AvatarFallback>
                         </Avatar>
                         <span className="font-medium">{user.full_name || "No name"}</span>
                       </div>
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {user.roles.map((role) => (
-                          <span key={role}>{getRoleBadge(role)}</span>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {user.is_verified ? (
-                        <Badge className="gap-1 border-transparent bg-[#1D9BF0]/10 text-[#1D9BF0] hover:bg-[#1D9BF0]/15">
-                          <BadgeCheck className="h-3 w-3" />Verified
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline">Unverified</Badge>
-                      )}
-                    </TableCell>
+                    <TableCell>{user.phone || "–"}</TableCell>
                     <TableCell>{format(new Date(user.created_at), "MMM dd, yyyy")}</TableCell>
-                    <TableCell>
-                      <Button
-                        size="sm"
-                        variant={user.is_verified ? "outline" : "default"}
-                        onClick={() => handleVerify(user.id, user.is_verified)}
-                        disabled={updateUserVerification.isPending}
-                      >
-                        {user.is_verified ? "Unverify" : "Verify"}
-                      </Button>
-                    </TableCell>
+                    <TableCell><ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" /></TableCell>
                   </TableRow>
                 ))
               )}

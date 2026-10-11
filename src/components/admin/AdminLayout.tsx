@@ -16,8 +16,8 @@ const navItems = [
   { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
   { title: "Analytics", url: "/admin/analytics", icon: Activity },
   { title: "Messages", url: "/admin/messages", icon: MessageCircle, badge: "Live" },
-  { title: "Users", url: "/admin/users", icon: Users },
-  { title: "Vendors", url: "/admin/vendors", icon: Store },
+  { title: "Customers", url: "/admin/users", icon: Users },
+  { title: "Sellers", url: "/admin/vendors", icon: Store },
   { title: "Products", url: "/admin/products", icon: Package },
   { title: "Orders", url: "/admin/orders", icon: ShoppingCart },
   { title: "Categories", url: "/admin/categories", icon: Tag },
@@ -34,7 +34,7 @@ const bottomNavItems = [
   { title: "Messages", url: "/admin/messages", icon: MessageCircle },
   { title: "Products", url: "/admin/products", icon: Package },
   { title: "Orders", url: "/admin/orders", icon: ShoppingCart },
-  { title: "Users", url: "/admin/users", icon: Users },
+  { title: "Customers", url: "/admin/users", icon: Users },
 ];
 
 interface AdminLayoutProps {

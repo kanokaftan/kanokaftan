@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { DeliveryActions } from "@/components/admin/DeliveryActions";
@@ -17,7 +18,9 @@ const PAGE_SIZE = 20;
 
 export default function AdminOrders() {
   const { orders, isLoading, updateOrderStatus } = useAdminOrders();
-  const [search, setSearch] = useState("");
+  const [searchParams] = useSearchParams();
+  // Links from chats and seller pages open the list already filtered (?search=<order id>).
+  const [search, setSearch] = useState(() => searchParams.get("search") ?? "");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
