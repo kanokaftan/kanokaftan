@@ -12,7 +12,7 @@ export const config = { runtime: "edge" };
 const SITE = "https://kanokaftan.shop";
 const SITE_NAME = "Kano Kaftan";
 const FALLBACK_IMAGE = `${SITE}/og-image.png`;
-const DEFAULT_DESCRIPTION = "Shop authentic Nigerian Agbada, Kaftan and Dashiki from master tailors in Kano.";
+const DEFAULT_DESCRIPTION = "Clothing, kaftans, fabrics, shoes, caps and accessories from trusted sellers, with safe payments and delivery.";
 const MAX_DESCRIPTION = 200;
 /** Previews are cached by WhatsApp & co. anyway; let the CDN keep them a few minutes. */
 const CACHE_SECONDS = 300;
@@ -47,7 +47,7 @@ function supabaseEnv() {
   return { url, key };
 }
 
-async function rest<T>(path: string, init?: RequestInit): Promise<T> {
+export async function rest<T>(path: string, init?: RequestInit): Promise<T> {
   const { url, key } = supabaseEnv();
   const res = await fetch(`${url}/rest/v1/${path}`, {
     ...init,
@@ -72,16 +72,14 @@ async function productPreview(slug: string): Promise<Preview | null> {
   const rows = await rest<ProductRow[]>(`products?select=${encodeURIComponent(select)}&slug=eq.${encodeURIComponent(slug)}&is_active=eq.true&limit=1`);
   const product = rows[0];
   if (!product) return null;
-  const images = [...(product.product_images ?? [])].sort(
-    (a, b) => Number(!!b.is_primary) - Number(!!a.is_primary) || (a.display_order ?? 0) - (b.display_order ?? 0),
-  );
   const price = Number(product.price);
   const was = product.compare_at_price && Number(product.compare_at_price) > price ? ` (was ${naira.format(Number(product.compare_at_price))})` : "";
   const shop = product.vendor?.store_name ? ` · by ${product.vendor.store_name}` : "";
   return {
     title: `${product.name} — ${naira.format(price)}`,
     description: clip(`${naira.format(price)}${was}${shop}. ${product.description || DEFAULT_DESCRIPTION}`),
-    image: images[0]?.url || FALLBACK_IMAGE,
+    // Branded card (photo + name + price + logo); api/og-image.ts falls back to the generic card.
+    image: `${SITE}/api/og-image?type=product&slug=${encodeURIComponent(product.slug)}`,
     imageAlt: product.name,
     url: `${SITE}/products/${product.slug}`,
     type: "product",
@@ -122,8 +120,8 @@ async function shopPreview(by: { slug?: string; vendorId?: string }): Promise<Pr
   return {
     title: `${shop.store_name} on ${SITE_NAME}`,
     description: clip(`${facts}. ${shop.store_description || DEFAULT_DESCRIPTION}`),
-    // The shop's own logo; its banner if there is no logo.
-    image: shop.avatar_url || shop.store_banner_url || FALLBACK_IMAGE,
+    // Branded card with the shop's logo, badge and numbers.
+    image: `${SITE}/api/og-image?type=shop&slug=${encodeURIComponent(shop.store_slug)}`,
     imageAlt: `${shop.store_name} logo`,
     url: `${SITE}/shop/${shop.store_slug}`,
     type: "profile",
@@ -154,6 +152,8 @@ function renderHtml(p: Preview): string {
     <meta property="og:image" content="${img}" />
     <meta property="og:image:secure_url" content="${img}" />
     <meta property="og:image:alt" content="${alt}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     ${productTags}
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${t}" />
@@ -193,7 +193,7 @@ export default async function handler(request: Request): Promise<Response> {
   }
   // Unknown product/shop or an error: the generic Kano Kaftan preview still works.
   const page = preview ?? {
-    title: `${SITE_NAME} — Authentic Nigerian Traditional Attire`,
+    title: `${SITE_NAME} – Clothing, Fabrics, Shoes & Accessories`,
     description: DEFAULT_DESCRIPTION,
     image: FALLBACK_IMAGE,
     imageAlt: SITE_NAME,

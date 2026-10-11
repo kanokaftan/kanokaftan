@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -68,7 +69,7 @@ export default function SellerLogin() {
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-10">
       <div className="w-full max-w-md space-y-6">
         <Link to="/" className="flex items-center justify-center gap-2">
-          <img src="/logo.svg" alt="" className="h-10 w-10 object-contain" />
+          <BrandLogo alt="" className="h-10 w-10" />
           <span className="font-display text-xl font-bold text-primary">Kano Kaftan</span>
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">Sellers</span>
         </Link>

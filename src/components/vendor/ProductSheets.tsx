@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  CheckCircle, ExternalLink, Eye, EyeOff, Loader2, Megaphone, Minus, Package, PackageX, Pencil, Plus, Trash2,
+  CheckCircle, ExternalLink, Eye, EyeOff, ImagePlus, Loader2, Megaphone, Minus, Package, PackageX, Pencil, Plus, Trash2,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,8 @@ export interface SheetProduct {
   stock_quantity: number;
   is_active: boolean;
   image?: string | null;
+  price?: number;
+  compare_at_price?: number | null;
 }
 
 /** Biggest stock a seller can type (stops accidental extra zeros). */
@@ -91,7 +93,7 @@ interface Action {
 
 /** iOS-style action sheet for one product. */
 export function ProductActionSheet({
-  product, onClose, onEditStock, onToggleVisible, onMarkSoldOut, onDelete,
+  product, onClose, onEditStock, onToggleVisible, onMarkSoldOut, onDelete, onCreatePost,
 }: {
   product: SheetProduct | null;
   onClose: () => void;
@@ -99,6 +101,8 @@ export function ProductActionSheet({
   onToggleVisible: () => void;
   onMarkSoldOut: () => void;
   onDelete: () => void;
+  /** Branded Instagram / WhatsApp Status image. */
+  onCreatePost?: () => void;
 }) {
   if (!product) return <Sheet open={false} />;
   const soldOut = product.stock_quantity === 0;
@@ -106,6 +110,7 @@ export function ProductActionSheet({
     { icon: Pencil, label: "Edit product", to: `/vendor/products/${product.id}` },
     { icon: soldOut ? CheckCircle : Package, label: soldOut ? "Restock" : "Change stock", onClick: onEditStock },
     ...(!soldOut ? [{ icon: PackageX, label: "Mark sold out", onClick: onMarkSoldOut }] : []),
+    ...(onCreatePost ? [{ icon: ImagePlus, label: "Create Instagram / Status post", onClick: onCreatePost }] : []),
     { icon: Megaphone, label: "Promote on homepage", to: `/vendor/promote?product=${product.id}` },
     { icon: ExternalLink, label: "View in shop", to: `/products/${product.slug}` },
     { icon: product.is_active ? EyeOff : Eye, label: product.is_active ? "Hide from customers" : "Show to customers", onClick: onToggleVisible },

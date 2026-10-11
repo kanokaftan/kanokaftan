@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, X, Heart, User, LogOut, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,7 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <img src="/logo.svg" alt="Kano Kaftan" className="h-8 w-8 object-contain" />
+          <BrandLogo alt="Kano Kaftan" className="h-8 w-8" />
           <span className="font-display text-lg font-bold text-primary">
             Kano Kaftan
           </span>

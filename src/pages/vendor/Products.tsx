@@ -1,4 +1,7 @@
 import { useMemo, useState } from "react";
+import { SocialPostSheet } from "@/components/share/SocialPostSheet";
+import { useMyShop } from "@/hooks/useMyShop";
+import type { PostProduct } from "@/lib/socialPost";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import { EyeOff, MoreHorizontal, Package, Plus, Search, Star, X } from "lucide-react";
@@ -28,7 +31,10 @@ const naira = (amount: number) =>
 type VendorProduct = NonNullable<ReturnType<typeof useVendorProducts>["data"]>[number];
 
 function toSheetProduct(p: VendorProduct): SheetProduct {
-  return { id: p.id, name: p.name, slug: p.slug, stock_quantity: p.stock_quantity, is_active: p.is_active, image: p.product_images?.[0]?.url ?? null };
+  return {
+    id: p.id, name: p.name, slug: p.slug, stock_quantity: p.stock_quantity, is_active: p.is_active,
+    image: p.product_images?.[0]?.url ?? null, price: p.price, compare_at_price: p.compare_at_price,
+  };
 }
 
 function StockPill({ quantity, onClick }: { quantity: number; onClick: () => void }) {
@@ -68,6 +74,19 @@ export default function VendorProducts() {
   const [stockFor, setStockFor] = useState<SheetProduct | null>(null);
   const [savingStock, setSavingStock] = useState(false);
   const [deleteFor, setDeleteFor] = useState<SheetProduct | null>(null);
+  const [postFor, setPostFor] = useState<PostProduct | null>(null);
+  const { name: shopName, shopUrl } = useMyShop(userId);
+
+  const openPostMaker = (p: SheetProduct) =>
+    setPostFor({
+      name: p.name,
+      price: p.price ?? 0,
+      compareAtPrice: p.compare_at_price ?? null,
+      imageUrl: p.image,
+      shopName,
+      // Short, readable link for the image; the product page is one tap from the shop.
+      link: (shopUrl ?? "https://kanokaftan.shop").replace(/^https:\/\//, ""),
+    });
 
   const counts = useMemo(() => {
     const list = products ?? [];
@@ -263,7 +282,10 @@ export default function VendorProducts() {
         onMarkSoldOut={() => actionsFor && saveStock(actionsFor.id, 0)}
         onToggleVisible={() => actionsFor && toggleProductStatus.mutate({ productId: actionsFor.id, isActive: !actionsFor.is_active })}
         onDelete={() => actionsFor && setDeleteFor(actionsFor)}
+        onCreatePost={() => actionsFor && openPostMaker(actionsFor)}
       />
+
+      <SocialPostSheet product={postFor} onClose={() => setPostFor(null)} />
 
       <StockSheet
         product={stockFor}

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -221,6 +222,14 @@ export default function AdminSettings() {
   return (
     <AdminLayout title="Settings">
       <div className="grid gap-6 md:grid-cols-2 pb-20 md:pb-6">
+        <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center sm:justify-between md:col-span-2">
+          <div>
+            <p className="font-semibold">Appearance</p>
+            <p className="text-sm text-muted-foreground">System follows this device's light or dark setting.</p>
+          </div>
+          <ThemeToggle />
+        </div>
+
         <PayoutSettingsCard />
 
         <MonetisationSettingsCard />

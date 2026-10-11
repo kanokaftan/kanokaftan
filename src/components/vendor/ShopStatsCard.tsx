@@ -54,7 +54,7 @@ export function ShopStatsCard() {
 
             <div className="h-28">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data.series} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
+                <AreaChart data={data.series ?? []} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
                   <defs>
                     <linearGradient id="shopViewsFill" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor={MARK_COLOR} stopOpacity={0.18} />
@@ -76,7 +76,7 @@ export function ShopStatsCard() {
               </ResponsiveContainer>
             </div>
 
-            {data.products.length > 0 && (
+            {(data.products?.length ?? 0) > 0 && (
               <div>
                 <p className="mb-1.5 text-xs font-medium text-muted-foreground">Most viewed products</p>
                 <ul className="divide-y text-sm">
@@ -92,7 +92,7 @@ export function ShopStatsCard() {
               </div>
             )}
 
-            {data.sources.length > 0 && (
+            {(data.sources?.length ?? 0) > 0 && (
               <p className="text-xs text-muted-foreground">
                 Visitors came from: {data.sources.map((s) => `${s.name} (${s.visitors})`).join(", ")}
               </p>

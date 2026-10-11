@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import {
   BadgeCheck, Bell, ChevronRight, CircleFadingPlus, ExternalLink, Headset, LogOut, Megaphone, Settings, Share2, ShoppingBag,
   type LucideIcon,
@@ -131,6 +132,14 @@ export default function VendorMore() {
             { icon: Bell, label: "Notifications", to: "/vendor/notifications" },
           ]}
         />
+
+        <section>
+          <h2 className="mb-1.5 px-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Appearance</h2>
+          <div className="flex items-center justify-between gap-3 rounded-2xl border bg-card px-4 py-3">
+            <span className="text-[15px]">Theme</span>
+            <ThemeToggle />
+          </div>
+        </section>
 
         <Group
           title="Help"

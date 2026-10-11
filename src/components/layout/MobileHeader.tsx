@@ -17,7 +17,7 @@ export function MobileHeader() {
     <header className="liquid-glass sticky top-0 z-50 w-full border-b border-white/30 dark:border-white/10">
       <div className="flex h-14 items-center gap-3 px-4">
         <Link to="/" className="flex-shrink-0">
-          <BrandLogo tile className="h-9 w-9 rounded-lg" alt="Kano Kaftan home" />
+          <BrandLogo className="h-9 w-9" alt="Kano Kaftan home" />
         </Link>
 
         <LiveSearch className="flex-1" placeholder={t("products.searchPlaceholder")} />

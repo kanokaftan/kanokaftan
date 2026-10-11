@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Bell, Globe, Trash2, ChevronRight, Loader2, Smartphone, Volume2 } from "lucide-react";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { Bell, Globe, Trash2, ChevronRight, Loader2, Palette, Smartphone, Volume2 } from "lucide-react";
 import { setSoundsEnabled, soundsEnabled } from "@/lib/callTones";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { PhoneNotificationsCard } from "@/components/notifications/PhoneNotificationsCard";
@@ -256,6 +257,19 @@ export default function Settings() {
               {t("settings.clear")}
             </Button>
           </SettingItem>
+        </SettingSection>
+
+        <SettingSection title="Appearance">
+          <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <Palette className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <p className="font-medium">Theme</p>
+                <p className="text-sm text-muted-foreground">System follows your phone's light or dark setting</p>
+              </div>
+            </div>
+            <ThemeToggle />
+          </div>
         </SettingSection>
 
         <SettingSection title={t("settings.languageRegion")}>

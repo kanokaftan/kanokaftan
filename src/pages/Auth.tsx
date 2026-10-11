@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -242,7 +243,7 @@ export default function AuthPage() {
         <div className="mx-auto w-full max-w-md">
           {/* Logo */}
           <Link to="/" className="mb-8 flex items-center gap-3">
-            <img src="/logo.svg" alt="K² Kano Kaftan" className="h-12 w-12 object-contain" />
+            <BrandLogo alt="K² Kano Kaftan" className="h-12 w-12" />
             <div>
               <span className="font-display text-2xl font-bold text-primary">K²</span>
               <span className="font-display text-lg ml-1">Kano Kaftan</span>
