@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Eye, EyeOff, Loader2, Store, Wallet, ShieldCheck, Megaphone, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, Handshake, Loader2, Store, Wallet, ShieldCheck, Megaphone, Clock, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -118,6 +118,14 @@ function HowSellingWorks() {
           <p>
             <strong>Safe payments.</strong> Customers pay Kano Kaftan. You receive half when the order is paid and the rest once
             it is delivered, minus a {commission}% commission, straight to your bank account.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Handshake className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary" />
+          <p>
+            <strong>Close deals your way.</strong> Chat and call customers in the app, agree prices, and sell to them
+            personally if you prefer. Commission only applies to orders paid through Kano Kaftan, which also give your
+            buyers payment protection.
           </p>
         </div>
         <div className="flex gap-3">
