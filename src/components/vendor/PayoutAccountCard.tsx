@@ -110,7 +110,8 @@ export function PayoutAccountCard({ vendorId }: { vendorId: string }) {
   };
 
   const lookupBlocked = lookup.error instanceof PayoutsNotConfiguredError;
-  const canSave = complete && !saveAccount.isPending && !notConfigured && !lookupBlocked && !lookup.isError;
+  // Only once the bank has confirmed the account name (the seller sees whose account it is first).
+  const canSave = complete && !!lookup.data && !lookup.isFetching && !saveAccount.isPending && !notConfigured && !lookupBlocked;
 
   return (
     <Card>

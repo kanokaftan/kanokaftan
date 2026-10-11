@@ -88,6 +88,19 @@ export function PaymentsStatusCard() {
           <p className="text-destructive">{(error as Error).message}</p>
         ) : data ? (
           <>
+            {data.connected && data.mode === "test" && (
+              <div className="flex gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <div className="space-y-1">
+                  <p className="font-medium">You're using a Paystack TEST key.</p>
+                  <p>
+                    No real money moves, and Paystack only allows 3 real bank-account checks a day, so sellers will see
+                    "bank checks are paused" when adding their account. When your Paystack business is activated, replace
+                    <code> PAYSTACK_SECRET_KEY</code> in Supabase → Edge Functions → Secrets with your live key (starts with sk_live_).
+                  </p>
+                </div>
+              </div>
+            )}
             {data.connected ? (
               <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
                 <CheckCircle2 className="h-4 w-4 shrink-0" />

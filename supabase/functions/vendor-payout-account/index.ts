@@ -30,14 +30,29 @@ async function listBanks(): Promise<Bank[]> {
   return bankCache.banks;
 }
 
+/** Paystack's answer when a test key has used its 3 real bank checks for the day. */
+const TEST_MODE_LIMIT = /test mode|daily limit|limit of \d+ live bank resolves/i;
+/** The bank (or NIBSS) didn't answer; not the seller's mistake. */
+const BANK_UNAVAILABLE = /timed? ?out|unavailable|try again later|service|gateway|connection/i;
+
 async function resolveAccount(bankCode: string, accountNumber: string): Promise<string> {
   const resolved = await paystack<{ account_name: string }>(
     `/bank/resolve?account_number=${accountNumber}&bank_code=${encodeURIComponent(bankCode)}`,
   );
-  if (!resolved.status || !resolved.data?.account_name) {
-    throw new Error("We couldn't find that account number at this bank. Please check both and try again.");
+  if (resolved.status && resolved.data?.account_name) return resolved.data.account_name;
+
+  // Keep Paystack's exact reason in the logs; show the seller what it means.
+  console.error('[vendor-payout-account] bank check failed', { bankCode, paystack: resolved.message });
+  const reason = resolved.message ?? '';
+  if (TEST_MODE_LIMIT.test(reason)) {
+    throw new Error(
+      "Bank checks are paused for today because Kano Kaftan payments are still in test mode. Your details are probably fine. Please try again after the team switches payments to live.",
+    );
   }
-  return resolved.data.account_name;
+  if (BANK_UNAVAILABLE.test(reason)) {
+    throw new Error("This bank isn't responding right now. Please try again in a few minutes.");
+  }
+  throw new Error("We couldn't find that account number at this bank. Please check both and try again.");
 }
 
 function validate(bankCode: unknown, accountNumber: unknown): { bankCode: string; accountNumber: string } {
