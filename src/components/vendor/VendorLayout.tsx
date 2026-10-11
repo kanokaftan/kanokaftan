@@ -1,9 +1,10 @@
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { 
-  LayoutDashboard, Package, ShoppingCart, Settings, 
-  Menu, X, LogOut, User, ChevronLeft, BadgeCheck, Megaphone, CircleFadingPlus 
+import {
+  LayoutDashboard, Package, ShoppingCart, Settings, LogOut, User, BadgeCheck, Megaphone, CircleFadingPlus,
+  MessageCircle, LayoutGrid,
 } from "lucide-react";
+import { useConversations } from "@/hooks/useChat";
 import { useVendorAuth } from "@/hooks/useVendorAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -12,13 +13,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { forgetThisDevice } from "@/lib/push";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { BubbleTabBar } from "@/components/layout/BubbleTabBar";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 
 interface VendorLayoutProps {
   children: ReactNode;
@@ -26,23 +20,30 @@ interface VendorLayoutProps {
 }
 
 const navItems = [
-  { title: "Dashboard", url: "/vendor/dashboard", icon: LayoutDashboard, inBottomNav: true },
-  { title: "Products", url: "/vendor/products", icon: Package, inBottomNav: true },
-  { title: "Orders", url: "/vendor/orders", icon: ShoppingCart, inBottomNav: true },
-  { title: "Verification", url: "/vendor/verification", icon: BadgeCheck, inBottomNav: false },
-  { title: "Stories", url: "/vendor/stories", icon: CircleFadingPlus, inBottomNav: false },
-  { title: "Promote", url: "/vendor/promote", icon: Megaphone, inBottomNav: true },
-  { title: "Settings", url: "/vendor/settings", icon: Settings, inBottomNav: true },
+  { title: "Dashboard", url: "/vendor/dashboard", icon: LayoutDashboard },
+  { title: "Products", url: "/vendor/products", icon: Package },
+  { title: "Orders", url: "/vendor/orders", icon: ShoppingCart },
+  { title: "Chats", url: "/vendor/messages", icon: MessageCircle },
+  { title: "Promote", url: "/vendor/promote", icon: Megaphone },
+  { title: "Stories", url: "/vendor/stories", icon: CircleFadingPlus },
+  { title: "Verification", url: "/vendor/verification", icon: BadgeCheck },
+  { title: "Settings", url: "/vendor/settings", icon: Settings },
 ];
 
-// The phone bottom bar fits five items; the rest live in the menu sheet.
-const bottomNavItems = navItems.filter((item) => item.inBottomNav);
+/** Pages reached from the "More" tab, so that tab stays lit on them. */
+const MORE_PATHS = ["/vendor/more", "/vendor/promote", "/vendor/stories", "/vendor/verification", "/vendor/settings", "/vendor/notifications"];
+
+/** Unread customer (and Kano Kaftan) chats for the seller's Chats tab. */
+function useSellerUnreadChats(): number {
+  const { conversations } = useConversations();
+  return conversations.filter((c) => c.unread && (c.role === "vendor" || c.role === "support_user")).length;
+}
 
 export function VendorLayout({ children, title }: VendorLayoutProps) {
   const { isLoading, isVendor } = useVendorAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const unreadChats = useSellerUnreadChats();
 
   const handleLogout = async () => {
     await forgetThisDevice();
@@ -63,70 +64,11 @@ export function VendorLayout({ children, title }: VendorLayoutProps) {
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/30">
-      {/* Mobile Header */}
-      <header className="sticky top-0 z-50 h-14 border-b bg-background flex items-center justify-between px-4 md:hidden">
-        <div className="flex items-center gap-3">
-          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-72 p-0">
-              <SheetHeader className="p-4 border-b">
-                <SheetTitle>Vendor Portal</SheetTitle>
-              </SheetHeader>
-              <nav className="flex flex-col p-2">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.url}
-                    to={item.url}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
-                      location.pathname === item.url
-                        ? "bg-primary text-primary-foreground"
-                        : "hover:bg-muted"
-                    )}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    <span>{item.title}</span>
-                  </Link>
-                ))}
-                <div className="border-t my-2" />
-                <Link
-                  to="/account"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted"
-                >
-                  <User className="h-5 w-5" />
-                  <span>Switch to Shopper</span>
-                </Link>
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    handleLogout();
-                  }}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-muted text-left text-muted-foreground"
-                >
-                  <LogOut className="h-5 w-5" />
-                  <span>Logout</span>
-                </button>
-              </nav>
-            </SheetContent>
-          </Sheet>
-          <h1 className="font-semibold">{title}</h1>
-        </div>
+      {/* Mobile header: big clear title, alerts on the right (everything else is in the tab bar) */}
+      <header className="liquid-glass sticky top-0 z-40 flex h-14 items-center justify-between border-b border-white/30 px-4 pt-[env(safe-area-inset-top)] box-content dark:border-white/10 md:hidden">
+        <h1 className="truncate text-[17px] font-semibold">{title}</h1>
         <div className="flex items-center gap-1">
           <NotificationBell href="/vendor/notifications" />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9"
-            onClick={() => navigate("/account")}
-          >
-            <User className="h-5 w-5" />
-          </Button>
         </div>
       </header>
 
@@ -144,13 +86,16 @@ export function VendorLayout({ children, title }: VendorLayoutProps) {
                 to={item.url}
                 className={cn(
                   "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors",
-                  location.pathname === item.url
+                  location.pathname === item.url || location.pathname.startsWith(`${item.url}/`)
                     ? "bg-primary text-primary-foreground"
                     : "hover:bg-muted text-muted-foreground hover:text-foreground"
                 )}
               >
                 <item.icon className="h-5 w-5" />
-                <span>{item.title}</span>
+                <span className="flex-1">{item.title}</span>
+                {item.url === "/vendor/messages" && unreadChats > 0 && (
+                  <span className="rounded-full bg-red-500 px-1.5 text-[11px] font-semibold leading-5 text-white">{unreadChats}</span>
+                )}
               </Link>
             ))}
           </nav>
@@ -184,10 +129,21 @@ export function VendorLayout({ children, title }: VendorLayoutProps) {
         </main>
       </div>
 
-      {/* Mobile Bottom Navigation: floating liquid-glass bubble bar */}
+      {/* Phone tab bar: the five things sellers do most */}
       <BubbleTabBar
         className="md:hidden"
-        items={bottomNavItems.map((item) => ({ href: item.url, label: item.title, icon: item.icon }))}
+        items={[
+          { href: "/vendor/dashboard", label: "Home", icon: LayoutDashboard },
+          { href: "/vendor/products", label: "Products", icon: Package },
+          { href: "/vendor/orders", label: "Orders", icon: ShoppingCart },
+          { href: "/vendor/messages", label: "Chats", icon: MessageCircle, badge: unreadChats },
+          {
+            href: "/vendor/more",
+            label: "More",
+            icon: LayoutGrid,
+            match: (pathname) => MORE_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`)),
+          },
+        ]}
       />
     </div>
   );

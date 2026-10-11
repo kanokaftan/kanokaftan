@@ -10,10 +10,12 @@ import { toast } from "sonner";
 interface ChatWithUsButtonProps extends Omit<ButtonProps, "onClick"> {
   productId?: string;
   label?: string;
+  /** Where chats open (sellers stay in the seller area). */
+  chatBasePath?: string;
 }
 
 /** Opens a chat with the Kano Kaftan team (protected purchase / support). */
-export function ChatWithUsButton({ productId, label = "Buy through Kano Kaftan", ...buttonProps }: ChatWithUsButtonProps) {
+export function ChatWithUsButton({ productId, label = "Buy through Kano Kaftan", chatBasePath = "/messages", ...buttonProps }: ChatWithUsButtonProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -40,7 +42,7 @@ export function ChatWithUsButton({ productId, label = "Buy through Kano Kaftan",
     try {
       // From a product: open the support chat with the product already sent.
       const conversationId = productId ? await requestPurchase(productId) : await startSupport.mutateAsync(undefined);
-      navigate(`/messages/${conversationId}`);
+      navigate(`${chatBasePath}/${conversationId}`);
     } catch (error: unknown) {
       console.error("[ChatWithUsButton] could not open support chat", { productId, error });
       toast.error(error instanceof Error ? error.message : "Could not open chat");

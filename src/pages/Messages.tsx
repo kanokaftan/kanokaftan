@@ -4,6 +4,7 @@ import { formatDistanceToNow } from "date-fns";
 import { MessageCircle } from "lucide-react";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { VendorLayout } from "@/components/vendor/VendorLayout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -15,12 +16,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CallHistory } from "@/components/calls/CallHistory";
 import { isMissedForMe, useCallHistory } from "@/hooks/useCallHistory";
 
-/** Inbox. With `admin`, it renders inside the admin dashboard and opens chats there. */
-export default function Messages({ admin = false }: { admin?: boolean }) {
+/** Chats a seller handles from the seller area: their customers, and Kano Kaftan support. */
+const SELLER_ROLES = new Set(["vendor", "support_user"]);
+
+/**
+ * Inbox. With `admin`, it renders inside the admin dashboard and opens chats there;
+ * with `seller`, inside the seller area with only the shop's customer chats.
+ */
+export default function Messages({ admin = false, seller = false }: { admin?: boolean; seller?: boolean }) {
   const { user, isLoading: authLoading, isAdmin } = useAuth();
   const navigate = useNavigate();
-  const { conversations, isLoading } = useConversations();
-  const basePath = admin ? "/admin/messages" : "/messages";
+  const { conversations: allConversations, isLoading } = useConversations();
+  const conversations = seller ? allConversations.filter((c) => SELLER_ROLES.has(c.role)) : allConversations;
+  const basePath = admin ? "/admin/messages" : seller ? "/vendor/messages" : "/messages";
+  const inDashboard = admin || seller;
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get("tab") === "calls" ? "calls" : "chats";
   const { data: calls = [] } = useCallHistory();
@@ -40,12 +49,17 @@ export default function Messages({ admin = false }: { admin?: boolean }) {
 
   // Admins answer customers from the dashboard, not the shop's inbox.
   useEffect(() => {
-    if (!admin && !authLoading && isAdmin) navigate("/admin/messages", { replace: true });
-  }, [admin, authLoading, isAdmin, navigate]);
+    if (!inDashboard && !authLoading && isAdmin) navigate("/admin/messages", { replace: true });
+  }, [inDashboard, authLoading, isAdmin, navigate]);
 
   const inbox = (
-      <div className={admin ? "" : "px-4 py-6 pb-24"}>
-        {!admin && (
+      <div className={inDashboard ? "" : "px-4 py-6 pb-24"}>
+        {seller && (
+          <div className="mb-3 flex justify-end">
+            <ChatWithUsButton size="sm" variant="outline" className="rounded-full" label="Chat with Kano Kaftan" chatBasePath="/vendor/messages" />
+          </div>
+        )}
+        {!inDashboard && (
           <div className="mb-4 flex items-center justify-between gap-2">
             <h1 className="font-display text-xl font-bold">Messages</h1>
             {!isAdmin && <ChatWithUsButton size="sm" variant="outline" label="Chat with us" />}
@@ -78,6 +92,8 @@ export default function Messages({ admin = false }: { admin?: boolean }) {
             <p>No messages yet.</p>
             {admin ? (
               <p className="text-sm">When customers or sellers tap "Chat with us", their conversations appear here.</p>
+            ) : seller ? (
+              <p className="text-sm">When customers tap "Chat with seller" on your shop or products, their messages appear here.</p>
             ) : (
               <>
                 <p className="text-sm">Questions, or want us to buy something for you? Chat with the Kano Kaftan team.</p>
@@ -135,5 +151,7 @@ export default function Messages({ admin = false }: { admin?: boolean }) {
       </div>
   );
 
-  return admin ? <AdminLayout title="Messages">{inbox}</AdminLayout> : <MobileLayout>{inbox}</MobileLayout>;
+  if (admin) return <AdminLayout title="Messages">{inbox}</AdminLayout>;
+  if (seller) return <VendorLayout title="Chats">{inbox}</VendorLayout>;
+  return <MobileLayout>{inbox}</MobileLayout>;
 }

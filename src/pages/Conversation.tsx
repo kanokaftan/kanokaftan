@@ -96,11 +96,14 @@ function pickRecorderMimeType(): string | undefined {
 
 const formatDuration = (secs: number) => `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
 
-/** One chat. With `admin`, it renders inside the admin dashboard. */
-export default function Conversation({ admin = false }: { admin?: boolean }) {
+/**
+ * One chat. With `admin`, it renders inside the admin dashboard; with `seller`,
+ * it is full screen like the shopper's chat but goes back to the seller inbox.
+ */
+export default function Conversation({ admin = false, seller = false }: { admin?: boolean; seller?: boolean }) {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
-  const basePath = admin ? "/admin/messages" : "/messages";
+  const basePath = admin ? "/admin/messages" : seller ? "/vendor/messages" : "/messages";
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
   const { conversation, messages, isLoading, sendMessage, userId, reactions, react, otherLastReadAt } = useConversation(id);

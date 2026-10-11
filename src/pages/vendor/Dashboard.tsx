@@ -1,512 +1,231 @@
+import { Link } from "react-router-dom";
+import { formatDistanceToNowStrict } from "date-fns";
+import {
+  AlertTriangle, BadgeCheck, ChevronRight, CircleFadingPlus, Clock, Megaphone, MessageCircle, Package, PackageX, Plus,
+  Share2, Truck, type LucideIcon,
+} from "lucide-react";
 import { VendorLayout, useVendorAuth } from "@/components/vendor/VendorLayout";
+import { PayoutsCard } from "@/components/vendor/PayoutsCard";
+import { ShopSetupChecklist } from "@/components/vendor/ShopSetupChecklist";
+import { ShopStatsCard } from "@/components/vendor/ShopStatsCard";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useVendorProducts } from "@/hooks/useVendorProducts";
 import { useVendorOrders } from "@/hooks/useVendorOrders";
-import { PayoutsCard } from "@/components/vendor/PayoutsCard";
-import { ShopStatsCard } from "@/components/vendor/ShopStatsCard";
-import { ShopSetupChecklist } from "@/components/vendor/ShopSetupChecklist";
-import { ChatWithUsButton } from "@/components/chat/ChatWithUsButton";
-import { useProductMutations } from "@/hooks/useProductMutations";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Package,
-  ShoppingCart,
-  TrendingUp,
-  AlertTriangle,
-  Plus,
-  Pencil,
-  Trash2,
-  PackageX,
-  CheckCircle,
-  Store,
-  MoreVertical,
-  BadgeCheck,
-  Megaphone,
-  ChevronRight,
-  Clock,
-  CircleFadingPlus,
-} from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useConversations } from "@/hooks/useChat";
+import { useMyShop } from "@/hooks/useMyShop";
 import { formatNaira, useVerification } from "@/hooks/useVerification";
+import { cn } from "@/lib/utils";
 
-function MonetisationCard({ vendorId }: { vendorId: string | null }) {
+/** Fewer pieces than this left counts as "low stock". */
+const LOW_STOCK = 5;
+/** Paid orders the seller still has to pack and send. */
+const TO_SHIP = new Set(["payment_confirmed", "processing"]);
+const RECENT_ORDERS = 3;
+
+const naira = (amount: number) =>
+  new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(amount);
+
+function greeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  payment_confirmed: "To pack",
+  processing: "Packing",
+  ready_for_pickup: "Ready for pickup",
+  shipped: "Shipped",
+  out_for_delivery: "Out for delivery",
+  delivered: "Delivered",
+  completed: "Completed",
+  cancelled: "Cancelled",
+};
+
+interface Task {
+  icon: LucideIcon;
+  label: string;
+  count: number;
+  to: string;
+  tone: "red" | "amber" | "blue";
+}
+
+const TONES: Record<Task["tone"], string> = {
+  red: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300",
+  amber: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200",
+  blue: "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200",
+};
+
+function QuickAction({ icon: Icon, label, to, onClick }: { icon: LucideIcon; label: string; to?: string; onClick?: () => void }) {
+  const body = (
+    <>
+      <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm transition-transform group-active:scale-90">
+        <Icon className="h-5 w-5" aria-hidden="true" />
+      </span>
+      <span className="text-center text-[11px] font-medium leading-tight">{label}</span>
+    </>
+  );
+  const className = "group flex flex-col items-center gap-1.5";
+  return to ? <Link to={to} className={className}>{body}</Link> : <button type="button" onClick={onClick} className={className}>{body}</button>;
+}
+
+/** Verification or promotion offer, depending on where the seller is. */
+function GrowCard({ vendorId }: { vendorId: string | null }) {
   const { request, settings, isVerified, isLoading } = useVerification(vendorId);
   if (isLoading || !settings) return null;
-
-  if (isVerified) {
-    return (
-      <Link to="/vendor/promote" className="block">
-        <Card className="border-primary/20 bg-gradient-to-r from-primary/10 to-primary/5 hover:shadow-md transition-shadow">
-          <CardContent className="p-3 md:p-4 flex items-center gap-3">
-            <div className="p-2 rounded-full bg-primary/15 flex-shrink-0">
-              <Megaphone className="h-5 w-5 text-primary" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-semibold text-sm">Promote your products</p>
-              <p className="text-xs text-muted-foreground">
-                Feature a product on the homepage from {formatNaira(settings.featured_product_weekly_fee)}/week
-              </p>
-            </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-          </CardContent>
-        </Card>
-      </Link>
-    );
-  }
-
   const underReview = request?.status === "pending_review";
-  const feeText =
-    settings.verification_fee === 0
-      ? "Free"
-      : settings.verification_period_days == null
-        ? `${formatNaira(settings.verification_fee)} one-time`
-        : `${formatNaira(settings.verification_fee)} every ${settings.verification_period_days} days`;
-
+  const to = isVerified ? "/vendor/promote" : "/vendor/verification";
+  const Icon = isVerified ? Megaphone : underReview ? Clock : BadgeCheck;
+  const title = isVerified ? "Promote your products" : underReview ? "Verification under review" : "Get the verified badge";
+  const hint = isVerified
+    ? `Feature a product on the homepage from ${formatNaira(settings.featured_product_weekly_fee)}/week`
+    : underReview
+      ? "We'll notify you once our team has checked your details"
+      : "Buyers trust verified shops more, and they're listed higher";
   return (
-    <Link to="/vendor/verification" className="block">
-      <Card className="border-primary/20 bg-gradient-to-r from-primary/10 to-primary/5 hover:shadow-md transition-shadow">
-        <CardContent className="p-3 md:p-4 flex items-center gap-3">
-          <div className="p-2 rounded-full bg-primary/15 flex-shrink-0">
-            {underReview ? <Clock className="h-5 w-5 text-primary" /> : <BadgeCheck className="h-5 w-5 text-primary" />}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-semibold text-sm">{underReview ? "Verification under review" : "Get verified"}</p>
-            <p className="text-xs text-muted-foreground">
-              {underReview
-                ? "We'll notify you once our team has checked your details"
-                : `Verified badge, top ranking and homepage features · ${feeText}`}
-            </p>
-          </div>
-          <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-        </CardContent>
-      </Card>
+    <Link to={to} className="flex items-center gap-3 rounded-2xl border bg-card p-3.5 active:bg-muted/60">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><Icon className="h-5 w-5" /></span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold">{title}</span>
+        <span className="block text-xs text-muted-foreground">{hint}</span>
+      </span>
+      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
     </Link>
   );
 }
 
+/** Seller home: what needs doing now, one-tap actions, then how the shop is doing. */
 export default function VendorDashboard() {
-  const navigate = useNavigate();
   const { userId } = useVendorAuth();
-  const { data: products, isLoading: productsLoading, refetch } = useVendorProducts(userId);
+  const { data: products, isLoading: productsLoading } = useVendorProducts(userId);
   const { orders, isLoading: ordersLoading } = useVendorOrders(userId);
-  const { deleteProduct, toggleProductStatus } = useProductMutations(userId);
-  const { toast } = useToast();
-  
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [stockEdit, setStockEdit] = useState<{ id: string; name: string; current: number } | null>(null);
-  const [newStock, setNewStock] = useState<string>("");
+  const { conversations } = useConversations();
+  const { name, share } = useMyShop(userId);
 
-  const totalProducts = products?.length || 0;
-  const activeProducts = products?.filter((p) => p.is_active).length || 0;
-  const soldOutProducts = products?.filter((p) => p.stock_quantity === 0).length || 0;
-  const lowStock = products?.filter((p) => p.stock_quantity > 0 && p.stock_quantity < 5).length || 0;
-  
-  // Only count paid orders for stats
-  const paidOrders = orders?.filter(o => o.payment_status === "paid") || [];
-  const totalOrders = paidOrders.length;
-  const totalRevenue = paidOrders.reduce((sum, order) => {
-    const vendorItems = order.order_items.reduce(
-      (itemSum, item) => itemSum + item.quantity * item.unit_price,
-      0
-    );
-    return sum + vendorItems;
-  }, 0);
+  const sales = (orders ?? []).reduce(
+    (sum, order) => sum + order.order_items.reduce((s, item) => s + item.quantity * item.unit_price, 0),
+    0,
+  );
+  const toShip = (orders ?? []).filter((o) => TO_SHIP.has(o.status)).length;
+  const unreadChats = conversations.filter((c) => c.unread && (c.role === "vendor" || c.role === "support_user")).length;
+  const soldOut = (products ?? []).filter((p) => p.stock_quantity === 0).length;
+  const lowStock = (products ?? []).filter((p) => p.stock_quantity > 0 && p.stock_quantity < LOW_STOCK).length;
+  const activeProducts = (products ?? []).filter((p) => p.is_active).length;
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const handleDelete = () => {
-    if (deleteId) {
-      deleteProduct.mutate(deleteId);
-      setDeleteId(null);
-    }
-  };
-
-  const handleMarkSoldOut = (productId: string) => {
-    updateStock(productId, 0);
-  };
-
-  const updateStock = async (productId: string, quantity: number) => {
-    const { error } = await supabase
-      .from("products")
-      .update({ stock_quantity: quantity })
-      .eq("id", productId);
-
-    if (error) {
-      toast({
-        title: "Error updating stock",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: quantity === 0 ? "Marked as sold out" : "Stock updated",
-        description: quantity === 0 ? "Product is now marked as sold out" : `Stock updated to ${quantity} units`,
-      });
-      refetch();
-    }
-  };
-
-  const handleStockUpdate = () => {
-    if (stockEdit && newStock !== "") {
-      updateStock(stockEdit.id, parseInt(newStock, 10));
-      setStockEdit(null);
-      setNewStock("");
-    }
-  };
-
-  const getStockBadge = (quantity: number) => {
-    if (quantity === 0) {
-      return <Badge variant="destructive" className="text-[10px] px-1.5">Sold Out</Badge>;
-    }
-    if (quantity < 5) {
-      return <Badge variant="outline" className="text-[10px] px-1.5 border-amber-500 text-amber-600">Low</Badge>;
-    }
-    return <Badge variant="secondary" className="text-[10px] px-1.5">{quantity}</Badge>;
-  };
+  const tasks: Task[] = [
+    { icon: Truck, label: toShip === 1 ? "order to pack and send" : "orders to pack and send", count: toShip, to: "/vendor/orders", tone: "red" },
+    { icon: MessageCircle, label: unreadChats === 1 ? "unread chat" : "unread chats", count: unreadChats, to: "/vendor/messages", tone: "blue" },
+    { icon: PackageX, label: soldOut === 1 ? "product sold out" : "products sold out", count: soldOut, to: "/vendor/products?filter=soldout", tone: "amber" },
+    { icon: AlertTriangle, label: "running low on stock", count: lowStock, to: "/vendor/products?filter=low", tone: "amber" },
+  ].filter((t) => t.count > 0) as Task[];
+  const loading = productsLoading || ordersLoading;
 
   return (
-    <VendorLayout title="Dashboard">
-      <div className="space-y-4 md:space-y-6">
+    <VendorLayout title="Home">
+      <div className="mx-auto max-w-3xl space-y-5">
+        {/* Hello + headline numbers */}
+        <section className="rounded-3xl bg-primary p-4 text-primary-foreground">
+          <p className="text-xs text-primary-foreground/60">{greeting()}</p>
+          <h2 className="truncate text-xl font-bold">{name}</h2>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {[
+              { label: "Sales", value: loading ? "…" : naira(sales) },
+              { label: "Orders", value: loading ? "…" : String(orders?.length ?? 0) },
+              { label: "Products", value: loading ? "…" : `${activeProducts}` },
+            ].map((s) => (
+              <div key={s.label} className="rounded-2xl bg-primary-foreground/10 px-2.5 py-2">
+                <p className="truncate text-base font-semibold tabular-nums">{s.value}</p>
+                <p className="text-[11px] text-primary-foreground/60">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Quick actions */}
+        <section className="grid grid-cols-4 gap-2">
+          <QuickAction icon={Plus} label="Add product" to="/vendor/products/new" />
+          <QuickAction icon={CircleFadingPlus} label="Post story" to="/vendor/stories" />
+          <QuickAction icon={Megaphone} label="Promote" to="/vendor/promote" />
+          <QuickAction icon={Share2} label="Share shop" onClick={share} />
+        </section>
+
+        {/* What needs doing */}
+        <section>
+          <h3 className="mb-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Needs your attention</h3>
+          {loading ? (
+            <Skeleton className="h-16 rounded-2xl" />
+          ) : tasks.length === 0 ? (
+            <p className="rounded-2xl border bg-card px-4 py-3.5 text-sm text-muted-foreground">You're all caught up. Nothing is waiting for you.</p>
+          ) : (
+            <ul className="overflow-hidden rounded-2xl border bg-card">
+              {tasks.map((task) => (
+                <li key={task.to} className="border-b border-border/60 last:border-b-0">
+                  <Link to={task.to} className="flex items-center gap-3 px-3.5 py-3 active:bg-muted/60">
+                    <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full", TONES[task.tone])}>
+                      <task.icon className="h-[18px] w-[18px]" aria-hidden="true" />
+                    </span>
+                    <span className="flex-1 text-[15px]"><span className="font-semibold tabular-nums">{task.count}</span> {task.label}</span>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
         <ShopSetupChecklist vendorId={userId} />
-        <MonetisationCard vendorId={userId} />
 
-        {/* Quick Actions - Mobile optimized */}
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 md:overflow-visible">
-          <Button asChild size="sm" className="flex-shrink-0">
-            <Link to="/vendor/products/new">
-              <Plus className="h-4 w-4 mr-1.5" />
-              Add Product
-            </Link>
-          </Button>
-          <Button asChild size="sm" variant="outline" className="flex-shrink-0 border-primary/40">
-            <Link to="/vendor/stories">
-              <CircleFadingPlus className="h-4 w-4 mr-1.5" />
-              Post a story
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild className="flex-shrink-0">
-            <Link to="/vendor/products">
-              <Package className="h-4 w-4 mr-1.5" />
-              All Products
-            </Link>
-          </Button>
-          <ChatWithUsButton size="sm" variant="outline" className="flex-shrink-0" label="Chat with Kano Kaftan" />
-        </div>
-
-        {/* Stats Cards - 2x2 grid on mobile */}
-        <div className="grid grid-cols-2 gap-3 md:gap-4 md:grid-cols-4">
-          <Card className="p-3 md:p-0">
-            <CardHeader className="hidden md:flex md:flex-row md:items-center md:justify-between md:space-y-0 md:pb-2">
-              <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="p-0 md:p-6 md:pt-0">
-              {productsLoading ? (
-                <Skeleton className="h-8 w-16" />
-              ) : (
-                <>
-                  <div className="flex items-center gap-2 md:block">
-                    <Package className="h-4 w-4 text-muted-foreground md:hidden" />
-                    <div className="text-xl md:text-2xl font-bold">{totalProducts}</div>
-                  </div>
-                  <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">
-                    {activeProducts} active
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="p-3 md:p-0">
-            <CardHeader className="hidden md:flex md:flex-row md:items-center md:justify-between md:space-y-0 md:pb-2">
-              <CardTitle className="text-sm font-medium">Orders</CardTitle>
-              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="p-0 md:p-6 md:pt-0">
-              {ordersLoading ? (
-                <Skeleton className="h-8 w-16" />
-              ) : (
-                <>
-                  <div className="flex items-center gap-2 md:block">
-                    <ShoppingCart className="h-4 w-4 text-muted-foreground md:hidden" />
-                    <div className="text-xl md:text-2xl font-bold">{totalOrders}</div>
-                  </div>
-                  <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">All time</p>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="p-3 md:p-0">
-            <CardHeader className="hidden md:flex md:flex-row md:items-center md:justify-between md:space-y-0 md:pb-2">
-              <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="p-0 md:p-6 md:pt-0">
-              {ordersLoading ? (
-                <Skeleton className="h-8 w-24" />
-              ) : (
-                <>
-                  <div className="flex items-center gap-2 md:block">
-                    <TrendingUp className="h-4 w-4 text-muted-foreground md:hidden" />
-                    <div className="text-lg md:text-2xl font-bold truncate">
-                      {formatCurrency(totalRevenue)}
-                    </div>
-                  </div>
-                  <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">From sales</p>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className={`p-3 md:p-0 ${lowStock > 0 || soldOutProducts > 0 ? "border-amber-300 bg-amber-50/50" : ""}`}>
-            <CardHeader className="hidden md:flex md:flex-row md:items-center md:justify-between md:space-y-0 md:pb-2">
-              <CardTitle className="text-sm font-medium">Alerts</CardTitle>
-              <AlertTriangle className={`h-4 w-4 ${lowStock > 0 ? "text-amber-500" : "text-muted-foreground"}`} />
-            </CardHeader>
-            <CardContent className="p-0 md:p-6 md:pt-0">
-              {productsLoading ? (
-                <Skeleton className="h-8 w-16" />
-              ) : (
-                <>
-                  <div className="flex items-center gap-2 md:block">
-                    <AlertTriangle className={`h-4 w-4 md:hidden ${lowStock > 0 || soldOutProducts > 0 ? "text-amber-500" : "text-muted-foreground"}`} />
-                    <div className="text-xl md:text-2xl font-bold">{lowStock + soldOutProducts}</div>
-                  </div>
-                  <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">
-                    {soldOutProducts} out · {lowStock} low
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+        {/* Recent orders */}
+        <section>
+          <div className="mb-1.5 flex items-center justify-between px-1">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Recent orders</h3>
+            <Link to="/vendor/orders" className="text-xs font-medium text-primary">See all</Link>
+          </div>
+          {ordersLoading ? (
+            <Skeleton className="h-28 rounded-2xl" />
+          ) : !orders?.length ? (
+            <div className="rounded-2xl border bg-card px-4 py-5 text-center text-sm text-muted-foreground">
+              <Package className="mx-auto mb-2 h-6 w-6 opacity-50" />
+              No orders yet. Share your shop link to bring in buyers.
+            </div>
+          ) : (
+            <ul className="overflow-hidden rounded-2xl border bg-card">
+              {orders.slice(0, RECENT_ORDERS).map((order) => {
+                const items = order.order_items.reduce((n, i) => n + i.quantity, 0);
+                const amount = order.order_items.reduce((s, i) => s + i.quantity * i.unit_price, 0);
+                const waiting = TO_SHIP.has(order.status);
+                return (
+                  <li key={order.id} className="border-b border-border/60 last:border-b-0">
+                    <Link to="/vendor/orders" className="flex items-center gap-3 px-3.5 py-3 active:bg-muted/60">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[15px] font-medium">
+                          {order.shipping_address?.full_name || order.customer?.full_name || "Customer"}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {items} item{items === 1 ? "" : "s"} · {formatDistanceToNowStrict(new Date(order.created_at), { addSuffix: true })}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold tabular-nums">{naira(amount)}</p>
+                        <p className={cn("text-[11px]", waiting ? "font-semibold text-red-600" : "text-muted-foreground")}>
+                          {STATUS_LABELS[order.status] ?? order.status}
+                        </p>
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
 
         <ShopStatsCard />
 
         {userId && <PayoutsCard vendorId={userId} />}
 
-        {/* Inventory List */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between py-3 md:py-6">
-            <CardTitle className="text-base md:text-lg">Inventory</CardTitle>
-            <Link to="/vendor/products" className="text-xs md:text-sm text-primary hover:underline">
-              View all →
-            </Link>
-          </CardHeader>
-          <CardContent className="p-3 md:p-6 pt-0 md:pt-0">
-            {productsLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-14 w-full" />
-                ))}
-              </div>
-            ) : products?.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Store className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                <p className="text-sm mb-3">No products yet</p>
-                <Button asChild size="sm">
-                  <Link to="/vendor/products/new">
-                    <Plus className="h-4 w-4 mr-1.5" />
-                    Add Product
-                  </Link>
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {products?.slice(0, 6).map((product) => (
-                  <div
-                    key={product.id}
-                    className="flex items-center gap-3 p-2 md:p-3 rounded-lg border hover:bg-muted/50 transition-colors"
-                  >
-                    {/* Product Image */}
-                    {product.product_images?.[0] ? (
-                      <img
-                        src={product.product_images[0].url}
-                        alt={product.name}
-                        className="h-10 w-10 md:h-12 md:w-12 rounded-md object-cover flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="h-10 w-10 md:h-12 md:w-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
-                        <Package className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
-                      </div>
-                    )}
-                    
-                    {/* Product Info */}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{product.name}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-muted-foreground">
-                          {formatCurrency(product.price)}
-                        </span>
-                        {getStockBadge(product.stock_quantity)}
-                      </div>
-                    </div>
-                    
-                    {/* Actions Dropdown - Better for mobile */}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-44">
-                        <DropdownMenuItem asChild>
-                          <Link to={`/vendor/products/${product.id}`}>
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Edit
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setStockEdit({
-                              id: product.id,
-                              name: product.name,
-                              current: product.stock_quantity,
-                            });
-                            setNewStock(product.stock_quantity.toString());
-                          }}
-                        >
-                          <Package className="h-4 w-4 mr-2" />
-                          Update Stock
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {product.stock_quantity > 0 ? (
-                          <DropdownMenuItem onClick={() => handleMarkSoldOut(product.id)}>
-                            <PackageX className="h-4 w-4 mr-2" />
-                            Mark Sold Out
-                          </DropdownMenuItem>
-                        ) : (
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setStockEdit({
-                                id: product.id,
-                                name: product.name,
-                                current: 0,
-                              });
-                              setNewStock("10");
-                            }}
-                          >
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Restock
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem
-                          onClick={() => toggleProductStatus.mutate({
-                            productId: product.id,
-                            isActive: !product.is_active,
-                          })}
-                        >
-                          {product.is_active ? "Deactivate" : "Activate"}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-destructive"
-                          onClick={() => setDeleteId(product.id)}
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <GrowCard vendorId={userId} />
       </div>
-
-      {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent className="max-w-[90vw] md:max-w-lg">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Product</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete this product and cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Stock Update Dialog */}
-      <Dialog open={!!stockEdit} onOpenChange={() => setStockEdit(null)}>
-        <DialogContent className="max-w-[90vw] md:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle>Update Stock</DialogTitle>
-            <DialogDescription className="truncate">
-              {stockEdit?.name}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="stock">Stock Quantity</Label>
-            <Input
-              id="stock"
-              type="number"
-              min="0"
-              value={newStock}
-              onChange={(e) => setNewStock(e.target.value)}
-              className="mt-2"
-              placeholder="Enter new stock quantity"
-            />
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setStockEdit(null)}>
-              Cancel
-            </Button>
-            <Button onClick={handleStockUpdate}>
-              Update Stock
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </VendorLayout>
   );
 }
