@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { VendorDetailModal } from "@/components/admin/VendorDetailModal";
+import { TodayTrafficCard } from "@/components/admin/TodayTrafficCard";
 import { useAdminStats } from "@/hooks/useAdminStats";
 import { useAdminAnalytics } from "@/hooks/useAdminAnalytics";
 import { useAdminOrders } from "@/hooks/useAdminOrders";
@@ -191,6 +192,8 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
+
+        <TodayTrafficCard />
 
         {/* Money */}
         <div className="grid grid-cols-2 gap-3">

@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_alert_settings: {
+        Row: {
+          user_id: string
+          signups: boolean
+          visits: string
+          daily_report: boolean
+          visits_last_sent_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          signups?: boolean
+          visits?: string
+          daily_report?: boolean
+          visits_last_sent_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          signups?: boolean
+          visits?: string
+          daily_report?: boolean
+          visits_last_sent_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       vendor_applications: {
         Row: {
           admin_note: string | null
@@ -1458,6 +1485,7 @@ export type Database = {
       track_events: { Args: { p_events: Json }; Returns: undefined }
       admin_analytics: { Args: { p_from: string; p_to: string }; Returns: Json }
       admin_live_visitors: { Args: Record<PropertyKey, never>; Returns: Json }
+      admin_today_overview: { Args: Record<PropertyKey, never>; Returns: Json }
       vendor_analytics: { Args: { p_days?: number }; Returns: Json }
       story_rings: {
         Args: { p_limit?: number }

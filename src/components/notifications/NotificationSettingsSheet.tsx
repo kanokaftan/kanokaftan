@@ -3,6 +3,7 @@ import { BellRing, Loader2, Megaphone, Package } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { AdminAlertSettings } from "@/components/notifications/AdminAlertSettings";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -31,7 +32,7 @@ const OPTIONS: { key: PrefKey; icon: typeof BellRing; title: string; description
 
 /** Quick notification choices, saved the moment a switch is flipped. */
 export function NotificationSettingsSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState<PrefKey | null>(null);
@@ -80,7 +81,7 @@ export function NotificationSettingsSheet({ open, onOpenChange }: { open: boolea
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="rounded-t-3xl pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      <SheetContent side="bottom" className="max-h-[90dvh] overflow-y-auto rounded-t-3xl pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         <SheetHeader className="text-left">
           <SheetTitle>Notification settings</SheetTitle>
           <SheetDescription>Choose what we tell you about. Changes save straight away.</SheetDescription>
@@ -108,6 +109,7 @@ export function NotificationSettingsSheet({ open, onOpenChange }: { open: boolea
             );
           })}
         </div>
+        {isAdmin && <AdminAlertSettings open={open} />}
       </SheetContent>
     </Sheet>
   );
