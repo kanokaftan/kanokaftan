@@ -1,5 +1,6 @@
 import useEmblaCarousel from "embla-carousel-react";
 import { useState, useEffect } from "react";
+import { track } from "@/lib/analytics";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ChevronLeft, Heart, Minus, Plus, ShoppingCart, Truck, Shield, RotateCcw, BadgeCheck, Store, Share2 } from "lucide-react";
 import { ChatWithVendorButton } from "@/components/chat/ChatWithVendorButton";
@@ -66,6 +67,10 @@ export default function ProductDetail() {
       });
     }
   }, [product, addToRecentlyViewed]);
+
+  useEffect(() => {
+    if (product?.id) track("product_view", { product_id: product.id, vendor_id: product.vendor_id ?? undefined, value: product.price });
+  }, [product?.id]); // eslint-disable-line react-hooks/exhaustive-deps -- once per product
 
   if (isLoading) {
     return (

@@ -6,6 +6,7 @@ import { persistQueryCache } from "@/lib/persistQueryCache";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Analytics } from "@vercel/analytics/react";
+import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Products from "./pages/Products";
@@ -34,6 +35,7 @@ import AdminSettings from "./pages/admin/Settings";
 import AdminAnnouncements from "./pages/admin/Announcements";
 import AdminModeration from "./pages/admin/Moderation";
 import AdminErrors from "./pages/admin/Errors";
+import AdminAnalytics from "./pages/admin/Analytics";
 import AdminProductForm from "./pages/admin/ProductForm";
 import AdminLogin from "./pages/admin/AdminLogin";
 import VendorDashboard from "./pages/vendor/Dashboard";
@@ -83,6 +85,7 @@ const App = () => (
         <PushSync />
         <PresenceHeartbeat />
         <BrowserRouter>
+          <AnalyticsTracker />
           <Routes>
             {/* Customer Routes */}
             <Route path="/" element={<Index />} />
@@ -143,6 +146,7 @@ const App = () => (
             <Route path="/admin/announcements" element={<AdminAnnouncements />} />
             <Route path="/admin/moderation" element={<AdminModeration />} />
             <Route path="/admin/errors" element={<AdminErrors />} />
+            <Route path="/admin/analytics" element={<AdminAnalytics />} />
             <Route path="/admin/chats" element={<Navigate to="/admin/messages" replace />} />
             <Route path="/admin/messages" element={<Messages admin />} />
             <Route path="/admin/messages/:id" element={<Conversation admin />} />

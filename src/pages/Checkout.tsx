@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { track } from "@/lib/analytics";
 import { useNavigate, Link } from "react-router-dom";
 import { MapPin, Plus, ChevronRight, CreditCard, ShieldCheck, Truck, Percent, Tag, X, Check } from "lucide-react";
 import { MobileLayout } from "@/components/layout/MobileLayout";
@@ -62,6 +63,14 @@ export default function Checkout() {
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<PromoCodeResult | null>(null);
   const [isValidatingPromo, setIsValidatingPromo] = useState(false);
+
+  // Counts once per visit to checkout, as soon as the cart has loaded.
+  const checkoutTracked = useRef(false);
+  useEffect(() => {
+    if (checkoutTracked.current || cartLoading || !items.length) return;
+    checkoutTracked.current = true;
+    track("checkout_start", { value: total });
+  }, [cartLoading, items.length, total]);
 
   // Redirect if not authenticated
   useEffect(() => {

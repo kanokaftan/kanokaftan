@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { trackOnce } from "@/lib/analytics";
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import {
@@ -46,6 +47,11 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.E
   cancelled: { label: "Cancelled", color: "bg-red-500", icon: Package },
 };
 
+/** One "purchase" per order for analytics, however many times payment is re-checked. */
+function recordPurchase(orderId: string, amount?: number) {
+  trackOnce(`purchase:${orderId}`, "purchase", { value: amount });
+}
+
 export default function OrderDetail() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
@@ -73,6 +79,7 @@ export default function OrderDetail() {
       verifyPayment(reference, id)
         .then((result) => {
           if (result.success) {
+            recordPurchase(id, result.amount);
             if (result.status === 'already_processed') {
               toast.success("Payment already confirmed!");
             } else {
@@ -100,6 +107,7 @@ export default function OrderDetail() {
       verifyPayment(order.payment_reference, order.id)
         .then((result) => {
           if (result.success) {
+            recordPurchase(order.id, Number(order.total));
             toast.success("Payment confirmed!");
             refetchOrders();
           }
@@ -181,6 +189,7 @@ export default function OrderDetail() {
     try {
       const result = await verifyPayment(order.payment_reference, order.id);
       if (result.success) {
+        recordPurchase(order.id, Number(order.total));
         toast.success("Payment confirmed!");
         refetchOrders();
       } else {

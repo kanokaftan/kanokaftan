@@ -1455,6 +1455,10 @@ export type Database = {
         Returns: undefined
       }
       admin_set_error_resolved: { Args: { p_error_id: string; p_resolved: boolean }; Returns: undefined }
+      track_events: { Args: { p_events: Json }; Returns: undefined }
+      admin_analytics: { Args: { p_from: string; p_to: string }; Returns: Json }
+      admin_live_visitors: { Args: Record<PropertyKey, never>; Returns: Json }
+      vendor_analytics: { Args: { p_days?: number }; Returns: Json }
       story_rings: {
         Args: { p_limit?: number }
         Returns: {

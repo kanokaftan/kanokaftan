@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { track } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -85,8 +86,9 @@ export function useWishlist() {
         return { action: "added" as const };
       }
     },
-    onSuccess: () => {
+    onSuccess: (result, productId) => {
       queryClient.invalidateQueries({ queryKey: ["wishlist"] });
+      if (result.action === "added") track("wishlist_add", { product_id: productId });
     },
   });
 

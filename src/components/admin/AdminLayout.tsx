@@ -1,7 +1,7 @@
 import { ReactNode, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Users, Package, ShoppingCart,
+  Activity, LayoutDashboard, Users, Package, ShoppingCart,
   Tag, DollarSign, BarChart, Settings, MessageCircle,
   Menu, X, LogOut, ShoppingBag, Shield, Store, Megaphone, Flag, AlertTriangle
 } from "lucide-react";
@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
+  { title: "Analytics", url: "/admin/analytics", icon: Activity },
   { title: "Messages", url: "/admin/messages", icon: MessageCircle, badge: "Live" },
   { title: "Users", url: "/admin/users", icon: Users },
   { title: "Vendors", url: "/admin/vendors", icon: Store },

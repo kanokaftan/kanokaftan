@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { track } from "@/lib/analytics";
 import { useParams, Link, Navigate, useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -37,6 +38,10 @@ export default function VendorProfile() {
   const { data: liveStories = [] } = useVendorStories(shop?.id);
   const { data: products, isLoading: productsLoading } = useShopProducts(shop?.id);
   const { data: reviews } = useShopReviews(shop?.id);
+
+  useEffect(() => {
+    if (shop?.id) track("shop_view", { vendor_id: shop.id });
+  }, [shop?.id]);
   const { isFollowing, toggleFollow, canFollow } = useShopFollow(shop?.id);
 
   const [search, setSearch] = useState("");
