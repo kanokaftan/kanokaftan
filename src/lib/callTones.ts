@@ -69,7 +69,10 @@ function playCycle(ctx: AudioContext, kind: ToneKind): number {
 
 /** Starts a repeating ring; returns a function that stops it. */
 export function startTone(kind: ToneKind): () => void {
-  setAudioSession("playback");
+  // The ringtone may use "playback" (rings through the silent switch). The
+  // caller's ringback plays while their microphone is already open, and iPhone
+  // stops the microphone in "playback" mode, so it stays in call mode.
+  setAudioSession(kind === "ringtone" ? "playback" : "play-and-record");
   const ctx = audioContext();
   let timer: number | undefined;
   let stopped = false;

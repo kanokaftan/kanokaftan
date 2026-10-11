@@ -1,5 +1,6 @@
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { setAudioSession } from "@/lib/callTones";
 
 // Peer-to-peer HD voice (and optional video) for one call. The two browsers exchange connection
 // details (offer / answer / network candidates) over a Realtime broadcast
@@ -57,39 +58,67 @@ export async function fetchIceServers(): Promise<RTCIceServer[]> {
 function mediaError(error: unknown, device: "microphone" | "camera"): Error {
   const name = (error as DOMException)?.name;
   if (name === "NotAllowedError" || name === "SecurityError") {
-    return new Error(`${device === "camera" ? "Camera" : "Microphone"} access is blocked. Allow it for Kano Kaftan in your phone settings.`);
+    const label = device === "camera" ? "Camera" : "Microphone";
+    return new Error(
+      `${label} access was not allowed. Tap Answer again and choose Allow. If it keeps failing: iPhone Settings → Safari → ${label} → Ask or Allow (Android: Settings → Apps → Chrome → Permissions).`,
+    );
   }
   if (name === "NotFoundError") return new Error(`No ${device} was found on this device.`);
-  if (name === "NotReadableError") return new Error(`The ${device} is being used by another app.`);
+  if (name === "NotReadableError" || name === "AbortError") return new Error(`The ${device} is being used by another app or call. Close it and try again.`);
   return new Error(`Could not start the ${device}.`);
 }
 
-export async function getHdMicrophone(): Promise<MediaStream> {
+/** True when the browser refused access (as opposed to a missing or busy device). */
+function isRefused(error: unknown): boolean {
+  const name = (error as DOMException)?.name;
+  return name === "NotAllowedError" || name === "SecurityError";
+}
+
+/**
+ * Asks for the microphone (and camera). iPhone refuses the microphone while the
+ * page's audio is in "playback" mode (used for the ringtone), with the same
+ * error as a denied permission, so switch to call mode first. If it is still
+ * refused, try once more in the default mode before giving up.
+ */
+async function requestMedia(constraints: MediaStreamConstraints): Promise<MediaStream> {
   if (!navigator.mediaDevices?.getUserMedia) {
     throw new Error("This browser can't make calls. Try Chrome, or the installed app.");
   }
+  setAudioSession("play-and-record");
   try {
-    return await navigator.mediaDevices.getUserMedia({ audio: HD_MIC_CONSTRAINTS, video: false });
+    return await navigator.mediaDevices.getUserMedia(constraints);
   } catch (error) {
-    throw mediaError(error, "microphone");
+    if (!isRefused(error)) throw error;
+    console.warn("[voiceCall] media refused in call mode; retrying in default audio mode", error);
+    setAudioSession("auto");
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    setAudioSession("play-and-record");
+    return stream;
+  }
+}
+
+export async function getHdMicrophone(): Promise<MediaStream> {
+  try {
+    return await requestMedia({ audio: HD_MIC_CONSTRAINTS, video: false });
+  } catch (error) {
+    console.error("[voiceCall] microphone request failed", error);
+    throw error instanceof DOMException ? mediaError(error, "microphone") : error;
   }
 }
 
 /** Microphone plus 720p camera. */
 export async function getCallMedia(kind: CallKind, facing: CameraFacing = "user"): Promise<MediaStream> {
   if (kind === "voice") return getHdMicrophone();
-  if (!navigator.mediaDevices?.getUserMedia) {
-    throw new Error("This browser can't make calls. Try Chrome, or the installed app.");
-  }
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
+    const stream = await requestMedia({
       audio: HD_MIC_CONSTRAINTS,
       video: { ...HD_CAMERA_CONSTRAINTS, facingMode: facing },
     });
     stream.getVideoTracks().forEach((t) => (t.contentHint = "motion"));
     return stream;
   } catch (error) {
-    throw mediaError(error, "camera");
+    console.error("[voiceCall] camera request failed", error);
+    throw error instanceof DOMException ? mediaError(error, "camera") : error;
   }
 }
 

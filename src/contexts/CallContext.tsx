@@ -246,9 +246,22 @@ export function CallProvider({ children }: { children: ReactNode }) {
     }, Math.max(1, RING_SECONDS - age) * 1000));
   }, [finish, userId, watchCall]);
 
-  const accept = useCallback(async () => {
-    const call = callRef.current;
-    if (!call) return;
+  const answeringRef = useRef(false);
+
+  /**
+   * A microphone problem must never turn into "declined" for the caller: the
+   * call keeps ringing so the person can allow access and tap Answer again
+   * (or decline it themselves).
+   */
+  const keepRingingAfterMediaError = useCallback((callId: string, error: unknown) => {
+    console.error("[calls] could not open the microphone to answer", { callId, error });
+    toast.error(error instanceof Error ? error.message : "Could not start the microphone", { duration: 8000 });
+    if (callRef.current?.id === callId && phaseRef.current === "incoming") {
+      stopToneRef.current ??= startTone("ringtone");
+    }
+  }, []);
+
+  const answer = useCallback(async (call: CallRow) => {
     primeAudio();
     stopTone();
     const kind: CallKind = call.kind === "video" ? "video" : "voice";
@@ -257,26 +270,25 @@ export function CallProvider({ children }: { children: ReactNode }) {
       stream = await getCallMedia(kind);
     } catch (error) {
       // No camera? Still answer with voice rather than missing the call.
-      if (kind === "video") {
-        try {
-          stream = await getHdMicrophone();
-          toast.info("Camera unavailable. Joined with voice only.");
-        } catch (micError) {
-          toast.error(micError instanceof Error ? micError.message : "Could not start the microphone");
-          endOnServer(call.id, "hangup");
-          return finish("Call ended");
-        }
-      } else {
-        toast.error(error instanceof Error ? error.message : "Could not start the microphone");
-        endOnServer(call.id, "hangup");
-        return finish("Call ended");
+      if (kind !== "video") return keepRingingAfterMediaError(call.id, error);
+      try {
+        stream = await getHdMicrophone();
+        toast.info("Camera unavailable. Joined with voice only.");
+      } catch (micError) {
+        return keepRingingAfterMediaError(call.id, micError);
       }
+    }
+    // The caller may have hung up while the permission prompt was open.
+    if (callRef.current?.id !== call.id || phaseRef.current !== "incoming") {
+      stream.getTracks().forEach((t) => t.stop());
+      return;
     }
     setLocalStream(stream);
     if (kind === "video" && stream.getVideoTracks().length === 0) setView((v) => ({ ...v, cameraOn: false }));
     const { data, error } = await supabase.rpc("answer_call", { p_call_id: call.id });
     if (error || !data) {
       stream.getTracks().forEach((t) => t.stop());
+      if (error) console.error("[calls] answer_call failed", { callId: call.id, error });
       return finish(error?.message || "This call has ended");
     }
     callRef.current = data as unknown as CallRow;
@@ -288,7 +300,18 @@ export function CallProvider({ children }: { children: ReactNode }) {
       endOnServer(call.id, "failed");
       finish("Could not connect the call");
     }
-  }, [endOnServer, finish, openSession]);
+  }, [endOnServer, finish, openSession, keepRingingAfterMediaError]);
+
+  const accept = useCallback(async () => {
+    const call = callRef.current;
+    if (!call || answeringRef.current) return;
+    answeringRef.current = true;
+    try {
+      await answer(call);
+    } finally {
+      answeringRef.current = false;
+    }
+  }, [answer]);
 
   const acceptRef = useRef(accept);
   acceptRef.current = accept;
