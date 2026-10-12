@@ -65,10 +65,12 @@ export function VendorLayout({ children, title }: VendorLayoutProps) {
   return (
     <div className="min-h-screen flex flex-col bg-muted/30">
       {/* Mobile header: big clear title, alerts on the right (everything else is in the tab bar) */}
-      <header className="liquid-glass sticky top-0 z-40 flex h-14 items-center justify-between border-b border-white/30 px-4 pt-[env(safe-area-inset-top)] box-content dark:border-white/10 md:hidden">
-        <h1 className="truncate text-[17px] font-semibold">{title}</h1>
-        <div className="flex items-center gap-1">
-          <NotificationBell href="/vendor/notifications" />
+      <header className="sticky top-0 z-40 bg-gradient-to-b from-muted via-muted/85 to-transparent px-3 pb-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] md:hidden">
+        <div className="liquid-glass flex h-14 items-center justify-between rounded-full pl-5 pr-2">
+          <h1 className="truncate text-[17px] font-semibold">{title}</h1>
+          <div className="flex items-center gap-1">
+            <NotificationBell href="/vendor/notifications" />
+          </div>
         </div>
       </header>
 
