@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -9,66 +10,98 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { Analytics } from "@vercel/analytics/react";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import Products from "./pages/Products";
-import ProductDetail from "./pages/ProductDetail";
-import Wishlist from "./pages/Wishlist";
-import Profile from "./pages/Profile";
-import Account from "./pages/Account";
-import Settings from "./pages/Settings";
-import Help from "./pages/Help";
+const Auth = lazy(() => import("./pages/Auth"));
+const Products = lazy(() => import("./pages/Products"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const Wishlist = lazy(() => import("./pages/Wishlist"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Account = lazy(() => import("./pages/Account"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Help = lazy(() => import("./pages/Help"));
 import { PushSync } from "@/components/notifications/PushSync";
 import { CallProvider } from "@/contexts/CallContext";
 import { PresenceHeartbeat } from "@/components/calls/PresenceHeartbeat";
 import { PullToRefresh } from "./components/layout/PullToRefresh";
-import Privacy from "./pages/Privacy";
-import Terms from "./pages/Terms";
-import SupportChatRedirect from "./pages/SupportChatRedirect";
-import AdminDashboard from "./pages/admin/Dashboard";
-import AdminUsers from "./pages/admin/Users";
-import AdminVendors from "./pages/admin/Vendors";
-import AdminProducts from "./pages/admin/Products";
-import AdminOrders from "./pages/admin/Orders";
-import AdminCategories from "./pages/admin/Categories";
-import AdminFinance from "./pages/admin/Finance";
-import AdminReports from "./pages/admin/Reports";
-import AdminSettings from "./pages/admin/Settings";
-import AdminAnnouncements from "./pages/admin/Announcements";
-import AdminModeration from "./pages/admin/Moderation";
-import AdminErrors from "./pages/admin/Errors";
-import AdminAnalytics from "./pages/admin/Analytics";
-import AdminLogistics from "./pages/admin/Logistics";
-import AdminVendorDetail from "./pages/admin/VendorDetail";
-import AdminCustomerDetail from "./pages/admin/CustomerDetail";
-import AdminChatTranscript from "./pages/admin/ChatTranscript";
-import AdminProductForm from "./pages/admin/ProductForm";
-import AdminLogin from "./pages/admin/AdminLogin";
-import VendorDashboard from "./pages/vendor/Dashboard";
-import VendorMore from "./pages/vendor/More";
-import VendorProducts from "./pages/vendor/Products";
-import VendorProductForm from "./pages/vendor/ProductForm";
-import VendorOrders from "./pages/vendor/Orders";
-import VendorSettings from "./pages/vendor/Settings";
-import VendorVerification from "./pages/vendor/Verification";
-import VendorPromote from "./pages/vendor/Promote";
-import VendorStories from "./pages/vendor/Stories";
-import VendorFans from "./pages/vendor/Fans";
-import VendorReviews from "./pages/vendor/Reviews";
-import VendorEarnings from "./pages/vendor/Earnings";
-import StoryViewer from "./pages/StoryViewer";
-import NotificationsPage from "./pages/Notifications";
-import SellerApply from "./pages/SellerApply";
-import SellerLogin from "./pages/SellerLogin";
-import VendorProfilePage from "./pages/VendorProfile";
-import Shops from "./pages/Shops";
-import Messages from "./pages/Messages";
-import Conversation from "./pages/Conversation";
-import Cart from "./pages/Cart";
-import Checkout from "./pages/Checkout";
-import Orders from "./pages/Orders";
-import OrderDetail from "./pages/OrderDetail";
-import Addresses from "./pages/Addresses";
-import NotFound from "./pages/NotFound";
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
+const SupportChatRedirect = lazy(() => import("./pages/SupportChatRedirect"));
+const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
+const AdminUsers = lazy(() => import("./pages/admin/Users"));
+const AdminVendors = lazy(() => import("./pages/admin/Vendors"));
+const AdminProducts = lazy(() => import("./pages/admin/Products"));
+const AdminOrders = lazy(() => import("./pages/admin/Orders"));
+const AdminCategories = lazy(() => import("./pages/admin/Categories"));
+const AdminFinance = lazy(() => import("./pages/admin/Finance"));
+const AdminReports = lazy(() => import("./pages/admin/Reports"));
+const AdminSettings = lazy(() => import("./pages/admin/Settings"));
+const AdminAnnouncements = lazy(() => import("./pages/admin/Announcements"));
+const AdminModeration = lazy(() => import("./pages/admin/Moderation"));
+const AdminErrors = lazy(() => import("./pages/admin/Errors"));
+const AdminAnalytics = lazy(() => import("./pages/admin/Analytics"));
+const AdminLogistics = lazy(() => import("./pages/admin/Logistics"));
+const AdminVendorDetail = lazy(() => import("./pages/admin/VendorDetail"));
+const AdminCustomerDetail = lazy(() => import("./pages/admin/CustomerDetail"));
+const AdminChatTranscript = lazy(() => import("./pages/admin/ChatTranscript"));
+const AdminProductForm = lazy(() => import("./pages/admin/ProductForm"));
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const VendorDashboard = lazy(() => import("./pages/vendor/Dashboard"));
+const VendorMore = lazy(() => import("./pages/vendor/More"));
+const VendorProducts = lazy(() => import("./pages/vendor/Products"));
+const VendorProductForm = lazy(() => import("./pages/vendor/ProductForm"));
+const VendorOrders = lazy(() => import("./pages/vendor/Orders"));
+const VendorSettings = lazy(() => import("./pages/vendor/Settings"));
+const VendorVerification = lazy(() => import("./pages/vendor/Verification"));
+const VendorPromote = lazy(() => import("./pages/vendor/Promote"));
+const VendorStories = lazy(() => import("./pages/vendor/Stories"));
+const VendorFans = lazy(() => import("./pages/vendor/Fans"));
+const VendorReviews = lazy(() => import("./pages/vendor/Reviews"));
+const VendorEarnings = lazy(() => import("./pages/vendor/Earnings"));
+const StoryViewer = lazy(() => import("./pages/StoryViewer"));
+const NotificationsPage = lazy(() => import("./pages/Notifications"));
+const SellerApply = lazy(() => import("./pages/SellerApply"));
+const SellerLogin = lazy(() => import("./pages/SellerLogin"));
+const VendorProfilePage = lazy(() => import("./pages/VendorProfile"));
+const Shops = lazy(() => import("./pages/Shops"));
+const Messages = lazy(() => import("./pages/Messages"));
+const Conversation = lazy(() => import("./pages/Conversation"));
+const Cart = lazy(() => import("./pages/Cart"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const Orders = lazy(() => import("./pages/Orders"));
+const OrderDetail = lazy(() => import("./pages/OrderDetail"));
+const Addresses = lazy(() => import("./pages/Addresses"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+/** Thin bar at the top while a page's code downloads (usually a blink, or instant once cached). */
+function RouteFallback() {
+  return (
+    <div className="min-h-[100dvh] bg-background" aria-busy="true" aria-label="Loading">
+      <div className="fixed inset-x-0 top-0 z-50 h-0.5 overflow-hidden bg-muted">
+        <div className="h-full w-1/3 animate-[route-progress_1s_ease-in-out_infinite] bg-primary" />
+      </div>
+    </div>
+  );
+}
+
+/** Pages most people open next; fetched quietly once the app is idle so taps feel instant. */
+const COMMON_PAGES = [
+  () => import("./pages/ProductDetail"),
+  () => import("./pages/Products"),
+  () => import("./pages/Cart"),
+  () => import("./pages/Messages"),
+  () => import("./pages/Conversation"),
+  () => import("./pages/VendorProfile"),
+  () => import("./pages/Orders"),
+  () => import("./pages/OrderDetail"),
+];
+/** Wait this long after start-up before warming pages, so the first screen gets the network to itself. */
+const PREFETCH_DELAY_MS = 2500;
+if (typeof window !== "undefined") {
+  window.setTimeout(() => {
+    const warm = () => COMMON_PAGES.forEach((load) => load().catch(() => undefined));
+    if ("requestIdleCallback" in window) window.requestIdleCallback(warm);
+    else warm();
+  }, PREFETCH_DELAY_MS);
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -96,6 +129,7 @@ const App = () => (
         <PresenceHeartbeat />
         <BrowserRouter>
           <AnalyticsTracker />
+          <Suspense fallback={<RouteFallback />}>
           <Routes>
             {/* Customer Routes */}
             <Route path="/" element={<Index />} />
@@ -175,6 +209,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
           <Analytics />
         </BrowserRouter>
       </TooltipProvider>

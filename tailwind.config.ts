@@ -76,6 +76,10 @@ export default {
         display: ["Playfair Display", "Georgia", "serif"],
       },
       keyframes: {
+        "route-progress": {
+          from: { transform: "translateX(-100%)" },
+          to: { transform: "translateX(300%)" },
+        },
         "accordion-down": {
           from: { height: "0" },
           to: { height: "var(--radix-accordion-content-height)" },
