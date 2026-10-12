@@ -10,11 +10,9 @@ interface ReviewCardProps {
 }
 
 export function ReviewCard({ review }: ReviewCardProps) {
-  const initials = review.user?.full_name
-    ?.split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase() || "U";
+  // Only the first name is shown publicly, the same as on the shop page.
+  const firstName = review.user?.full_name?.trim().split(/\s+/)[0] || "Customer";
+  const initials = firstName.charAt(0).toUpperCase();
 
   return (
     <div className="rounded-xl bg-card p-4 shadow-sm">
@@ -27,7 +25,7 @@ export function ReviewCard({ review }: ReviewCardProps) {
         <div className="flex-1">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium">{review.user?.full_name || "Anonymous"}</p>
+              <p className="font-medium">{firstName}</p>
               <div className="mt-0.5 flex items-center gap-2">
                 <StarRating rating={review.rating} size="sm" />
                 <span className="text-xs text-muted-foreground">

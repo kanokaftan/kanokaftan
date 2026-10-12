@@ -1486,6 +1486,60 @@ export type Database = {
       admin_analytics: { Args: { p_from: string; p_to: string }; Returns: Json }
       admin_live_visitors: { Args: Record<PropertyKey, never>; Returns: Json }
       admin_today_overview: { Args: Record<PropertyKey, never>; Returns: Json }
+      set_shop_like: { Args: { p_vendor_id: string; p_like: boolean }; Returns: Json }
+      get_shop_social: {
+        Args: { p_vendor_id: string }
+        Returns: { follower_count: number; like_count: number; i_follow: boolean; i_like: boolean }[]
+      }
+      get_my_shop_fans: {
+        Args: { p_kind: string; p_limit?: number; p_offset?: number }
+        Returns: {
+          user_id: string
+          name: string
+          avatar_url: string | null
+          since: string
+          follows: boolean
+          likes: boolean
+          orders_count: number
+        }[]
+      }
+      get_my_shop_fan_summary: { Args: Record<PropertyKey, never>; Returns: Json }
+      get_my_reviewable_items: {
+        Args: { p_vendor_id?: string | null; p_product_id?: string | null }
+        Returns: {
+          order_item_id: string
+          order_id: string
+          product_id: string
+          product_name: string
+          product_slug: string
+          image_url: string | null
+          vendor_id: string
+          store_name: string | null
+          variant: string | null
+          delivered_at: string
+        }[]
+      }
+      get_my_shop_reviews: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: {
+          id: string
+          rating: number
+          review_text: string | null
+          photos: Json
+          fit_feedback: string | null
+          would_recommend: boolean | null
+          seller_reply: string | null
+          seller_replied_at: string | null
+          created_at: string
+          reviewer_name: string
+          reviewer_avatar: string | null
+          product_id: string
+          product_name: string
+          product_slug: string
+          product_image: string | null
+        }[]
+      }
+      reply_to_review: { Args: { p_review_id: string; p_reply: string }; Returns: undefined }
       admin_vendor_overview: { Args: { p_vendor_id: string }; Returns: Json }
       admin_customer_overview: { Args: { p_user_id: string }; Returns: Json }
       admin_list_conversations: {

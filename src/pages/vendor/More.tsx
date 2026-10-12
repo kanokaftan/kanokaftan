@@ -1,11 +1,12 @@
 import { Link, useNavigate } from "react-router-dom";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import {
-  BadgeCheck, Bell, ChevronRight, CircleFadingPlus, ExternalLink, Headset, LogOut, Megaphone, Settings, Share2, ShoppingBag,
+  BadgeCheck, Bell, ChevronRight, CircleFadingPlus, ExternalLink, Headset, Heart, LogOut, Megaphone, Settings, Share2, ShoppingBag, Star,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMyShop } from "@/hooks/useMyShop";
+import { useMyFanSummary } from "@/hooks/useShopFans";
 import { VendorLayout, useVendorAuth } from "@/components/vendor/VendorLayout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -68,6 +69,7 @@ export default function VendorMore() {
   const startSupport = useStartSupportConversation();
 
   const { shop, name, shopUrl, isLoading, share: shareShop } = useMyShop(userId);
+  const { data: fans } = useMyFanSummary(!!userId);
 
   const chatWithUs = async () => {
     try {
@@ -113,6 +115,24 @@ export default function VendorMore() {
             </>
           )}
         </div>
+
+        <Group
+          title="Your customers"
+          rows={[
+            {
+              icon: Heart,
+              label: "Followers & likes",
+              hint: fans ? `${fans.followers} follower${fans.followers === 1 ? "" : "s"} · ${fans.likes} like${fans.likes === 1 ? "" : "s"}` : "See who follows and likes your shop",
+              to: "/vendor/fans",
+            },
+            {
+              icon: Star,
+              label: "Reviews",
+              hint: fans?.awaiting_reply ? `${fans.awaiting_reply} waiting for your reply` : fans?.reviews ? `${fans.reviews} review${fans.reviews === 1 ? "" : "s"}${fans.rating != null ? ` · ${fans.rating.toFixed(1)} stars` : ""}` : "Read and reply to reviews",
+              to: "/vendor/reviews",
+            },
+          ]}
+        />
 
         <Group
           title="Grow your sales"

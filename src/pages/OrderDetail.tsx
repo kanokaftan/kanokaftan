@@ -18,6 +18,7 @@ import { MobileLayout } from "@/components/layout/MobileLayout";
 import { BuyerProtection } from "@/components/orders/BuyerProtection";
 import { DeliveryCode } from "@/components/orders/DeliveryCode";
 import { ChatWithUsButton } from "@/components/chat/ChatWithUsButton";
+import { ReviewPrompt } from "@/components/reviews/ReviewPrompt";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -389,6 +390,10 @@ export default function OrderDetail() {
             <span>{formatPrice(order.total)}</span>
           </div>
         </div>
+
+        {(order.status === "delivered" || order.status === "completed") && (
+          <ReviewPrompt orderId={order.id} className="mt-4" />
+        )}
 
         {/* Order Notes */}
         {order.notes && (

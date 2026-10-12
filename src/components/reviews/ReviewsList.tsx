@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ReviewCard } from "./ReviewCard";
 import { ReviewSummary } from "./ReviewSummary";
+import { ReviewPrompt } from "./ReviewPrompt";
 import { useProductReviews } from "@/hooks/useReviews";
 
 interface ReviewsListProps {
@@ -52,6 +53,8 @@ export function ReviewsList({ productId }: ReviewsListProps) {
           Reviews
         </h2>
       </div>
+
+      <ReviewPrompt productId={productId} />
 
       <ReviewSummary
         averageRating={averageRating}

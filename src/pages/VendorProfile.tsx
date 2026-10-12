@@ -3,7 +3,7 @@ import { track } from "@/lib/analytics";
 import { useParams, Link, Navigate, useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import {
-  ChevronLeft, Store, BadgeCheck, Package, Star, MapPin, Share2, Search, Heart, Loader2,
+  ChevronLeft, Store, Package, Star, MapPin, Share2, Search, Heart, Loader2, UserCheck, UserPlus,
 } from "lucide-react";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,8 @@ import { ProductCard } from "@/components/products/ProductCard";
 import { ChatWithVendorButton } from "@/components/chat/ChatWithVendorButton";
 import { ChatWithUsButton } from "@/components/chat/ChatWithUsButton";
 import { useShop, useShopFollow, useShopProducts, useShopReviews } from "@/hooks/useShops";
+import { friendlyError, useShopSocial, useToggleShopLike } from "@/hooks/useShopFans";
+import { ReviewPrompt } from "@/components/reviews/ReviewPrompt";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 import { toast } from "sonner";
@@ -43,6 +45,8 @@ export default function VendorProfile() {
     if (shop?.id) track("shop_view", { vendor_id: shop.id });
   }, [shop?.id]);
   const { isFollowing, toggleFollow, canFollow } = useShopFollow(shop?.id);
+  const { data: social } = useShopSocial(shop?.id);
+  const toggleLike = useToggleShopLike(shop?.id);
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
@@ -147,7 +151,23 @@ export default function VendorProfile() {
     }
   };
 
+  const handleLike = () => {
+    if (!user) {
+      toast.info("Sign in to like shops");
+      navigate(`/auth?redirect=${encodeURIComponent(`/shop/${shop.store_slug}`)}`);
+      return;
+    }
+    const like = !social?.iLike;
+    toggleLike.mutate(like, {
+      onSuccess: () => like && toast.success(`You liked ${shop.store_name}`),
+      onError: (error) => toast.error(friendlyError(error, "Could not update your like. Please try again.")),
+    });
+  };
+
   const isOwnShop = user?.id === shop.id;
+  const followerCount = social?.followerCount ?? shop.follower_count;
+  const likeCount = social?.likeCount ?? 0;
+  const liked = social?.iLike ?? false;
 
   return (
     <MobileLayout hideHeader>
@@ -221,7 +241,7 @@ export default function VendorProfile() {
         <div className="mt-4 grid grid-cols-4 gap-2">
           {[
             { value: shop.product_count, label: "Products" },
-            { value: shop.follower_count, label: "Followers" },
+            { value: followerCount, label: followerCount === 1 ? "Follower" : "Followers" },
             { value: shop.items_sold, label: "Sold" },
             {
               value: shop.rating !== null ? Number(shop.rating).toFixed(1) : "–",
@@ -243,7 +263,7 @@ export default function VendorProfile() {
 
         {/* Actions */}
         {!isOwnShop && (
-          <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="mt-4 grid grid-cols-[1fr_1fr_auto] gap-2">
             <Button
               variant={isFollowing ? "outline" : "default"}
               onClick={handleFollow}
@@ -251,18 +271,32 @@ export default function VendorProfile() {
             >
               {toggleFollow.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : isFollowing ? (
+                <UserCheck className="mr-2 h-4 w-4" />
               ) : (
-                <Heart className={`mr-2 h-4 w-4 ${isFollowing ? "fill-current" : ""}`} />
+                <UserPlus className="mr-2 h-4 w-4" />
               )}
               {isFollowing ? "Following" : "Follow"}
             </Button>
-            <ChatWithVendorButton vendorId={shop.id} variant="outline" label="Chat with seller" />
-            <ChatWithUsButton className="col-span-2" variant="secondary" label="Buy through Kano Kaftan (protected)" />
-            <p className="col-span-2 text-center text-xs text-muted-foreground">
+            <ChatWithVendorButton vendorId={shop.id} variant="outline" label="Chat" />
+            <Button
+              variant="outline"
+              onClick={handleLike}
+              disabled={!!user && !canFollow}
+              aria-pressed={liked}
+              aria-label={liked ? `Unlike ${shop.store_name}` : `Like ${shop.store_name}`}
+              className={cn("gap-1.5 px-3 tabular-nums", liked && "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40")}
+            >
+              <Heart className={cn("h-4 w-4 transition-transform", liked && "scale-110 fill-current")} />
+              {likeCount > 0 && likeCount}
+            </Button>
+            <ChatWithUsButton className="col-span-3" variant="secondary" label="Buy through Kano Kaftan (protected)" />
+            <p className="col-span-3 text-center text-xs text-muted-foreground">
               Deals made directly with the seller are at your own risk.
             </p>
           </div>
         )}
+        {!isOwnShop && <ReviewPrompt vendorId={shop.id} className="mt-3" />}
       </div>
 
       <Tabs defaultValue="products" className="px-4 pb-24">

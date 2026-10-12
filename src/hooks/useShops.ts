@@ -105,6 +105,7 @@ export function useShopFollow(vendorId: string | undefined) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shop-following", userId, vendorId] });
+      queryClient.invalidateQueries({ queryKey: ["shop-social", vendorId] });
       queryClient.invalidateQueries({ queryKey: ["shop"] });
       queryClient.invalidateQueries({ queryKey: ["shops"] });
     },

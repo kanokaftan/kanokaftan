@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useOrders } from "@/hooks/useOrders";
+import { ReviewPrompt } from "@/components/reviews/ReviewPrompt";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -87,6 +88,7 @@ export default function Orders() {
     <MobileLayout>
       <div className="px-4 py-6 pb-24">
         <h1 className="mb-6 font-display text-xl font-bold">{t("orders.title")}</h1>
+        <ReviewPrompt className="mb-4" />
 
         {orders.length === 0 ? (
           <div className="mt-12 flex flex-col items-center justify-center text-center">

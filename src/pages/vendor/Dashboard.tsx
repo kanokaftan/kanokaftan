@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import { formatDistanceToNowStrict } from "date-fns";
 import {
-  AlertTriangle, BadgeCheck, ChevronRight, CircleFadingPlus, Clock, Megaphone, MessageCircle, Package, PackageX, Plus,
-  Share2, Truck, type LucideIcon,
+  AlertTriangle, BadgeCheck, ChevronRight, CircleFadingPlus, Clock, Heart, Megaphone, MessageCircle, MessageSquareReply, Package, PackageX, Plus,
+  Share2, Star, Truck, UserCheck, type LucideIcon,
 } from "lucide-react";
 import { VendorLayout, useVendorAuth } from "@/components/vendor/VendorLayout";
 import { PayoutsCard } from "@/components/vendor/PayoutsCard";
@@ -13,6 +13,7 @@ import { useVendorProducts } from "@/hooks/useVendorProducts";
 import { useVendorOrders } from "@/hooks/useVendorOrders";
 import { useConversations } from "@/hooks/useChat";
 import { useMyShop } from "@/hooks/useMyShop";
+import { useMyFanSummary, type FanSummary } from "@/hooks/useShopFans";
 import { formatNaira, useVerification } from "@/hooks/useVerification";
 import { cn } from "@/lib/utils";
 
@@ -95,6 +96,35 @@ function GrowCard({ vendorId }: { vendorId: string | null }) {
   );
 }
 
+/** Followers, likes and rating at a glance; each opens the full list. */
+function FansRow({ summary }: { summary: FanSummary | undefined }) {
+  const tiles = [
+    { icon: UserCheck, label: "Followers", value: summary?.followers, week: summary?.followers_week, to: "/vendor/fans", tint: "text-sky-600" },
+    { icon: Heart, label: "Likes", value: summary?.likes, week: summary?.likes_week, to: "/vendor/fans?tab=likes", tint: "text-rose-500" },
+    {
+      icon: Star,
+      label: summary?.reviews ? `${summary.reviews} review${summary.reviews === 1 ? "" : "s"}` : "Reviews",
+      value: summary?.rating != null ? summary.rating.toFixed(1) : summary ? "–" : undefined,
+      week: 0,
+      to: "/vendor/reviews",
+      tint: "text-amber-500",
+    },
+  ];
+  return (
+    <section className="grid grid-cols-3 gap-2">
+      {tiles.map((t) => (
+        <Link key={t.to} to={t.to} className="rounded-2xl border bg-card px-3 py-2.5 active:bg-muted/60">
+          <t.icon className={cn("h-4 w-4", t.tint, t.icon === Heart || t.icon === Star ? "fill-current" : "")} aria-hidden="true" />
+          <p className="mt-1 text-lg font-semibold tabular-nums">{t.value ?? "…"}</p>
+          <p className="truncate text-[11px] text-muted-foreground">
+            {t.label}{t.week ? <span className="font-medium text-emerald-600"> +{t.week}</span> : null}
+          </p>
+        </Link>
+      ))}
+    </section>
+  );
+}
+
 /** Seller home: what needs doing now, one-tap actions, then how the shop is doing. */
 export default function VendorDashboard() {
   const { userId } = useVendorAuth();
@@ -102,6 +132,8 @@ export default function VendorDashboard() {
   const { orders, isLoading: ordersLoading } = useVendorOrders(userId);
   const { conversations } = useConversations();
   const { name, share } = useMyShop(userId);
+  const { data: fans } = useMyFanSummary(!!userId);
+  const awaitingReply = fans?.awaiting_reply ?? 0;
 
   const sales = (orders ?? []).reduce(
     (sum, order) => sum + order.order_items.reduce((s, item) => s + item.quantity * item.unit_price, 0),
@@ -116,6 +148,7 @@ export default function VendorDashboard() {
   const tasks: Task[] = [
     { icon: Truck, label: toShip === 1 ? "order to pack and send" : "orders to pack and send", count: toShip, to: "/vendor/orders", tone: "red" },
     { icon: MessageCircle, label: unreadChats === 1 ? "unread chat" : "unread chats", count: unreadChats, to: "/vendor/messages", tone: "blue" },
+    { icon: MessageSquareReply, label: awaitingReply === 1 ? "review waiting for your reply" : "reviews waiting for your reply", count: awaitingReply, to: "/vendor/reviews", tone: "blue" },
     { icon: PackageX, label: soldOut === 1 ? "product sold out" : "products sold out", count: soldOut, to: "/vendor/products?filter=soldout", tone: "amber" },
     { icon: AlertTriangle, label: "running low on stock", count: lowStock, to: "/vendor/products?filter=low", tone: "amber" },
   ].filter((t) => t.count > 0) as Task[];
@@ -149,6 +182,8 @@ export default function VendorDashboard() {
           <QuickAction icon={Megaphone} label="Promote" to="/vendor/promote" />
           <QuickAction icon={Share2} label="Share shop" onClick={share} />
         </section>
+
+        <FansRow summary={fans} />
 
         {/* What needs doing */}
         <section>

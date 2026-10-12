@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import type { Database } from "@/integrations/supabase/types";
 
 export interface Review {
   id: string;
@@ -90,6 +91,28 @@ export function useProductReviews(productId: string) {
   };
 }
 
+export type ReviewableItem = Database["public"]["Functions"]["get_my_reviewable_items"]["Returns"][number];
+
+/**
+ * Things the signed-in buyer received and hasn't reviewed yet. Narrow it to one
+ * shop or one product (e.g. the shop page or product page).
+ */
+export function useReviewableItems({ vendorId, productId }: { vendorId?: string; productId?: string } = {}) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["reviewable-items", user?.id ?? null, vendorId ?? null, productId ?? null],
+    queryFn: async (): Promise<ReviewableItem[]> => {
+      const { data, error } = await supabase.rpc("get_my_reviewable_items", {
+        p_vendor_id: vendorId ?? null,
+        p_product_id: productId ?? null,
+      });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!user,
+  });
+}
+
 export function useReviews() {
   const { user } = useAuth();
   const userId = user?.id || null;
@@ -97,7 +120,7 @@ export function useReviews() {
 
   const createReview = useMutation({
     mutationFn: async (reviewData: CreateReviewData) => {
-      if (!userId) throw new Error("Must be logged in");
+      if (!userId) throw new Error("Please sign in to write a review");
 
       const { data, error } = await supabase
         .from("reviews")
@@ -113,12 +136,15 @@ export function useReviews() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["reviews", data.product_id] });
+      queryClient.invalidateQueries({ queryKey: ["reviewable-items"] });
+      queryClient.invalidateQueries({ queryKey: ["shop-reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["shop"] });
     },
   });
 
   const updateReview = useMutation({
     mutationFn: async ({ id, ...data }: Partial<CreateReviewData> & { id: string }) => {
-      if (!userId) throw new Error("Must be logged in");
+      if (!userId) throw new Error("Please sign in to edit your review");
 
       const { error } = await supabase
         .from("reviews")
@@ -130,44 +156,12 @@ export function useReviews() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["shop-reviews"] });
     },
   });
-
-  // Check if user can review a product (must have completed order)
-  const canReview = async (productId: string): Promise<{ canReview: boolean; orderItemId?: string }> => {
-    if (!userId) return { canReview: false };
-
-    // Check if already reviewed
-    const { data: existingReview } = await supabase
-      .from("reviews")
-      .select("id")
-      .eq("product_id", productId)
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (existingReview) return { canReview: false };
-
-    // Check for completed order with this product
-    const { data: orderItem } = await supabase
-      .from("order_items")
-      .select(`
-        id,
-        order:orders!inner (status, user_id)
-      `)
-      .eq("product_id", productId)
-      .eq("order.user_id", userId)
-      .eq("order.status", "completed")
-      .maybeSingle();
-
-    return {
-      canReview: !!orderItem,
-      orderItemId: orderItem?.id,
-    };
-  };
 
   return {
     createReview,
     updateReview,
-    canReview,
   };
 }
