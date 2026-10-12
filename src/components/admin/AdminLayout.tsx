@@ -3,7 +3,7 @@ import { useNavigate, Link, useLocation } from "react-router-dom";
 import {
   Activity, LayoutDashboard, Users, Package, ShoppingCart,
   Tag, DollarSign, BarChart, Settings, MessageCircle,
-  Menu, X, LogOut, ShoppingBag, Shield, Store, Megaphone, Flag, AlertTriangle
+  Menu, X, LogOut, ShoppingBag, Shield, Store, Megaphone, Flag, AlertTriangle, Truck
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { forgetThisDevice } from "@/lib/push";
@@ -20,6 +20,7 @@ const navItems = [
   { title: "Sellers", url: "/admin/vendors", icon: Store },
   { title: "Products", url: "/admin/products", icon: Package },
   { title: "Orders", url: "/admin/orders", icon: ShoppingCart },
+  { title: "Logistics", url: "/admin/logistics", icon: Truck },
   { title: "Categories", url: "/admin/categories", icon: Tag },
   { title: "Finance", url: "/admin/finance", icon: DollarSign },
   { title: "Reports", url: "/admin/reports", icon: BarChart },

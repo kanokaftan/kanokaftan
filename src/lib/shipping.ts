@@ -1,39 +1,39 @@
 /**
  * Distance-based shipping calculation with order value discounts and promo codes.
- * The fee actually charged is computed by the place_order() database function,
- * which mirrors these tiers; keep the two in sync.
+ * The fee actually charged is computed in the database (shipping_base_fee,
+ * shipping_value_discount, and a ₦1,500 floor on every order); keep these in sync.
  */
 
 import { supabase } from "@/integrations/supabase/client";
 
-// Shipping price tiers by distance (in km) - Progressive pricing
-// Close = cheap, Far = more expensive (fixed inversion issue)
+// Delivery price by distance (km) from the shop to the customer.
 const DISTANCE_TIERS = [
-  { maxKm: 5, fee: 500 },      // Very close: ₦500
-  { maxKm: 15, fee: 800 },     // Within city: ₦800
-  { maxKm: 30, fee: 1200 },    // Nearby areas: ₦1,200
-  { maxKm: 50, fee: 1800 },    // Inter-city short: ₦1,800
-  { maxKm: 100, fee: 2500 },   // Inter-city: ₦2,500
-  { maxKm: 200, fee: 3500 },   // Long distance: ₦3,500
-  { maxKm: 400, fee: 5000 },   // Very long: ₦5,000
-  { maxKm: Infinity, fee: 6500 }, // Cross-country: ₦6,500
+  { maxKm: 5, fee: 1500 },        // Same area
+  { maxKm: 10, fee: 2000 },       // Across town
+  { maxKm: 20, fee: 2500 },       // Kano metropolis edge
+  { maxKm: 35, fee: 3500 },       // Outer Kano LGAs
+  { maxKm: 60, fee: 5000 },       // Far Kano LGAs
+  { maxKm: 120, fee: 7000 },      // Neighbouring states
+  { maxKm: 300, fee: 9500 },      // Regional
+  { maxKm: 600, fee: 12000 },     // Long distance
+  { maxKm: Infinity, fee: 15000 }, // Across Nigeria
 ];
 
-// Order value discount tiers
+// Money off delivery for bigger orders (never below MIN_SHIPPING_FEE).
 const VALUE_DISCOUNTS = [
-  { minValue: 500000, discount: 0.70 }, // 70% off
-  { minValue: 200000, discount: 0.50 }, // 50% off
-  { minValue: 100000, discount: 0.35 }, // 35% off
-  { minValue: 50000, discount: 0.20 },  // 20% off
-  { minValue: 0, discount: 0 },          // No discount
+  { minValue: 500000, discount: 0.50 },
+  { minValue: 200000, discount: 0.30 },
+  { minValue: 100000, discount: 0.20 },
+  { minValue: 50000, discount: 0.10 },
+  { minValue: 0, discount: 0 },
 ];
 
-// Default shipping fee when distance can't be calculated
-export const DEFAULT_SHIPPING_FEE = 1500;
+// Fee when the distance can't be worked out (no map location saved).
+export const DEFAULT_SHIPPING_FEE = 2500;
 
-// Min and max shipping fees for display
-export const MIN_SHIPPING_FEE = 500;
-export const MAX_SHIPPING_FEE = 6500;
+// Delivery is never cheaper than this (only a free-delivery promo code goes to ₦0).
+export const MIN_SHIPPING_FEE = 1500;
+export const MAX_SHIPPING_FEE = 15000;
 
 /**
  * Calculate distance between two coordinates using Haversine formula
@@ -195,12 +195,12 @@ export function calculateShippingFee(
       };
     } else if (promoCode.discountType === 'percentage') {
       const promoDiscount = (promoCode.discountValue || 0) / 100;
-      const discountAmount = Math.round(baseFee * promoDiscount);
+      const finalFee = Math.max(MIN_SHIPPING_FEE, baseFee - Math.round(baseFee * promoDiscount));
       return {
         baseFee,
         discount: promoDiscount,
-        discountAmount,
-        finalFee: baseFee - discountAmount,
+        discountAmount: baseFee - finalFee,
+        finalFee,
         distanceKm,
         promoApplied: true,
         promoDescription: `${promoCode.discountValue}% off shipping!`,
@@ -210,8 +210,8 @@ export function calculateShippingFee(
   
   // Fall back to value-based discount
   const discount = getDiscountByValue(subtotal);
-  const discountAmount = Math.round(baseFee * discount);
-  const finalFee = baseFee - discountAmount;
+  const finalFee = Math.max(MIN_SHIPPING_FEE, baseFee - Math.round(baseFee * discount));
+  const discountAmount = baseFee - finalFee;
   
   return {
     baseFee,

@@ -573,31 +573,91 @@ export type Database = {
       }
       order_deliveries: {
         Row: {
+          assigned_automatically: boolean
+          company_id: string | null
+          company_phone: string | null
           created_at: string
           created_by: string | null
-          delivery_company: string
+          delivery_company: string | null
+          dispatched_at: string | null
           order_id: string
           pickup_code: string
           tracking_reference: string | null
           updated_at: string
         }
         Insert: {
+          assigned_automatically?: boolean
+          company_id?: string | null
+          company_phone?: string | null
           created_at?: string
           created_by?: string | null
-          delivery_company: string
+          delivery_company?: string | null
+          dispatched_at?: string | null
           order_id: string
           pickup_code: string
           tracking_reference?: string | null
           updated_at?: string
         }
         Update: {
+          assigned_automatically?: boolean
+          company_id?: string | null
+          company_phone?: string | null
           created_at?: string
           created_by?: string | null
-          delivery_company?: string
+          delivery_company?: string | null
+          dispatched_at?: string | null
           order_id?: string
           pickup_code?: string
           tracking_reference?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      logistics_companies: {
+        Row: {
+          areas: string[]
+          contact_name: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          notes: string | null
+          phone: string | null
+          priority: number
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          areas?: string[]
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          notes?: string | null
+          phone?: string | null
+          priority?: number
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          areas?: string[]
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          priority?: number
+          updated_at?: string
+          whatsapp?: string | null
         }
         Relationships: []
       }
@@ -1539,6 +1599,11 @@ export type Database = {
           product_image: string | null
         }[]
       }
+      admin_dispatch_delivery: {
+        Args: { p_order_id: string; p_company_id: string; p_pickup_code?: string | null; p_tracking_reference?: string | null }
+        Returns: undefined
+      }
+      admin_logistics_overview: { Args: Record<PropertyKey, never>; Returns: Json }
       reply_to_review: { Args: { p_review_id: string; p_reply: string }; Returns: undefined }
       admin_vendor_overview: { Args: { p_vendor_id: string }; Returns: Json }
       admin_customer_overview: { Args: { p_user_id: string }; Returns: Json }

@@ -37,6 +37,7 @@ import AdminAnnouncements from "./pages/admin/Announcements";
 import AdminModeration from "./pages/admin/Moderation";
 import AdminErrors from "./pages/admin/Errors";
 import AdminAnalytics from "./pages/admin/Analytics";
+import AdminLogistics from "./pages/admin/Logistics";
 import AdminVendorDetail from "./pages/admin/VendorDetail";
 import AdminCustomerDetail from "./pages/admin/CustomerDetail";
 import AdminChatTranscript from "./pages/admin/ChatTranscript";
@@ -156,6 +157,7 @@ const App = () => (
             <Route path="/admin/products/new" element={<AdminProductForm />} />
             <Route path="/admin/products/:id/edit" element={<AdminProductForm />} />
             <Route path="/admin/orders" element={<AdminOrders />} />
+            <Route path="/admin/logistics" element={<AdminLogistics />} />
             <Route path="/admin/categories" element={<AdminCategories />} />
             <Route path="/admin/finance" element={<AdminFinance />} />
             <Route path="/admin/reports" element={<AdminReports />} />

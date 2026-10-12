@@ -1,4 +1,4 @@
-import { Activity, LayoutDashboard, Users, Store, Package, ShoppingCart, FolderTree, Settings, LogOut, ArrowLeftRight, DollarSign, FileText, MessageCircle, Megaphone, Flag, AlertTriangle } from "lucide-react";
+import { Activity, LayoutDashboard, Users, Store, Package, ShoppingCart, FolderTree, Settings, LogOut, ArrowLeftRight, DollarSign, FileText, MessageCircle, Megaphone, Flag, AlertTriangle, Truck } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { supabase } from "@/integrations/supabase/client";
 import { forgetThisDevice } from "@/lib/push";
@@ -23,6 +23,7 @@ const menuItems = [
   { title: "Products", url: "/admin/products", icon: Package },
   { title: "Sellers", url: "/admin/vendors", icon: Store },
   { title: "Orders", url: "/admin/orders", icon: ShoppingCart },
+  { title: "Logistics", url: "/admin/logistics", icon: Truck },
   { title: "Messages", url: "/admin/messages", icon: MessageCircle },
   { title: "Categories", url: "/admin/categories", icon: FolderTree },
   { title: "Finance", url: "/admin/finance", icon: DollarSign },

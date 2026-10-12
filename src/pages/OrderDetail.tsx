@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { trackOnce } from "@/lib/analytics";
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
@@ -56,7 +56,7 @@ function recordPurchase(orderId: string, amount?: number) {
 export default function OrderDetail() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { orders, isLoading } = useOrders();
   const { payOrder, verifyPayment, isProcessing } = usePayment();
   const { user } = useAuth();
@@ -76,32 +76,36 @@ export default function OrderDetail() {
     }
   }, [queryClient, user?.id]);
 
+  // Coming back from Paystack (?verify=true&reference=…): check that payment once.
+  // The reference is remembered so a re-render can't start the check (and its
+  // "confirmed" pop-up) again, and the query is cleared through the router so
+  // useSearchParams() really forgets it.
+  const verifiedReferences = useRef(new Set<string>());
   useEffect(() => {
     const shouldVerify = searchParams.get("verify") === "true";
     const reference = searchParams.get("reference") || searchParams.get("trxref");
+    if (!shouldVerify || !reference || !id || verifiedReferences.current.has(reference)) return;
 
-    if (shouldVerify && reference && id && !isVerifying) {
-      setIsVerifying(true);
-      verifyPayment(reference, id)
-        .then((result) => {
-          if (result.success) {
-            recordPurchase(id, result.amount);
-            if (result.status === 'already_processed') {
-              toast.success("Payment already confirmed!");
-            } else {
-              toast.success("Payment verified successfully!");
-            }
-            refetchOrders();
-          } else {
-            toast.error(result.error || "Payment verification failed");
-          }
-        })
-        .finally(() => {
-          setIsVerifying(false);
-          window.history.replaceState({}, "", `/orders/${id}`);
-        });
-    }
-  }, [searchParams, id, verifyPayment, refetchOrders, isVerifying]);
+    verifiedReferences.current.add(reference);
+    setHasAutoVerified(true); // this check covers the "pending with a reference" one below
+    setSearchParams({}, { replace: true });
+    setIsVerifying(true);
+    verifyPayment(reference, id)
+      .then((result) => {
+        if (result.success) {
+          recordPurchase(id, result.amount);
+          toast.success("Payment confirmed! Thank you.", { id: `paid-${id}` });
+          refetchOrders();
+        } else {
+          toast.error(result.error || "We couldn't confirm the payment yet. Pull down to refresh in a moment.", { id: `paid-${id}` });
+        }
+      })
+      .catch((error) => {
+        console.error("[OrderDetail] payment check after checkout failed", { orderId: id, reference, error });
+        toast.error("We couldn't check the payment. Please refresh in a moment.", { id: `paid-${id}` });
+      })
+      .finally(() => setIsVerifying(false));
+  }, [searchParams, setSearchParams, id, verifyPayment, refetchOrders]);
 
   useEffect(() => {
     if (order && !hasAutoVerified && !isVerifying &&
@@ -114,10 +118,11 @@ export default function OrderDetail() {
         .then((result) => {
           if (result.success) {
             recordPurchase(order.id, Number(order.total));
-            toast.success("Payment confirmed!");
+            toast.success("Payment confirmed! Thank you.", { id: `paid-${order.id}` });
             refetchOrders();
           }
         })
+        .catch((error) => console.error("[OrderDetail] automatic payment check failed", { orderId: order.id, error }))
         .finally(() => {
           setIsVerifying(false);
         });
