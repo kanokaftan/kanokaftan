@@ -131,7 +131,7 @@ export function PayoutAccountCard({ vendorId }: { vendorId: string }) {
         ) : !showForm && account ? (
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-start gap-2">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 text-foreground" />
+              <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-600" />
               <div className="text-sm">
                 <p className="font-medium">{account.account_name}</p>
                 <p className="text-muted-foreground">
@@ -146,7 +146,7 @@ export function PayoutAccountCard({ vendorId }: { vendorId: string }) {
         ) : (
           <>
             {(notConfigured || lookupBlocked) && (
-              <div className="flex gap-2 rounded-xl border border-border bg-muted p-3 text-xs text-foreground">
+              <div className="flex gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 <p>{notConfiguredMessage ?? (lookup.error as Error)?.message}</p>
               </div>
@@ -192,7 +192,7 @@ export function PayoutAccountCard({ vendorId }: { vendorId: string }) {
                   </>
                 ) : lookup.data ? (
                   <>
-                    <CheckCircle2 className="h-4 w-4 shrink-0 text-foreground" />
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
                     <span className="font-semibold uppercase tracking-wide">{lookup.data}</span>
                   </>
                 ) : null}

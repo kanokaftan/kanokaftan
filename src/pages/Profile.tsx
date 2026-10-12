@@ -183,7 +183,7 @@ export default function Profile() {
                   )}
                 </Badge>
                 {isAdmin && (
-                  <Badge variant="outline" className="text-xs border-border text-foreground">
+                  <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
                     <Shield className="h-3 w-3 mr-1" />
                     {t("profile.admin")}
                   </Badge>

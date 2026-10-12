@@ -72,6 +72,7 @@ export const en = {
     noProductsDesc: "Try adjusting your filters",
     addToCart: "Add to Cart",
     addedToCart: "Added to cart",
+    viewCart: "View cart",
     addToWishlist: "Add to Wishlist",
     removeFromWishlist: "Remove from Wishlist",
     inStock: "In Stock",

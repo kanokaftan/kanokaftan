@@ -42,7 +42,7 @@ export function PayoutsCard({ vendorId }: { vendorId: string }) {
       </CardHeader>
       <CardContent className="space-y-2">
         {needsBankAccount && (
-          <p className="rounded-md bg-muted p-2 text-xs text-foreground">
+          <p className="rounded-md bg-amber-50 p-2 text-xs text-amber-900 dark:bg-amber-950 dark:text-amber-100">
             You have money waiting. Add your bank account in Settings to receive it.
           </p>
         )}

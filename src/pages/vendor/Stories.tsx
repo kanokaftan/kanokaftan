@@ -155,7 +155,7 @@ function NewStoryCard() {
 }
 
 const STATUS_BADGE: Record<StoryStatus, { label: string; className: string }> = {
-  live: { label: "Live", className: "bg-primary text-primary-foreground hover:bg-primary/90" },
+  live: { label: "Live", className: "bg-green-600 text-white hover:bg-green-600" },
   expired: { label: "Ended", className: "" },
   removed: { label: "Removed", className: "" },
 };

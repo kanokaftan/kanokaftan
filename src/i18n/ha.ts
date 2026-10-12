@@ -72,6 +72,7 @@ export const ha = {
     noProductsDesc: "Gwada canza tace-tacen ku",
     addToCart: "Saka a Kwando",
     addedToCart: "An saka a kwando",
+    viewCart: "Duba kwando",
     addToWishlist: "Adana a Jerin So",
     removeFromWishlist: "Cire daga Jerin So",
     inStock: "Akwai a Hannu",

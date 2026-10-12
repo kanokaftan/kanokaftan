@@ -38,7 +38,7 @@ export function ShopCard({ shop, compact = false }: { shop: Shop; compact?: bool
           <span>{shop.follower_count} followers</span>
           {shop.rating !== null && (
             <span className="flex items-center gap-0.5">
-              <Star className="h-3 w-3 fill-foreground text-foreground" />
+              <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
               {Number(shop.rating).toFixed(1)}
             </span>
           )}

@@ -462,7 +462,7 @@ export default function Conversation({ admin = false, seller = false }: { admin?
                   <AvatarFallback className="bg-gradient-to-br from-primary/80 to-primary text-primary-foreground">{conversation.other_party_name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 {presence?.online && (
-                  <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-primary" aria-label="Online" />
+                  <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-green-500" aria-label="Online" />
                 )}
               </div>
               <div className="min-w-0 flex-1">
@@ -474,9 +474,9 @@ export default function Conversation({ admin = false, seller = false }: { admin?
                   <p className="truncate text-[15px] font-semibold leading-tight">{conversation.other_party_name}</p>
                 )}
                 {otherTyping ? (
-                  <p className="truncate text-xs font-medium text-foreground">{t("chat.typing")}</p>
+                  <p className="truncate text-xs font-medium text-green-600">{t("chat.typing")}</p>
                 ) : presenceLabel ? (
-                  <p className={cn("truncate text-xs", presence?.online ? "font-medium text-foreground" : "text-muted-foreground")}>
+                  <p className={cn("truncate text-xs", presence?.online ? "font-medium text-green-600" : "text-muted-foreground")}>
                     {presenceLabel}
                   </p>
                 ) : (
@@ -1134,7 +1134,7 @@ function MessageBubble({
         {format(created, "h:mm a")}
         {mine &&
           (read ? (
-            <CheckCheck className="h-3.5 w-3.5 text-muted-foreground" aria-label={t("chat.read")} />
+            <CheckCheck className="h-3.5 w-3.5 text-sky-300" aria-label={t("chat.read")} />
           ) : (
             <Check className="h-3.5 w-3.5" aria-label={t("chat.sent")} />
           ))}
@@ -1215,7 +1215,7 @@ function ChatNotice({ conversation }: { conversation: ConversationSummary | null
   }
 
   return (
-    <div className="mx-auto mb-3 max-w-md space-y-2 rounded-lg border border-border bg-muted p-3 text-xs text-foreground">
+    <div className="mx-auto mb-3 max-w-md space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
       <div className="flex gap-2">
         <ShieldAlert className="h-4 w-4 flex-shrink-0" />
         <p>

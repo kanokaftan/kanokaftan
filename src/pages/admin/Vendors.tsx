@@ -81,7 +81,7 @@ export default function AdminVendors() {
           <TabsTrigger value="applications" className="gap-1.5">
             Applications
             {pendingApplications > 0 && (
-              <span className="rounded-full bg-primary px-1.5 text-[10px] font-semibold leading-4 text-primary-foreground">
+              <span className="rounded-full bg-amber-500 px-1.5 text-[10px] font-semibold leading-4 text-white">
                 {pendingApplications}
               </span>
             )}
@@ -89,7 +89,7 @@ export default function AdminVendors() {
           <TabsTrigger value="verification" className="gap-1.5">
             Verification requests
             {pendingReviewCount > 0 && (
-              <span className="rounded-full bg-primary px-1.5 text-[10px] font-semibold leading-4 text-primary-foreground">
+              <span className="rounded-full bg-amber-500 px-1.5 text-[10px] font-semibold leading-4 text-white">
                 {pendingReviewCount}
               </span>
             )}
@@ -179,11 +179,11 @@ export default function AdminVendors() {
                         <p className="text-xs text-muted-foreground">Products</p>
                       </div>
                       <div className="p-2 rounded-lg bg-muted/50">
-                        <p className="font-bold text-foreground">{formatCurrency(vendor.total_sales)}</p>
+                        <p className="font-bold text-green-600">{formatCurrency(vendor.total_sales)}</p>
                         <p className="text-xs text-muted-foreground">Sales</p>
                       </div>
                       <div className="p-2 rounded-lg bg-muted/50">
-                        <p className="font-bold text-foreground">{formatCurrency(vendor.pending_payout)}</p>
+                        <p className="font-bold text-amber-600">{formatCurrency(vendor.pending_payout)}</p>
                         <p className="text-xs text-muted-foreground">Pending</p>
                       </div>
                     </div>
@@ -283,10 +283,10 @@ export default function AdminVendors() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <span className="font-medium text-foreground">{formatCurrency(vendor.total_sales)}</span>
+                          <span className="font-medium text-green-600">{formatCurrency(vendor.total_sales)}</span>
                         </TableCell>
                         <TableCell className="text-right">
-                          <span className="font-medium text-foreground">{formatCurrency(vendor.pending_payout)}</span>
+                          <span className="font-medium text-amber-600">{formatCurrency(vendor.pending_payout)}</span>
                         </TableCell>
                         <TableCell className="text-center">
                           <TierChip tier={badgeTierOf(vendor)} />

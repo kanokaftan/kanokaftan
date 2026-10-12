@@ -136,13 +136,13 @@ export default function Orders() {
                             {itemCount} {itemCount === 1 ? t("orders.item") : t("orders.items_plural")}
                           </p>
                           {order.payment_status === "pending" && (
-                            <Badge variant="outline" className="text-foreground border-border bg-muted">
+                            <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">
                               <CreditCard className="h-3 w-3 mr-1" />
                               {t("orders.awaitingPayment")}
                             </Badge>
                           )}
                           {order.payment_status === "paid" && (
-                            <Badge variant="outline" className="text-foreground border-border bg-muted">
+                            <Badge variant="outline" className="text-green-600 border-green-300 bg-green-50">
                               <CheckCircle2 className="h-3 w-3 mr-1" />
                               {t("orders.paymentStatus.paid")}
                             </Badge>

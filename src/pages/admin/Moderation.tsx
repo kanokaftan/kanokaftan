@@ -104,7 +104,7 @@ function ReportCard({ report, onRemoveStory }: { report: Report; onRemoveStory: 
           <Badge variant="outline">{TARGET_LABELS[report.target_type] ?? report.target_type}</Badge>
           <Badge className="bg-destructive/10 text-destructive hover:bg-destructive/10">{REASON_LABELS[report.reason] ?? report.reason}</Badge>
           {report.reports_against_user >= REPEAT_OFFENDER_REPORTS && (
-            <Badge className="bg-primary text-primary-foreground hover:bg-primary/90">{report.reports_against_user} reports about this person</Badge>
+            <Badge className="bg-amber-500 text-white hover:bg-amber-500">{report.reports_against_user} reports about this person</Badge>
           )}
           <span className="ml-auto text-xs text-muted-foreground">
             {formatDistanceToNowStrict(new Date(report.created_at), { addSuffix: true })}

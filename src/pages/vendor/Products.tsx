@@ -40,7 +40,7 @@ function toSheetProduct(p: VendorProduct): SheetProduct {
 function StockPill({ quantity, onClick }: { quantity: number; onClick: () => void }) {
   const tone =
     quantity === 0 ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"
-      : quantity < LOW_STOCK ? "bg-muted text-foreground"
+      : quantity < LOW_STOCK ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200"
         : "bg-muted text-muted-foreground";
   return (
     <button
@@ -181,7 +181,7 @@ export default function VendorProducts() {
                   className={cn(
                     "flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors",
                     active ? "border-primary bg-primary text-primary-foreground" : "bg-background text-foreground",
-                    f.value === "low" && count > 0 && !active && "border-border text-foreground",
+                    f.value === "low" && count > 0 && !active && "border-amber-300 text-amber-800 dark:text-amber-300",
                     f.value === "soldout" && count > 0 && !active && "border-red-200 text-red-700 dark:text-red-300",
                   )}
                 >
@@ -237,7 +237,7 @@ export default function VendorProducts() {
                         <span className="flex h-full w-full items-center justify-center"><Package className="h-6 w-6 text-muted-foreground/50" /></span>
                       )}
                       {p.featured && (
-                        <span className="absolute left-1 top-1 rounded-full bg-primary p-1 text-primary-foreground shadow" title={until ? `Featured until ${format(new Date(until), "d MMM")}` : "Featured"}>
+                        <span className="absolute left-1 top-1 rounded-full bg-amber-500 p-1 text-white shadow" title={until ? `Featured until ${format(new Date(until), "d MMM")}` : "Featured"}>
                           <Star className="h-3 w-3 fill-current" />
                         </span>
                       )}

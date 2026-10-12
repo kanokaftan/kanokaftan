@@ -31,7 +31,7 @@ function Stars({ rating, className }: { rating: number; className?: string }) {
   return (
     <span className={cn("flex gap-0.5", className)} aria-label={`${rating} out of 5 stars`}>
       {[1, 2, 3, 4, 5].map((n) => (
-        <Star key={n} className={cn("h-3.5 w-3.5", n <= rating ? "fill-foreground text-foreground" : "text-muted-foreground/30")} />
+        <Star key={n} className={cn("h-3.5 w-3.5", n <= rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30")} />
       ))}
     </span>
   );
@@ -86,7 +86,7 @@ function ReviewItem({ review }: { review: MyShopReview }) {
                 <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]">{FIT_LABELS[review.fit_feedback]}</span>
               )}
               {review.would_recommend && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] text-foreground">
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
                   <ThumbsUp className="h-3 w-3" />Recommends
                 </span>
               )}

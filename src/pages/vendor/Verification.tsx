@@ -156,10 +156,10 @@ function VerifiedCard({ verifiedUntil, tier = "blue" }: { verifiedUntil: string 
   const gold = tier === "gold";
   return (
     <Card className={gold
-      ? "border-border bg-gradient-to-br from-muted to-muted"
-      : "border-border bg-gradient-to-br from-muted to-muted"}>
+      ? "border-amber-500/40 bg-gradient-to-br from-amber-400/15 to-amber-500/5"
+      : "border-green-500/30 bg-gradient-to-br from-green-500/10 to-green-500/5"}>
       <CardContent className="p-6 text-center space-y-4">
-        <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center ${gold ? "bg-muted" : "bg-muted"}`}>
+        <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center ${gold ? "bg-amber-500/15" : "bg-green-500/15"}`}>
           <VerifiedBadge className="h-9 w-9" tier={tier} />
         </div>
         <div className="space-y-1">
@@ -196,7 +196,7 @@ function GoldOfferCard({ settings, onStart }: { settings: VendorFeeSettings; onS
     { icon: ShieldCheck, text: t("vendorFees.goldBenefitTrust", "Buyers see you as a top-tier seller") },
   ];
   return (
-    <Card className="border-border bg-gradient-to-br from-muted to-muted">
+    <Card className="border-amber-500/40 bg-gradient-to-br from-amber-400/15 to-amber-500/5">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <VerifiedBadge className="h-5 w-5" tier="gold" />
@@ -538,8 +538,8 @@ export default function VendorVerification() {
         <Card>
           <CardContent className="p-6 space-y-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                <Clock className="h-5 w-5 text-foreground" />
+              <div className="w-10 h-10 rounded-full bg-amber-500/15 flex items-center justify-center flex-shrink-0">
+                <Clock className="h-5 w-5 text-amber-600" />
               </div>
               <div className="space-y-1">
                 <div className="flex flex-wrap items-center gap-2">

@@ -51,7 +51,7 @@ export function StarRating({
                 sizeClasses[size],
                 "transition-colors",
                 filled || partial
-                  ? "fill-foreground text-foreground"
+                  ? "fill-amber-400 text-amber-400"
                   : "fill-muted text-muted"
               )}
             />
@@ -59,7 +59,7 @@ export function StarRating({
               <Star
                 className={cn(
                   sizeClasses[size],
-                  "absolute left-0 top-0 fill-foreground text-foreground"
+                  "absolute left-0 top-0 fill-amber-400 text-amber-400"
                 )}
                 style={{
                   clipPath: `inset(0 ${100 - (rating % 1) * 100}% 0 0)`,

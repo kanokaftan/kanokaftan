@@ -30,17 +30,17 @@ function FanRow({ fan, kind }: { fan: ShopFan; kind: FanList }) {
       </div>
       <div className="flex shrink-0 flex-wrap justify-end gap-1">
         {kind === "followers" && fan.likes && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground">
+          <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-medium text-rose-700 dark:bg-rose-950 dark:text-rose-300">
             <Heart className="h-3 w-3 fill-current" />Liked
           </span>
         )}
         {kind === "likes" && fan.follows && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground">
+          <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300">
             <UserCheck className="h-3 w-3" />Follows
           </span>
         )}
         {fan.orders_count > 0 && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground">
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
             <ShoppingBag className="h-3 w-3" />Bought {fan.orders_count}×
           </span>
         )}
@@ -70,7 +70,7 @@ export default function VendorFans() {
           {TABS.map((t) => (
             <div key={t.value} className="rounded-2xl border bg-card p-3.5">
               <div className="flex items-center gap-2 text-muted-foreground">
-                <t.icon className={cn("h-4 w-4", t.value === "likes" && "text-foreground")} />
+                <t.icon className={cn("h-4 w-4", t.value === "likes" && "text-rose-500")} />
                 <span className="text-xs font-medium">{t.label}</span>
               </div>
               <p className="mt-1 text-2xl font-bold tabular-nums">{summary ? counts[t.value].total : "…"}</p>

@@ -143,7 +143,7 @@ export function WriteReviewSheet({ items, open, onClose }: { items: ReviewableIt
                     onClick={() => setRating(n)}
                     className="rounded-full p-1 transition-transform active:scale-90"
                   >
-                    <Star className={cn("h-10 w-10 transition-colors", n <= rating ? "fill-foreground text-foreground" : "text-muted-foreground/30")} />
+                    <Star className={cn("h-10 w-10 transition-colors", n <= rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30")} />
                   </button>
                 ))}
               </div>

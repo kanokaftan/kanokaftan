@@ -42,9 +42,9 @@ const DEFAULT_WEEKS = 1;
 const MAIN_PAY_BUTTON = "main";
 
 const PHASE_BADGES: Record<PlacementPhase, { label: string; className: string }> = {
-  live: { label: "Live", className: "bg-primary hover:bg-primary/90 text-primary-foreground" },
-  queued: { label: "Starts later", className: "bg-primary hover:bg-primary/90 text-primary-foreground" },
-  awaiting_payment: { label: "Awaiting payment", className: "bg-primary hover:bg-primary/90 text-primary-foreground" },
+  live: { label: "Live", className: "bg-green-600 hover:bg-green-600 text-white" },
+  queued: { label: "Starts later", className: "bg-blue-600 hover:bg-blue-600 text-white" },
+  awaiting_payment: { label: "Awaiting payment", className: "bg-amber-500 hover:bg-amber-500 text-white" },
   ended: { label: "Ended", className: "" },
 };
 

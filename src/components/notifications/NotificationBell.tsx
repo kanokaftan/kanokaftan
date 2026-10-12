@@ -20,11 +20,11 @@ const categoryIcons: Record<string, React.ElementType> = {
 };
 
 const typeColors: Record<string, string> = {
-  info: "bg-muted text-foreground",
-  success: "bg-muted text-foreground",
-  warning: "bg-muted text-foreground",
+  info: "bg-blue-100 text-blue-600",
+  success: "bg-green-100 text-green-600",
+  warning: "bg-yellow-100 text-yellow-600",
   order: "bg-primary/10 text-primary",
-  payment: "bg-muted text-foreground",
+  payment: "bg-emerald-100 text-emerald-600",
   system: "bg-muted text-muted-foreground",
 };
 

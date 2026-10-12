@@ -25,8 +25,8 @@ export function ReviewPrompt({
   return (
     <>
       {items.length > 0 && (
-        <div className={cn("flex items-center gap-3 rounded-2xl border border-border bg-muted p-3", className)}>
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-foreground">
+        <div className={cn("flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/60 dark:bg-amber-950/40", className)}>
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-400/20 text-amber-600">
             <Star className="h-5 w-5 fill-current" />
           </span>
           <div className="min-w-0 flex-1">

@@ -108,7 +108,7 @@ function OverviewTab({ vendorId }: { vendorId: string }) {
               <span className="block text-muted-foreground">{o.payout_account.bank_name} · ****{o.payout_account.account_number_last4}</span>
             </InfoRow>
           ) : (
-            <p className="text-sm text-foreground">No bank account added yet, so payouts are waiting.</p>
+            <p className="text-sm text-amber-700 dark:text-amber-400">No bank account added yet, so payouts are waiting.</p>
           )}
         </CardContent>
       </Card>
@@ -177,7 +177,7 @@ function OrdersTab({ vendorId }: { vendorId: string }) {
             </div>
             <div className="text-right">
               <p className="text-sm font-semibold tabular-nums">{naira(o.total)}</p>
-              <p className={cn("text-[11px]", o.payment_status === "paid" ? "text-foreground" : "text-muted-foreground")}>
+              <p className={cn("text-[11px]", o.payment_status === "paid" ? "text-green-700 dark:text-green-400" : "text-muted-foreground")}>
                 {human(o.payment_status)} · {human(o.status)}
               </p>
             </div>

@@ -436,9 +436,9 @@ export default function AdminProductForm() {
                   onCheckedChange={(v) => setFormData((p) => ({ ...p, is_active: v }))}
                 />
               </div>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted border border-border">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-amber-50 border border-amber-200">
                 <div className="flex items-center gap-2">
-                  <Star className="h-4 w-4 text-foreground fill-foreground" />
+                  <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
                   <div>
                     <p className="text-sm font-medium">Featured</p>
                     <p className="text-xs text-muted-foreground">Show on homepage highlights</p>

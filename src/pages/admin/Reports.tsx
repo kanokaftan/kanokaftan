@@ -308,7 +308,7 @@ export default function AdminReports() {
                         <p className="font-semibold">{vendor.storeName}</p>
                       </div>
                       {vendor.isVerified ? (
-                        <Badge className="bg-muted text-foreground">Verified</Badge>
+                        <Badge className="bg-green-100 text-green-800">Verified</Badge>
                       ) : (
                         <Badge variant="outline">Pending</Badge>
                       )}
@@ -368,7 +368,7 @@ export default function AdminReports() {
                         <TableCell className="font-semibold">{formatCurrency(vendor.totalRevenue)}</TableCell>
                         <TableCell>
                           {vendor.isVerified ? (
-                            <Badge className="bg-muted text-foreground">Verified</Badge>
+                            <Badge className="bg-green-100 text-green-800">Verified</Badge>
                           ) : (
                             <Badge variant="outline">Pending</Badge>
                           )}

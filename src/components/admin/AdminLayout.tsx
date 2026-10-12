@@ -137,7 +137,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
                 <item.icon className="w-4 h-4 flex-shrink-0" />
                 {item.title}
                 {item.badge && (
-                  <span className="ml-auto text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">
+                  <span className="ml-auto text-[10px] bg-green-500 text-white px-1.5 py-0.5 rounded-full">
                     {item.badge}
                   </span>
                 )}

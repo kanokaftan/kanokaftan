@@ -347,7 +347,7 @@ function ApplicationReceived({ phone, signedIn }: { phone: string; signedIn: boo
   return (
     <Card className="border-primary/30">
       <CardContent className="flex flex-col items-center py-10 text-center">
-        <CheckCircle2 className="mb-4 h-14 w-14 text-foreground" />
+        <CheckCircle2 className="mb-4 h-14 w-14 text-green-600" />
         <h1 className="font-display text-2xl font-bold">{t("seller.apply.receivedTitle")}</h1>
         <p className="mt-2 max-w-md text-muted-foreground">
           {t("seller.apply.receivedBody", { phone })}

@@ -237,7 +237,7 @@ export default function Account() {
                   <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
                   <span className="text-sm flex-1 truncate">{user?.email}</span>
                   <Badge variant="secondary" className="text-xs shrink-0">
-                    <CheckCircle2 className="h-3 w-3 mr-1 text-foreground" />
+                    <CheckCircle2 className="h-3 w-3 mr-1 text-green-600" />
                     Verified
                   </Badge>
                 </div>
@@ -309,7 +309,7 @@ export default function Account() {
           </CardHeader>
           <CardContent>
             {passwordResetSent ? (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted border border-border text-foreground text-sm">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 text-green-700 dark:text-green-400 text-sm">
                 <CheckCircle2 className="h-4 w-4 shrink-0" />
                 Reset link sent to {user?.email}. Check your inbox.
               </div>

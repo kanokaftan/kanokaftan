@@ -48,10 +48,10 @@ export default function AdminFinance() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "completed": return "bg-muted text-foreground";
-      case "processing": return "bg-muted text-foreground";
-      case "shipped": return "bg-muted text-foreground";
-      case "pending": return "bg-muted text-foreground";
+      case "completed": return "bg-green-100 text-green-800";
+      case "processing": return "bg-blue-100 text-blue-800";
+      case "shipped": return "bg-purple-100 text-purple-800";
+      case "pending": return "bg-yellow-100 text-yellow-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
@@ -74,14 +74,14 @@ export default function AdminFinance() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-muted to-muted border-border">
+        <Card className="bg-gradient-to-br from-green-100 to-green-50 border-green-200 dark:from-green-950/30 dark:to-green-950/10 dark:border-green-900">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Platform Revenue</CardTitle>
-            <TrendingUp className="h-4 w-4 text-foreground" />
+            <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             {isLoading ? <Skeleton className="h-8 w-24" /> : (
-              <div className="text-2xl font-bold text-foreground">{formatCurrency(totalPlatformRevenue)}</div>
+              <div className="text-2xl font-bold text-green-600">{formatCurrency(totalPlatformRevenue)}</div>
             )}
             <p className="text-xs text-muted-foreground mt-1">{feePercent}% platform fee</p>
           </CardContent>
@@ -192,7 +192,7 @@ export default function AdminFinance() {
                       </div>
                       <div>
                         <p className="text-muted-foreground">Net Payout</p>
-                        <p className="font-semibold text-foreground">{formatCurrency(payout.netPayout)}</p>
+                        <p className="font-semibold text-green-600">{formatCurrency(payout.netPayout)}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Platform Fee</p>
@@ -260,9 +260,9 @@ export default function AdminFinance() {
                         </TableCell>
                         <TableCell className="font-medium">{formatCurrency(payout.totalSales)}</TableCell>
                         <TableCell className="text-muted-foreground">{formatCurrency(payout.platformFee)}</TableCell>
-                        <TableCell className="font-semibold text-foreground">{formatCurrency(payout.netPayout)}</TableCell>
+                        <TableCell className="font-semibold text-green-600">{formatCurrency(payout.netPayout)}</TableCell>
                         <TableCell>
-                          <span className="text-foreground">{payout.completedOrders}</span>
+                          <span className="text-green-600">{payout.completedOrders}</span>
                           {payout.pendingOrders > 0 && (
                             <span className="text-muted-foreground"> (+{payout.pendingOrders} pending)</span>
                           )}
@@ -365,7 +365,7 @@ export default function AdminFinance() {
                         <TableCell>{tx.customerName}</TableCell>
                         <TableCell className="font-medium">{formatCurrency(tx.amount)}</TableCell>
                         <TableCell className="text-muted-foreground">{formatCurrency(tx.platformFee)}</TableCell>
-                        <TableCell className="font-semibold text-foreground">{formatCurrency(tx.netAmount)}</TableCell>
+                        <TableCell className="font-semibold text-green-600">{formatCurrency(tx.netAmount)}</TableCell>
                         <TableCell><Badge className={getStatusColor(tx.status)}>{tx.status}</Badge></TableCell>
                       </TableRow>
                     ))

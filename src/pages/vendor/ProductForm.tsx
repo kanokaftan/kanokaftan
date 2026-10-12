@@ -453,10 +453,10 @@ export default function ProductForm() {
                 />
               </div>
 
-              <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-muted border border-border">
+              <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium flex items-center gap-2">
-                    <Star className="h-4 w-4 text-foreground fill-foreground" />
+                    <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
                     {formData.featured ? "Featured on homepage" : "Homepage promotion"}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">

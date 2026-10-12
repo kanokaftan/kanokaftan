@@ -56,8 +56,8 @@ interface Task {
 
 const TONES: Record<Task["tone"], string> = {
   red: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300",
-  amber: "bg-muted text-foreground",
-  blue: "bg-muted text-foreground",
+  amber: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200",
+  blue: "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200",
 };
 
 function QuickAction({ icon: Icon, label, to, onClick }: { icon: LucideIcon; label: string; to?: string; onClick?: () => void }) {
@@ -101,15 +101,15 @@ function GrowCard({ vendorId }: { vendorId: string | null }) {
 /** Followers, likes and rating at a glance; each opens the full list. */
 function FansRow({ summary }: { summary: FanSummary | undefined }) {
   const tiles = [
-    { icon: UserCheck, label: "Followers", value: summary?.followers, week: summary?.followers_week, to: "/vendor/fans", tint: "text-foreground" },
-    { icon: Heart, label: "Likes", value: summary?.likes, week: summary?.likes_week, to: "/vendor/fans?tab=likes", tint: "text-foreground" },
+    { icon: UserCheck, label: "Followers", value: summary?.followers, week: summary?.followers_week, to: "/vendor/fans", tint: "text-sky-600" },
+    { icon: Heart, label: "Likes", value: summary?.likes, week: summary?.likes_week, to: "/vendor/fans?tab=likes", tint: "text-rose-500" },
     {
       icon: Star,
       label: summary?.reviews ? `${summary.reviews} review${summary.reviews === 1 ? "" : "s"}` : "Reviews",
       value: summary?.rating != null ? summary.rating.toFixed(1) : summary ? "–" : undefined,
       week: 0,
       to: "/vendor/reviews",
-      tint: "text-foreground",
+      tint: "text-amber-500",
     },
   ];
   return (
@@ -119,7 +119,7 @@ function FansRow({ summary }: { summary: FanSummary | undefined }) {
           <t.icon className={cn("h-4 w-4", t.tint, t.icon === Heart || t.icon === Star ? "fill-current" : "")} aria-hidden="true" />
           <p className="mt-1 text-lg font-semibold tabular-nums">{t.value ?? "…"}</p>
           <p className="truncate text-[11px] text-muted-foreground">
-            {t.label}{t.week ? <span className="font-medium text-foreground"> +{t.week}</span> : null}
+            {t.label}{t.week ? <span className="font-medium text-emerald-600"> +{t.week}</span> : null}
           </p>
         </Link>
       ))}
@@ -133,7 +133,9 @@ function EarnCard() {
   const { data: rates } = useEarningRates();
   return (
     <Link to="/vendor/earnings" className="flex items-center gap-3 rounded-2xl border bg-card p-3.5 active:bg-muted/60">
-      <Wallet className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+        <Wallet className="h-5 w-5" aria-hidden="true" />
+      </span>
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-semibold">{t("seller.earn.pageTitle")}</span>
         <span className="block text-xs text-muted-foreground">

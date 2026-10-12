@@ -100,7 +100,7 @@ export default function AdminCustomerDetail() {
                       </span>
                       <span className="text-right">
                         <span className="block font-semibold tabular-nums">{naira(Number(order.total))}</span>
-                        <span className={cn("text-[11px]", order.payment_status === "paid" ? "text-foreground" : "text-muted-foreground")}>
+                        <span className={cn("text-[11px]", order.payment_status === "paid" ? "text-green-700 dark:text-green-400" : "text-muted-foreground")}>
                           {human(order.payment_status)} · {human(order.status)}
                         </span>
                       </span>

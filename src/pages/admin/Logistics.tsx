@@ -253,7 +253,7 @@ export default function AdminLogistics() {
         </div>
 
         {companies && !hasDefault && (
-          <div className="rounded-2xl border border-border bg-muted p-3 text-sm text-foreground">
+          <div className="rounded-2xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
             No default company yet. Orders from areas nobody covers still get a pickup code, but you'll need to pick a company by hand.
           </div>
         )}

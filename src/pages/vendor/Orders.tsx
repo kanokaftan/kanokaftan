@@ -39,14 +39,14 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  pending_payment: { label: "Pending Payment", color: "bg-muted text-foreground", icon: Clock },
-  payment_confirmed: { label: "Payment Confirmed", color: "bg-muted text-foreground", icon: CheckCircle2 },
-  processing: { label: "Processing", color: "bg-muted text-foreground", icon: Package },
-  ready_for_pickup: { label: "Ready for Pickup", color: "bg-muted text-foreground", icon: Package },
-  shipped: { label: "Shipped", color: "bg-muted text-foreground", icon: Truck },
-  out_for_delivery: { label: "Out for Delivery", color: "bg-muted text-foreground", icon: Truck },
-  delivered: { label: "Delivered", color: "bg-muted text-foreground", icon: CheckCircle2 },
-  completed: { label: "Completed", color: "bg-muted text-foreground", icon: CheckCircle2 },
+  pending_payment: { label: "Pending Payment", color: "bg-yellow-100 text-yellow-700", icon: Clock },
+  payment_confirmed: { label: "Payment Confirmed", color: "bg-blue-100 text-blue-700", icon: CheckCircle2 },
+  processing: { label: "Processing", color: "bg-blue-100 text-blue-700", icon: Package },
+  ready_for_pickup: { label: "Ready for Pickup", color: "bg-purple-100 text-purple-700", icon: Package },
+  shipped: { label: "Shipped", color: "bg-purple-100 text-purple-700", icon: Truck },
+  out_for_delivery: { label: "Out for Delivery", color: "bg-purple-100 text-purple-700", icon: Truck },
+  delivered: { label: "Delivered", color: "bg-green-100 text-green-700", icon: CheckCircle2 },
+  completed: { label: "Completed", color: "bg-green-100 text-green-700", icon: CheckCircle2 },
   cancelled: { label: "Cancelled", color: "bg-red-100 text-red-700", icon: Package },
 };
 

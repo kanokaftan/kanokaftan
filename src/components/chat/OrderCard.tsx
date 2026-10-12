@@ -102,7 +102,7 @@ function PayNowButton({ order }: { order: ChatOrder }) {
       type="button"
       onClick={pay}
       disabled={opening}
-      className="flex w-full items-center justify-center gap-2 bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 active:bg-primary/90 disabled:opacity-90"
+      className="flex w-full items-center justify-center gap-2 bg-emerald-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-90"
     >
       {opening ? (
         <><Loader2 className="h-4 w-4 animate-spin" /> Opening secure checkout…</>
@@ -162,7 +162,7 @@ export function OrderCard({ orderId, mine }: { orderId: string; mine: boolean })
         <PayNowButton order={order} />
       ) : (
         <span className={cn("flex items-center justify-center gap-1.5 border-t py-2 text-xs font-medium animate-in fade-in-0 zoom-in-95 duration-300", mine ? "border-white/20" : "")}>
-          <CheckCircle2 className="h-4 w-4 text-foreground" />
+          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
           {order.payment_status === "paid" || order.payment_status === "success" ? "Paid" : order.status.replace(/_/g, " ")}
         </span>
       )}

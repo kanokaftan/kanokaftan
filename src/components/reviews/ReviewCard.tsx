@@ -69,7 +69,7 @@ export function ReviewCard({ review }: ReviewCardProps) {
               </Badge>
             )}
             {review.would_recommend && (
-              <Badge variant="outline" className="gap-1 text-xs text-foreground">
+              <Badge variant="outline" className="gap-1 text-xs text-green-600">
                 <ThumbsUp className="h-3 w-3" />
                 Recommends
               </Badge>
