@@ -42,9 +42,9 @@ const DEFAULT_WEEKS = 1;
 const MAIN_PAY_BUTTON = "main";
 
 const PHASE_BADGES: Record<PlacementPhase, { label: string; className: string }> = {
-  live: { label: "Live", className: "bg-green-600 hover:bg-green-600 text-white" },
-  queued: { label: "Starts later", className: "bg-blue-600 hover:bg-blue-600 text-white" },
-  awaiting_payment: { label: "Awaiting payment", className: "bg-amber-500 hover:bg-amber-500 text-white" },
+  live: { label: "Live", className: "bg-primary hover:bg-primary/90 text-primary-foreground" },
+  queued: { label: "Starts later", className: "bg-primary hover:bg-primary/90 text-primary-foreground" },
+  awaiting_payment: { label: "Awaiting payment", className: "bg-primary hover:bg-primary/90 text-primary-foreground" },
   ended: { label: "Ended", className: "" },
 };
 
@@ -298,7 +298,7 @@ export default function VendorPromote() {
               selected={kind === "product"}
               onSelect={() => setKind("product")}
               icon={Images}
-              title={t("vendorFees.carouselOption", "Homepage carousel — feature a product")}
+              title={t("vendorFees.carouselOption", "Homepage carousel: feature a product")}
               description="Your product photo appears in the big image carousel at the top of the homepage."
               price={t("vendorFees.perWeek", "{{amount}} / week", { amount: formatNaira(settings.featured_product_weekly_fee) })}
             />
@@ -306,7 +306,7 @@ export default function VendorPromote() {
               selected={kind === "shop"}
               onSelect={() => setKind("shop")}
               icon={Store}
-              title={t("vendorFees.logoOption", "Logo strip — feature my shop")}
+              title={t("vendorFees.logoOption", "Logo strip: feature my shop")}
               description="Your shop logo appears in the strip of featured shops on the homepage."
               price={t("vendorFees.perWeek", "{{amount}} / week", { amount: formatNaira(settings.featured_shop_weekly_fee) })}
             />

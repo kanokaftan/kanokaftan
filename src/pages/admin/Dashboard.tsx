@@ -19,6 +19,7 @@ import {
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
 import { VerifiedBadge } from "@/components/shop/VerifiedBadge";
+import { withoutLeadingEmoji } from "@/lib/text";
 
 const formatTime = (date: string | null) => {
   if (!date) return "";
@@ -59,13 +60,13 @@ function greeting(): string {
 const statusColor = (status: string) => {
   switch (status) {
     case "pending":
-    case "pending_payment": return "bg-yellow-100 text-yellow-700";
+    case "pending_payment": return "bg-muted text-foreground";
     case "payment_confirmed":
-    case "processing": return "bg-blue-100 text-blue-700";
+    case "processing": return "bg-muted text-foreground";
     case "shipped":
-    case "out_for_delivery": return "bg-purple-100 text-purple-700";
+    case "out_for_delivery": return "bg-muted text-foreground";
     case "delivered":
-    case "completed": return "bg-green-100 text-green-700";
+    case "completed": return "bg-muted text-foreground";
     case "cancelled": return "bg-red-100 text-red-700";
     default: return "bg-muted text-muted-foreground";
   }
@@ -237,7 +238,7 @@ export default function AdminDashboard() {
                   {card.sub && <span className="text-muted-foreground/80"> · {card.sub}</span>}
                 </p>
               </div>
-              {card.urgent && <span className="absolute right-2.5 top-2.5 w-2 h-2 bg-amber-500 rounded-full animate-pulse" />}
+              {card.urgent && <span className="absolute right-2.5 top-2.5 w-2 h-2 bg-primary rounded-full animate-pulse" />}
             </Link>
           ))}
         </div>
@@ -324,7 +325,7 @@ export default function AdminDashboard() {
                       <span className="text-[10px] text-muted-foreground flex-shrink-0 ml-2">{formatTime(chat.last_message_at)}</span>
                     </div>
                     <p className="text-xs text-muted-foreground truncate">
-                      {chat.product_name ? `${chat.product_name} · ` : ""}{chat.last_message_preview || "No messages"}
+                      {chat.product_name ? `${chat.product_name} · ` : ""}{withoutLeadingEmoji(chat.last_message_preview) || "No messages"}
                     </p>
                   </div>
                   {chat.unread && <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />}
@@ -359,14 +360,14 @@ export default function AdminDashboard() {
                     className="flex items-center gap-3 bg-card border border-border rounded-xl p-3 hover:border-primary/20 hover:bg-muted/30 transition-colors"
                   >
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      done ? "bg-green-100" : order.status === "cancelled" ? "bg-red-100" : "bg-yellow-100"
+                      done ? "bg-muted" : order.status === "cancelled" ? "bg-red-100" : "bg-muted"
                     }`}>
                       {done ? (
-                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        <CheckCircle className="w-4 h-4 text-foreground" />
                       ) : order.status === "cancelled" ? (
                         <XCircle className="w-4 h-4 text-red-600" />
                       ) : (
-                        <Clock className="w-4 h-4 text-yellow-600" />
+                        <Clock className="w-4 h-4 text-foreground" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">

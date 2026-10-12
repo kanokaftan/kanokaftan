@@ -53,10 +53,10 @@ const STATUS_FILTERS: { value: VerificationStatusFilter; label: string }[] = [
 ];
 
 const STATUS_META: Record<string, { label: string; className: string }> = {
-  pending_review: { label: "Awaiting review", className: "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-500/15 dark:text-amber-400" },
+  pending_review: { label: "Awaiting review", className: "bg-muted text-foreground border-border" },
   awaiting_payment: { label: "Not paid yet", className: "bg-muted text-muted-foreground border-border" },
   rejected: { label: "Rejected", className: "bg-red-100 text-red-800 border-red-200 dark:bg-red-500/15 dark:text-red-400" },
-  approved: { label: "Approved", className: "bg-green-100 text-green-800 border-green-200 dark:bg-green-500/15 dark:text-green-400" },
+  approved: { label: "Approved", className: "bg-muted text-foreground border-border" },
 };
 
 const ID_TYPE_LABELS: Record<string, string> = {
@@ -311,7 +311,7 @@ function ReviewDialog({
 
 function GoldChip() {
   return (
-    <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
+    <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-foreground">
       Gold upgrade
     </span>
   );
@@ -332,7 +332,7 @@ function RequestCard({ request, onOpen }: { request: AdminVerificationRequest; o
       }}
       className={cn(
         "cursor-pointer transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        request.status === "pending_review" && "border-amber-300 dark:border-amber-500/40",
+        request.status === "pending_review" && "border-border",
       )}
     >
       <CardContent className="p-4">
@@ -394,14 +394,14 @@ export function VerificationRequests() {
 
   return (
     <div className="space-y-4 pb-20 md:pb-6">
-      <Card className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20">
+      <Card className="bg-gradient-to-br from-muted to-muted border-border">
         <CardContent className="flex items-center justify-between gap-3 p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-full bg-amber-500/20 p-2">
-              <ShieldCheck className="h-5 w-5 text-amber-600" />
+            <div className="rounded-full bg-muted p-2">
+              <ShieldCheck className="h-5 w-5 text-foreground" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-amber-600">{pendingCount}</p>
+              <p className="text-2xl font-bold text-foreground">{pendingCount}</p>
               <p className="text-xs text-muted-foreground">Awaiting review</p>
             </div>
           </div>
@@ -428,7 +428,7 @@ export function VerificationRequests() {
           >
             {filter.label}
             {filter.value === "pending_review" && pendingCount > 0 && (
-              <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 text-[10px] font-semibold text-white">
+              <span className="ml-1.5 rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
                 {pendingCount}
               </span>
             )}

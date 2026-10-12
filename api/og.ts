@@ -115,7 +115,7 @@ async function shopPreview(by: { slug?: string; vendorId?: string }): Promise<Pr
     badge,
     place && `in ${place}`,
     `${shop.product_count} product${Number(shop.product_count) === 1 ? "" : "s"}`,
-    shop.rating && shop.review_count ? `★ ${shop.rating} (${shop.review_count})` : null,
+    shop.rating && shop.review_count ? `Rated ${shop.rating}/5 (${shop.review_count})` : null,
   ].filter(Boolean).join(" · ");
   return {
     title: `${shop.store_name} on ${SITE_NAME}`,

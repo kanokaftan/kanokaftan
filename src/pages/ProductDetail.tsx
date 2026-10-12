@@ -2,7 +2,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import { useState, useEffect } from "react";
 import { track } from "@/lib/analytics";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ChevronLeft, Heart, Minus, Plus, ShoppingCart, Truck, Shield, RotateCcw, BadgeCheck, Store, Share2 } from "lucide-react";
+import { ChevronLeft, Heart, Minus, Plus, ShoppingCart, Truck, Shield, RotateCcw, BadgeCheck, Store, Share2, Check } from "lucide-react";
 import { ChatWithVendorButton } from "@/components/chat/ChatWithVendorButton";
 import { ChatWithUsButton } from "@/components/chat/ChatWithUsButton";
 import { MobileLayout } from "@/components/layout/MobileLayout";
@@ -198,14 +198,14 @@ export default function ProductDetail() {
         await navigator.share(shareData);
       } else {
         await navigator.clipboard.writeText(productUrl);
-        toast.success("Product link copied! 🎉", {
+        toast.success("Product link copied", {
           description: "Share it with friends",
         });
       }
     } catch (error) {
       if ((error as Error).name !== 'AbortError') {
         await navigator.clipboard.writeText(productUrl);
-        toast.success("Product link copied! 🎉");
+        toast.success("Product link copied");
       }
     }
   };
@@ -315,14 +315,14 @@ export default function ProductDetail() {
           {/* Stock indicator */}
           <div className="flex items-center gap-2 mt-2">
             {availableStock > 0 ? (
-              <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
-                ✓ {t("products.inStock")}
+              <Badge variant="outline" className="gap-1 text-foreground border-border bg-muted">
+                <Check className="h-3 w-3" aria-hidden="true" />{t("products.inStock")}
               </Badge>
             ) : (
               <Badge variant="destructive">{t("products.outOfStock")}</Badge>
             )}
             {availableStock > 0 && availableStock < 10 && (
-              <span className="text-xs text-orange-600">{t("products.stockLeft", { count: availableStock })}</span>
+              <span className="text-xs text-foreground">{t("products.stockLeft", { count: availableStock })}</span>
             )}
           </div>
         </div>
@@ -494,8 +494,8 @@ export default function ProductDetail() {
             </div>
           </div>
           <div className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/50 text-center">
-            <div className="p-2 rounded-full bg-green-500/10">
-              <Shield className="h-5 w-5 text-green-600" />
+            <div className="p-2 rounded-full bg-muted">
+              <Shield className="h-5 w-5 text-foreground" />
             </div>
             <div>
               <p className="text-xs font-semibold">Escrow</p>
@@ -503,8 +503,8 @@ export default function ProductDetail() {
             </div>
           </div>
           <div className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/50 text-center">
-            <div className="p-2 rounded-full bg-blue-500/10">
-              <RotateCcw className="h-5 w-5 text-blue-600" />
+            <div className="p-2 rounded-full bg-muted">
+              <RotateCcw className="h-5 w-5 text-foreground" />
             </div>
             <div>
               <p className="text-xs font-semibold">{t("products.easyReturns")}</p>

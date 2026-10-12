@@ -90,7 +90,7 @@ export function Navbar() {
             <Link to="/products?category=caps" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Caps</Link>
             <Link to="/products?category=accessories" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Accessories</Link>
             <Link to="/wishlist" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Wishlist</Link>
-            <Link to="/chat" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>💬 Chat to Order</Link>
+            <Link to="/chat" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>Chat to order</Link>
             {user ? (
               <>
                 <Link to="/profile" className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>My Profile</Link>

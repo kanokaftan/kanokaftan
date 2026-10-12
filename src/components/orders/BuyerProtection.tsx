@@ -26,7 +26,7 @@ export function BuyerProtection({ order }: { order: Order }) {
 
   if (order.dispute_status === "open") {
     return (
-      <div className="mt-4 flex gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+      <div className="mt-4 flex gap-3 rounded-lg border border-border bg-muted p-3 text-sm text-foreground">
         <AlertTriangle className="h-5 w-5 flex-shrink-0" />
         <div>
           <p className="font-medium">Problem reported</p>

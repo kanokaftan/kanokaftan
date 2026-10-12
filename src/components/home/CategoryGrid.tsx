@@ -37,7 +37,7 @@ export function CategoryGrid() {
             Shop by Category
           </h2>
           <p className="mt-4 text-muted-foreground">
-            Explore our curated collection of traditional Nigerian attire
+            Clothing, fabrics, shoes, caps and accessories from Kano sellers
           </p>
         </div>
 

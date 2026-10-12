@@ -153,7 +153,7 @@ export function FlashSalesSection() {
 
   if (isLoading) {
     return (
-      <section className="py-6 bg-gradient-to-r from-destructive/5 to-orange-500/5">
+      <section className="py-6 bg-gradient-to-r from-destructive/5 to-muted">
         <div className="container">
           <div className="flex items-center gap-2 mb-4">
             <Skeleton className="h-6 w-32" />
@@ -171,7 +171,7 @@ export function FlashSalesSection() {
   if (flashSales.length === 0) return null;
 
   return (
-    <section className="py-6 bg-gradient-to-r from-destructive/5 to-orange-500/5">
+    <section className="py-6 bg-gradient-to-r from-destructive/5 to-muted">
       <div className="container">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">

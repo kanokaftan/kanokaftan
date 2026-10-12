@@ -38,8 +38,8 @@ export const CHAT_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image
 export const CHAT_AUDIO_TYPES = ["audio/webm", "audio/ogg", "audio/mp4", "audio/mpeg", "audio/wav"] as const;
 /** Default bodies for media messages (body is required; it also feeds inbox previews). */
 export const MEDIA_LABELS: Record<Exclude<ChatMessageType, "text">, string> = {
-  image: "📷 Photo",
-  voice: "🎤 Voice note",
+  image: "Photo",
+  voice: "Voice note",
 };
 
 const EXTENSIONS: Record<string, string> = {

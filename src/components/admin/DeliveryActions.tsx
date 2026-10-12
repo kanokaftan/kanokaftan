@@ -17,6 +17,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useLogisticsCompanies, whatsappNumber } from "@/hooks/useLogistics";
 import { toast } from "sonner";
+import { BrandIcon } from "@/components/brand/BrandIcon";
 
 interface DeliveryActionsProps {
   orderId: string;
@@ -220,7 +221,7 @@ export function DeliveryActions({ orderId, paymentStatus, escrowStatus }: Delive
             {company && job && wa && (
               <Button asChild variant="secondary" className="w-full">
                 <a href={`https://wa.me/${wa}?text=${encodeURIComponent(jobMessage(job))}`} target="_blank" rel="noreferrer">
-                  <MessageCircle className="mr-2 h-4 w-4" />Send job to {company.name} on WhatsApp
+                  <BrandIcon brand="whatsapp" className="mr-2" />Send job to {company.name} on WhatsApp
                 </a>
               </Button>
             )}

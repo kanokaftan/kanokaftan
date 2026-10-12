@@ -138,7 +138,7 @@ export function QuickViewModal({ product, open, onOpenChange }: QuickViewModalPr
             {/* Badges */}
             <div className="absolute left-3 top-3 flex flex-col gap-2">
               {product.featured && (
-                <Badge className="bg-amber-500 hover:bg-amber-600">⭐ Featured</Badge>
+                <Badge className="bg-primary hover:bg-primary/90">Featured</Badge>
               )}
               {discount && (
                 <Badge className="bg-destructive">{discount}% OFF</Badge>
@@ -195,9 +195,9 @@ export function QuickViewModal({ product, open, onOpenChange }: QuickViewModalPr
               {isOutOfStock ? (
                 <span className="text-destructive font-medium">Out of stock</span>
               ) : product.stock_quantity <= 5 ? (
-                <span className="text-amber-600 font-medium">Only {product.stock_quantity} left</span>
+                <span className="text-foreground font-medium">Only {product.stock_quantity} left</span>
               ) : (
-                <span className="text-green-600">In Stock</span>
+                <span className="text-foreground">In Stock</span>
               )}
             </p>
 

@@ -51,14 +51,14 @@ export default function AdminOrders() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "completed": return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
-      case "delivered": return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
-      case "processing": return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
-      case "payment_confirmed": return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
-      case "shipped": return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400";
-      case "out_for_delivery": return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400";
-      case "pending": return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
-      case "pending_payment": return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400";
+      case "completed": return "bg-muted text-muted-foreground";
+      case "delivered": return "bg-muted text-muted-foreground";
+      case "processing": return "bg-primary text-primary-foreground";
+      case "payment_confirmed": return "bg-primary text-primary-foreground";
+      case "shipped": return "bg-muted text-foreground";
+      case "out_for_delivery": return "bg-muted text-foreground";
+      case "pending": return "bg-muted text-foreground";
+      case "pending_payment": return "bg-muted text-foreground";
       case "cancelled": return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
       default: return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
     }
@@ -66,8 +66,8 @@ export default function AdminOrders() {
 
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
-      case "paid": return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
-      case "pending": return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400";
+      case "paid": return "bg-muted text-foreground";
+      case "pending": return "bg-muted text-foreground";
       case "failed": return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
       default: return "bg-gray-100 text-gray-800";
     }
@@ -155,7 +155,7 @@ export default function AdminOrders() {
                   {vendorNames(order) && <span className="block text-xs">Vendor: {vendorNames(order)}</span>}
                 </span>
                 <Badge className={getPaymentStatusColor(order.payment_status)} variant="outline">
-                  {order.payment_status === "paid" ? "💰 Paid" : order.payment_status === "pending" ? "⏳ Unpaid" : order.payment_status}
+                  {order.payment_status === "paid" ? "Paid" : order.payment_status === "pending" ? "Unpaid" : order.payment_status}
                 </Badge>
               </div>
               <div className="pt-3 border-t space-y-2">

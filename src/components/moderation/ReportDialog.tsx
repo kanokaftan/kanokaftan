@@ -46,7 +46,7 @@ export function ReportDialog({
       { targetType, targetId, reason, details },
       {
         onSuccess: () => {
-          toast.success("Thanks — our team will review this");
+          toast.success("Thanks. Our team will review this.");
           onOpenChange(false);
           onReported?.();
         },

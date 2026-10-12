@@ -1728,7 +1728,7 @@ export type Database = {
         Returns: undefined
       }
       admin_broadcast_notification: {
-        Args: { p_action_url?: string; p_audience?: string; p_message: string; p_title: string }
+        Args: { p_action_url?: string; p_audience?: string; p_message: string; p_title: string; p_title_ha?: string; p_message_ha?: string }
         Returns: number
       }
       admin_review_vendor_application: {

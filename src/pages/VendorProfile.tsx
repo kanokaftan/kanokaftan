@@ -252,7 +252,7 @@ export default function VendorProfile() {
             <Card key={stat.label} className="border-0 bg-muted/50">
               <CardContent className="p-2 text-center">
                 <p className="flex items-center justify-center gap-1 font-bold">
-                  {stat.star && <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />}
+                  {stat.star && <Star className="h-3.5 w-3.5 fill-foreground text-foreground" />}
                   {stat.value}
                 </p>
                 <p className="text-[11px] text-muted-foreground">{stat.label}</p>
@@ -285,7 +285,7 @@ export default function VendorProfile() {
               disabled={!!user && !canFollow}
               aria-pressed={liked}
               aria-label={liked ? `Unlike ${shop.store_name}` : `Like ${shop.store_name}`}
-              className={cn("gap-1.5 px-3 tabular-nums", liked && "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40")}
+              className={cn("gap-1.5 px-3 tabular-nums", liked && "border-border bg-muted text-foreground hover:bg-muted/80 hover:text-foreground")}
             >
               <Heart className={cn("h-4 w-4 transition-transform", liked && "scale-110 fill-current")} />
               {likeCount > 0 && likeCount}
@@ -378,7 +378,7 @@ export default function VendorProfile() {
                       {[1, 2, 3, 4, 5].map((n) => (
                         <Star
                           key={n}
-                          className={`h-3.5 w-3.5 ${n <= review.rating ? "fill-amber-500 text-amber-500" : "text-muted-foreground/40"}`}
+                          className={`h-3.5 w-3.5 ${n <= review.rating ? "fill-foreground text-foreground" : "text-muted-foreground/40"}`}
                         />
                       ))}
                     </div>

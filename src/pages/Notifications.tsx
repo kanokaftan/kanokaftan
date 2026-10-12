@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { LanguageToggle } from "@/components/LanguageToggle";
 
 type Area = "shop" | "seller" | "admin";
 type Filter = "all" | "unread";
@@ -91,10 +92,11 @@ function NotificationsContent({ area }: { area: Area }) {
             {unreadCount} new
           </span>
         )}
+        <LanguageToggle className="ml-auto" />
         <Button
           variant="ghost"
           size="icon"
-          className="ml-auto h-9 w-9 rounded-full"
+          className="h-9 w-9 rounded-full"
           onClick={() => setSettingsOpen(true)}
           aria-label="Notification settings"
         >

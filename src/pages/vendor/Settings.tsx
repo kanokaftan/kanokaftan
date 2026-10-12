@@ -311,12 +311,12 @@ export default function VendorSettings() {
 
             {/* Verification Section */}
             {!isVerified && (
-              <div className="p-3 md:p-4 rounded-lg bg-blue-50 border border-blue-200">
+              <div className="p-3 md:p-4 rounded-lg bg-muted border border-border">
                 <div className="flex items-start gap-3">
-                  <ShieldCheck className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <ShieldCheck className="h-5 w-5 text-foreground flex-shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-blue-900 text-sm md:text-base">Get Verified</h4>
-                    <p className="text-xs md:text-sm text-blue-700 mt-1">
+                    <h4 className="font-medium text-foreground text-sm md:text-base">Get Verified</h4>
+                    <p className="text-xs md:text-sm text-foreground mt-1">
                       Get a verified badge on your profile and listings.
                     </p>
                     <Button size="sm" className="mt-3" asChild>
@@ -394,12 +394,12 @@ export default function VendorSettings() {
             <CardContent className="space-y-4">
               {/* Location Status Indicator */}
               {form.watch("store_street") && form.watch("store_city") && form.watch("store_state") ? (
-                <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 p-2 rounded-lg">
+                <div className="flex items-center gap-2 text-sm text-foreground bg-muted p-2 rounded-lg">
                   <ShieldCheck className="h-4 w-4" />
                   <span>Location set - coordinates will be saved on submit</span>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 p-2 rounded-lg">
+                <div className="flex items-center gap-2 text-sm text-foreground bg-muted p-2 rounded-lg">
                   <MapPin className="h-4 w-4" />
                   <span>Location required for accurate shipping rates</span>
                 </div>

@@ -58,8 +58,8 @@ export function TodayTrafficCard() {
           <div className="rounded-xl bg-muted p-2">
             <p className="flex items-center justify-center gap-1.5 text-lg font-semibold tabular-nums">
               <span className="relative flex h-2 w-2" aria-hidden="true">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-60" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
               </span>
               {count(data.live)}
             </p>

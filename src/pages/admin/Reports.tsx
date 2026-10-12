@@ -308,7 +308,7 @@ export default function AdminReports() {
                         <p className="font-semibold">{vendor.storeName}</p>
                       </div>
                       {vendor.isVerified ? (
-                        <Badge className="bg-green-100 text-green-800">Verified</Badge>
+                        <Badge className="bg-muted text-foreground">Verified</Badge>
                       ) : (
                         <Badge variant="outline">Pending</Badge>
                       )}
@@ -368,7 +368,7 @@ export default function AdminReports() {
                         <TableCell className="font-semibold">{formatCurrency(vendor.totalRevenue)}</TableCell>
                         <TableCell>
                           {vendor.isVerified ? (
-                            <Badge className="bg-green-100 text-green-800">Verified</Badge>
+                            <Badge className="bg-muted text-foreground">Verified</Badge>
                           ) : (
                             <Badge variant="outline">Pending</Badge>
                           )}
@@ -407,8 +407,8 @@ export default function AdminReports() {
                     <Tooltip />
                     <Legend />
                     <Line type="monotone" dataKey="newUsers" name="New Users" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} />
-                    <Line type="monotone" dataKey="activeUsers" name="Active Users" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} />
-                    <Line type="monotone" dataKey="totalOrders" name="Orders" stroke="#f59e0b" strokeWidth={2} dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="activeUsers" name="Active Users" stroke="hsl(var(--muted-foreground))" strokeDasharray="6 3" strokeWidth={2} dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="totalOrders" name="Orders" stroke="hsl(var(--foreground) / 0.45)" strokeDasharray="2 3" strokeWidth={2} dot={{ r: 4 }} />
                   </LineChart>
                 </ResponsiveContainer>
               )}

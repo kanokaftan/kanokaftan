@@ -72,7 +72,7 @@ export function ShopSetupChecklist({ vendorId }: { vendorId: string | null }) {
                 aria-disabled={step.done}
               >
                 {step.done ? (
-                  <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-green-600" />
+                  <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-foreground" />
                 ) : (
                   <Circle className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
                 )}

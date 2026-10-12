@@ -89,7 +89,7 @@ export function PaymentsStatusCard() {
         ) : data ? (
           <>
             {data.connected && data.mode === "test" && (
-              <div className="flex gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+              <div className="flex gap-2 rounded-xl border border-border bg-muted p-3 text-xs text-foreground">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 <div className="space-y-1">
                   <p className="font-medium">You're using a Paystack TEST key.</p>
@@ -102,14 +102,14 @@ export function PaymentsStatusCard() {
               </div>
             )}
             {data.connected ? (
-              <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
+              <div className="flex items-center gap-2 text-foreground">
                 <CheckCircle2 className="h-4 w-4 shrink-0" />
                 <span>
                   Payments are on. Available for payouts: <strong>{formatNaira(data.transfer_balance ?? 0)}</strong>
                 </span>
               </div>
             ) : (
-              <div className="flex gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+              <div className="flex gap-2 rounded-xl border border-border bg-muted p-3 text-xs text-foreground">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 <div className="space-y-1">
                   <p className="font-medium">{data.problem}</p>

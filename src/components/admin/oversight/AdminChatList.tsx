@@ -4,6 +4,7 @@ import { MessageCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAdminConversations } from "@/hooks/useAdminOversight";
+import { withoutLeadingEmoji } from "@/lib/text";
 
 /**
  * A seller's chats with customers (or a customer's chats with sellers), WhatsApp-style.
@@ -58,7 +59,7 @@ export function AdminChatList({ vendorId, customerId }: { vendorId?: string; cus
                 </div>
                 <p className="truncate text-sm text-muted-foreground">
                   {!fromOther && chat.last_sender_id ? <span className="font-medium">{showCustomer ? "Seller: " : "Customer: "}</span> : null}
-                  {chat.last_message_preview || "…"}
+                  {withoutLeadingEmoji(chat.last_message_preview) || "…"}
                 </p>
                 <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
                   {chat.message_count} messages{chat.product_name ? ` · about ${chat.product_name}` : ""}

@@ -117,7 +117,7 @@ export default function AdminProducts() {
                   {product.is_active ? "Active" : "Inactive"}
                 </Badge>
                 {product.featured && (
-                  <Badge className="bg-yellow-100 text-yellow-800 gap-1">
+                  <Badge className="bg-muted text-foreground gap-1">
                     <Star className="h-3 w-3" /> Featured
                   </Badge>
                 )}

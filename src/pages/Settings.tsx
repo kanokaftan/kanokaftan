@@ -13,17 +13,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
-import i18n from "@/i18n/index";
-
-const LANGUAGE_KEY = "kk_language";
+import { currentLanguage, setLanguage as saveLanguage } from "@/i18n/language";
 
 function applyLanguage(value: string) {
-  if (i18n.language !== value) i18n.changeLanguage(value);
-  try {
-    localStorage.setItem(LANGUAGE_KEY, value);
-  } catch {
-    // ignore storage errors
-  }
+  saveLanguage(value === "ha" ? "ha" : "en");
 }
 
 interface SettingItemProps {
@@ -84,7 +77,7 @@ export default function Settings() {
   const [notifications, setNotifications] = useState(true);
   const [orderUpdates, setOrderUpdates] = useState(true);
   const [promotions, setPromotions] = useState(false);
-  const [language, setLanguage] = useState(() => i18n.language || "en");
+  const [language, setLanguage] = useState<string>(() => currentLanguage());
   const [currency, setCurrency] = useState("NGN");
   // Stored on this device only, so it applies straight away (no Save needed).
   const [sounds, setSounds] = useState(soundsEnabled);

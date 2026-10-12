@@ -91,17 +91,17 @@ export function PendingPaymentsSection() {
   }
 
   return (
-    <Card className="border-amber-200 dark:border-amber-900">
-      <CardHeader className="bg-amber-50/50 dark:bg-amber-950/20 rounded-t-lg">
+    <Card className="border-border">
+      <CardHeader className="bg-muted rounded-t-lg">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <div className="p-1.5 rounded-full bg-amber-100 dark:bg-amber-900">
-              <Clock className="h-4 w-4 text-amber-600" />
+            <div className="p-1.5 rounded-full bg-muted">
+              <Clock className="h-4 w-4 text-foreground" />
             </div>
             Pending Payments
           </CardTitle>
           {pendingOrders && pendingOrders.length > 0 && (
-            <Badge variant="outline" className="border-amber-300 text-amber-700">
+            <Badge variant="outline" className="border-border text-foreground">
               {pendingOrders.length} awaiting
             </Badge>
           )}
@@ -140,7 +140,7 @@ export function PendingPaymentsSection() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-amber-600">{formatCurrency(order.total)}</p>
+                  <p className="font-semibold text-foreground">{formatCurrency(order.total)}</p>
                   <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               </div>

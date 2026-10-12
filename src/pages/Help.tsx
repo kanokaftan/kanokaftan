@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useTranslation } from "react-i18next";
+import { BrandIcon } from "@/components/brand/BrandIcon";
 
 export default function Help() {
   const { t } = useTranslation();
@@ -64,8 +65,8 @@ export default function Help() {
           <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleCall}>
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0">
-                  <Phone className="h-5 w-5 text-green-600" />
+                <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                  <Phone className="h-5 w-5 text-foreground" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium">{t("help.callUs")}</h3>
@@ -77,17 +78,17 @@ export default function Help() {
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-md transition-shadow bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800" onClick={handleWhatsApp}>
+          <Card className="cursor-pointer hover:shadow-md transition-shadow bg-muted border-border" onClick={handleWhatsApp}>
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
-                  <MessageCircle className="h-5 w-5 text-white" />
+                <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                  <BrandIcon brand="whatsapp" className="h-5 w-5 text-primary-foreground" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium">{t("help.whatsapp")}</h3>
                   <p className="text-sm text-muted-foreground">{t("help.whatsappDesc")}</p>
                 </div>
-                <Button size="sm" className="bg-green-600 hover:bg-green-700 gap-1">
+                <Button size="sm" className="bg-primary hover:bg-primary/90 gap-1">
                   <Send className="h-3 w-3" />
                   Chat
                 </Button>

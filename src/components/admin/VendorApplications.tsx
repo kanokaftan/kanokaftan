@@ -16,8 +16,8 @@ import {
 import { toast } from "sonner";
 
 const STATUS_STYLE: Record<string, { label: string; className: string }> = {
-  pending: { label: "Waiting for review", className: "bg-amber-100 text-amber-800 border-amber-200" },
-  approved: { label: "Approved", className: "bg-green-100 text-green-800 border-green-200" },
+  pending: { label: "Waiting for review", className: "bg-muted text-foreground border-border" },
+  approved: { label: "Approved", className: "bg-muted text-foreground border-border" },
   rejected: { label: "Needs changes", className: "bg-red-100 text-red-800 border-red-200" },
 };
 

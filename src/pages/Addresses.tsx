@@ -169,7 +169,7 @@ export default function Addresses() {
                       {address.street_address}, {address.city}, {address.state}
                     </p>
                     {address.landmark && (
-                      <p className="text-xs text-muted-foreground">📍 {address.landmark}</p>
+                      <p className="flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="h-3 w-3" aria-hidden="true" />{address.landmark}</p>
                     )}
                   </div>
 

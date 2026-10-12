@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { BrandLogo } from "@/components/brand/BrandLogo";
-import { Facebook, Instagram, Twitter } from "lucide-react";
 
 export function Footer() {
   return (
@@ -16,29 +15,6 @@ export function Footer() {
             <p className="text-sm text-primary-foreground/80">
               Clothing, fabrics, shoes, caps and accessories from trusted sellers, with safe payments and delivery.
             </p>
-            <div className="flex gap-4">
-              <a 
-                href="#" 
-                className="text-primary-foreground/80 transition-colors hover:text-primary-foreground"
-                aria-label="Facebook"
-              >
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a 
-                href="#" 
-                className="text-primary-foreground/80 transition-colors hover:text-primary-foreground"
-                aria-label="Instagram"
-              >
-                <Instagram className="h-5 w-5" />
-              </a>
-              <a 
-                href="#" 
-                className="text-primary-foreground/80 transition-colors hover:text-primary-foreground"
-                aria-label="Twitter"
-              >
-                <Twitter className="h-5 w-5" />
-              </a>
-            </div>
           </div>
 
           {/* Shop */}

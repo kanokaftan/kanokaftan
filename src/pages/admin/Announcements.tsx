@@ -37,6 +37,8 @@ const LINK_PRESETS = [
 export default function AdminAnnouncements() {
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
+  const [titleHa, setTitleHa] = useState("");
+  const [messageHa, setMessageHa] = useState("");
   const [audience, setAudience] = useState<Audience>("customers");
   const [linkPreset, setLinkPreset] = useState("/products");
   const [customLink, setCustomLink] = useState("");
@@ -67,11 +69,15 @@ export default function AdminAnnouncements() {
         p_message: message.trim(),
         p_action_url: link || undefined,
         p_audience: audience,
+        p_title_ha: titleHa.trim(),
+        p_message_ha: messageHa.trim(),
       });
       if (error) throw new Error(error.message);
       toast.success(`Sent to ${data ?? 0} ${audienceLabel}`);
       setTitle("");
       setMessage("");
+      setTitleHa("");
+      setMessageHa("");
     } catch (error) {
       console.error("Broadcast failed", error);
       toast.error(error instanceof Error ? error.message : "Could not send the announcement");
@@ -106,6 +112,22 @@ export default function AdminAnnouncements() {
               <Textarea id="ann-message" rows={3} value={message} maxLength={MAX_MESSAGE_LENGTH} onChange={(e) => setMessage(e.target.value)}
                 placeholder="e.g. This weekend only. Tap to see the new collection." />
               <p className="text-right text-xs text-muted-foreground">{message.length}/{MAX_MESSAGE_LENGTH}</p>
+            </div>
+            <div className="space-y-3 rounded-xl border p-3">
+              <div>
+                <p className="text-sm font-medium">Hausa (optional)</p>
+                <p className="text-xs text-muted-foreground">People who chose Hausa in the app see this instead.</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ann-title-ha">Title in Hausa</Label>
+                <Input id="ann-title-ha" lang="ha" value={titleHa} maxLength={MAX_TITLE_LENGTH} onChange={(e) => setTitleHa(e.target.value)}
+                  placeholder="misali Rangwamen Sallah: 20% a kan kaftan" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ann-message-ha">Message in Hausa</Label>
+                <Textarea id="ann-message-ha" lang="ha" rows={3} value={messageHa} maxLength={MAX_MESSAGE_LENGTH} onChange={(e) => setMessageHa(e.target.value)}
+                  placeholder="misali Wannan karshen mako kawai. Taba don ganin sababbin kaya." />
+              </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">

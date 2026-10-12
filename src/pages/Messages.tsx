@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CallHistory } from "@/components/calls/CallHistory";
 import { isMissedForMe, useCallHistory } from "@/hooks/useCallHistory";
+import { withoutLeadingEmoji } from "@/lib/text";
 
 /** Chats a seller handles from the seller area: their customers, and Kano Kaftan support. */
 const SELLER_ROLES = new Set(["vendor", "support_user"]);
@@ -136,7 +137,7 @@ export default function Messages({ admin = false, seller = false }: { admin?: bo
                     </div>
                     <div className="flex items-center gap-2">
                       <p className={cn("truncate text-sm", c.unread ? "text-foreground" : "text-muted-foreground")}>
-                        {c.last_message_preview}
+                        {withoutLeadingEmoji(c.last_message_preview)}
                       </p>
                       {c.unread && <span className="ml-auto h-2.5 w-2.5 flex-shrink-0 rounded-full bg-primary" aria-label="Unread" />}
                     </div>

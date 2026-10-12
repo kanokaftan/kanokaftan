@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { playSound } from "@/lib/callTones";
+import i18n from "@/i18n/index";
 
 export interface Notification {
   id: string;
@@ -91,9 +92,10 @@ export function useNotifications() {
 
           // Show toast with optional action
           // Fixed id so several mounted instances show a single toast
-          toast(newNotif.title, {
+          const text = localizedNotification(newNotif, i18n.language ?? "en");
+          toast(text.title, {
             id: `notification-${newNotif.id}`,
-            description: newNotif.message,
+            description: text.message,
             duration: 5000,
             ...(newNotif.action_url
               ? {
@@ -194,4 +196,13 @@ export function useNotifications() {
     deleteNotification,
     clearAll,
   };
+}
+
+/** Title and message in the person's chosen language (announcements can carry a Hausa version). */
+export function localizedNotification(n: Pick<Notification, "title" | "message" | "metadata">, language: string) {
+  const meta = (n.metadata ?? {}) as { title_ha?: string; message_ha?: string };
+  if (language.startsWith("ha") && meta.title_ha && meta.message_ha) {
+    return { title: meta.title_ha, message: meta.message_ha };
+  }
+  return { title: n.title, message: n.message };
 }

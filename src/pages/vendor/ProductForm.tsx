@@ -344,7 +344,7 @@ export default function ProductForm() {
                 </div>
               </div>
               <p className="text-[10px] text-muted-foreground -mt-2">
-                Separate with commas. Leave empty if the item has one size or colour — buyers must pick one when you list several.
+                Separate with commas. Leave empty if the item has one size or colour. Buyers must pick one when you list several.
               </p>
             </CardContent>
           </Card>
@@ -453,10 +453,10 @@ export default function ProductForm() {
                 />
               </div>
 
-              <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+              <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-muted border border-border">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium flex items-center gap-2">
-                    <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+                    <Star className="h-4 w-4 text-foreground fill-foreground" />
                     {formData.featured ? "Featured on homepage" : "Homepage promotion"}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">

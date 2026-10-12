@@ -16,6 +16,7 @@ import {
   type LogisticsCompany, type LogisticsCompanyInput,
 } from "@/hooks/useLogistics";
 import { cn } from "@/lib/utils";
+import { BrandIcon } from "@/components/brand/BrandIcon";
 
 const DEFAULT_PRIORITY = 100;
 const EMPTY: LogisticsCompanyInput = {
@@ -200,7 +201,7 @@ function CompanyCard({ company, openJobs, onEdit }: { company: LogisticsCompany;
           <Button asChild size="sm" variant="outline"><a href={`tel:${company.phone}`}><Phone className="mr-1.5 h-3.5 w-3.5" />Call</a></Button>
         )}
         {wa && (
-          <Button asChild size="sm" variant="outline"><a href={`https://wa.me/${wa}`} target="_blank" rel="noreferrer"><MessageCircle className="mr-1.5 h-3.5 w-3.5" />WhatsApp</a></Button>
+          <Button asChild size="sm" variant="outline"><a href={`https://wa.me/${wa}`} target="_blank" rel="noreferrer"><BrandIcon brand="whatsapp" className="mr-1.5 h-3.5 w-3.5" />WhatsApp</a></Button>
         )}
         <Button size="sm" variant="secondary" onClick={onEdit}>Edit</Button>
       </div>
@@ -252,7 +253,7 @@ export default function AdminLogistics() {
         </div>
 
         {companies && !hasDefault && (
-          <div className="rounded-2xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+          <div className="rounded-2xl border border-border bg-muted p-3 text-sm text-foreground">
             No default company yet. Orders from areas nobody covers still get a pickup code, but you'll need to pick a company by hand.
           </div>
         )}

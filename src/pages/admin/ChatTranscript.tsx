@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useChatMediaUrl } from "@/hooks/useChat";
 import { useAdminTranscript, type TranscriptMessage } from "@/hooks/useAdminOversight";
 import { cn } from "@/lib/utils";
+import { withoutLeadingEmoji } from "@/lib/text";
 
 const ORDER_LINK = /(\/orders\/[0-9a-f-]{36})/g;
 
@@ -83,8 +84,8 @@ function Bubble({
         {message.message_type === "voice" && media ? (
           <ChatVoice path={media} right={right} />
         ) : (
-          message.body && !(message.message_type === "image" && message.body.startsWith("📷")) && (
-            <p className="whitespace-pre-wrap break-words"><Body text={message.body} right={right} /></p>
+          message.body && !(message.message_type === "image" && (message.body.startsWith("📷") || message.body === "Photo")) && (
+            <p className="whitespace-pre-wrap break-words"><Body text={withoutLeadingEmoji(message.body)} right={right} /></p>
           )
         )}
         <p className={cn("mt-0.5 text-right text-[10px]", right ? "text-primary-foreground/70" : "text-muted-foreground")}>

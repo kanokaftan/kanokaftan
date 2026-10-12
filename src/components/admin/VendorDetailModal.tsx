@@ -104,19 +104,19 @@ export function VendorDetailModal({ vendor, open, onOpenChange, canChangeBadge =
                 <p className="text-xs text-muted-foreground">Products</p>
               </CardContent>
             </Card>
-            <Card className="bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-900">
+            <Card className="bg-muted border-border">
               <CardContent className="pt-4 text-center">
-                <Wallet className="h-5 w-5 mx-auto mb-1 text-green-600" />
-                <p className="text-2xl font-bold text-green-600">
+                <Wallet className="h-5 w-5 mx-auto mb-1 text-foreground" />
+                <p className="text-2xl font-bold text-foreground">
                   {vendor.total_sales ? formatCurrency(vendor.total_sales) : "₦0"}
                 </p>
                 <p className="text-xs text-muted-foreground">Total Sales</p>
               </CardContent>
             </Card>
-            <Card className="bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-900">
+            <Card className="bg-muted border-border">
               <CardContent className="pt-4 text-center">
-                <Clock className="h-5 w-5 mx-auto mb-1 text-amber-600" />
-                <p className="text-2xl font-bold text-amber-600">
+                <Clock className="h-5 w-5 mx-auto mb-1 text-foreground" />
+                <p className="text-2xl font-bold text-foreground">
                   {vendor.pending_payout ? formatCurrency(vendor.pending_payout) : "₦0"}
                 </p>
                 <p className="text-xs text-muted-foreground">Pending</p>

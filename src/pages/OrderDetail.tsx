@@ -38,13 +38,13 @@ function formatPrice(amount: number): string {
 }
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  pending_payment: { label: "Pending Payment", color: "bg-yellow-500", icon: CreditCard },
-  payment_confirmed: { label: "Payment Confirmed", color: "bg-blue-500", icon: CheckCircle2 },
-  processing: { label: "Processing", color: "bg-blue-500", icon: Package },
-  shipped: { label: "Shipped", color: "bg-purple-500", icon: Truck },
-  out_for_delivery: { label: "Out for Delivery", color: "bg-purple-500", icon: Truck },
-  delivered: { label: "Delivered", color: "bg-green-500", icon: CheckCircle2 },
-  completed: { label: "Completed", color: "bg-green-500", icon: CheckCircle2 },
+  pending_payment: { label: "Pending Payment", color: "bg-primary", icon: CreditCard },
+  payment_confirmed: { label: "Payment Confirmed", color: "bg-primary", icon: CheckCircle2 },
+  processing: { label: "Processing", color: "bg-primary", icon: Package },
+  shipped: { label: "Shipped", color: "bg-primary", icon: Truck },
+  out_for_delivery: { label: "Out for Delivery", color: "bg-primary", icon: Truck },
+  delivered: { label: "Delivered", color: "bg-primary", icon: CheckCircle2 },
+  completed: { label: "Completed", color: "bg-primary", icon: CheckCircle2 },
   cancelled: { label: "Cancelled", color: "bg-red-500", icon: Package },
 };
 
@@ -254,12 +254,12 @@ export default function OrderDetail() {
 
         {/* Payment Required Banner */}
         {showPayButton && (
-          <div className="mb-4 rounded-xl bg-yellow-50 border border-yellow-200 p-4">
-            <div className="flex items-center gap-2 text-yellow-800 mb-3">
+          <div className="mb-4 rounded-xl bg-muted border border-border p-4">
+            <div className="flex items-center gap-2 text-foreground mb-3">
               <CreditCard className="h-5 w-5" />
               <span className="font-medium">{t("orders.paymentRequired")}</span>
             </div>
-            <p className="text-sm text-yellow-700 mb-3">
+            <p className="text-sm text-foreground mb-3">
               {t("orders.paymentRequiredDesc")}
             </p>
             <Button
@@ -284,7 +284,7 @@ export default function OrderDetail() {
                 type="button"
                 onClick={handleManualVerify}
                 disabled={paying}
-                className="mt-3 flex w-full items-center justify-center gap-1.5 text-sm font-medium text-yellow-800 underline-offset-2 hover:underline dark:text-yellow-200"
+                className="mt-3 flex w-full items-center justify-center gap-1.5 text-sm font-medium text-foreground underline-offset-2 hover:underline"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 {t("orders.alreadyPaidCheck", "Already paid? Check again")}
@@ -388,7 +388,7 @@ export default function OrderDetail() {
               <span className="text-muted-foreground">{t("orders.shipping")}</span>
               <span>
                 {order.shipping_fee === 0 ? (
-                  <span className="text-green-600">{t("orders.free")}</span>
+                  <span className="text-foreground">{t("orders.free")}</span>
                 ) : (
                   formatPrice(order.shipping_fee)
                 )}

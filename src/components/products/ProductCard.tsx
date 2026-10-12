@@ -105,7 +105,7 @@ export function ProductCard({ product, onQuickView, hideFloatingCart = false, co
         await navigator.share(shareData);
       } else {
         await navigator.clipboard.writeText(productUrl);
-        toast.success("Product link copied! 🎉", {
+        toast.success("Product link copied", {
           description: "Share it with friends",
         });
       }
@@ -113,7 +113,7 @@ export function ProductCard({ product, onQuickView, hideFloatingCart = false, co
       // User cancelled share or error
       if ((error as Error).name !== 'AbortError') {
         await navigator.clipboard.writeText(productUrl);
-        toast.success("Product link copied! 🎉");
+        toast.success("Product link copied");
       }
     }
   };

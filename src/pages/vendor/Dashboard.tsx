@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { formatDistanceToNowStrict } from "date-fns";
 import {
   AlertTriangle, BadgeCheck, ChevronRight, CircleFadingPlus, Clock, Heart, Megaphone, MessageCircle, MessageSquareReply, Package, PackageX, Plus,
@@ -55,8 +56,8 @@ interface Task {
 
 const TONES: Record<Task["tone"], string> = {
   red: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300",
-  amber: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200",
-  blue: "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200",
+  amber: "bg-muted text-foreground",
+  blue: "bg-muted text-foreground",
 };
 
 function QuickAction({ icon: Icon, label, to, onClick }: { icon: LucideIcon; label: string; to?: string; onClick?: () => void }) {
@@ -100,15 +101,15 @@ function GrowCard({ vendorId }: { vendorId: string | null }) {
 /** Followers, likes and rating at a glance; each opens the full list. */
 function FansRow({ summary }: { summary: FanSummary | undefined }) {
   const tiles = [
-    { icon: UserCheck, label: "Followers", value: summary?.followers, week: summary?.followers_week, to: "/vendor/fans", tint: "text-sky-600" },
-    { icon: Heart, label: "Likes", value: summary?.likes, week: summary?.likes_week, to: "/vendor/fans?tab=likes", tint: "text-rose-500" },
+    { icon: UserCheck, label: "Followers", value: summary?.followers, week: summary?.followers_week, to: "/vendor/fans", tint: "text-foreground" },
+    { icon: Heart, label: "Likes", value: summary?.likes, week: summary?.likes_week, to: "/vendor/fans?tab=likes", tint: "text-foreground" },
     {
       icon: Star,
       label: summary?.reviews ? `${summary.reviews} review${summary.reviews === 1 ? "" : "s"}` : "Reviews",
       value: summary?.rating != null ? summary.rating.toFixed(1) : summary ? "–" : undefined,
       week: 0,
       to: "/vendor/reviews",
-      tint: "text-amber-500",
+      tint: "text-foreground",
     },
   ];
   return (
@@ -118,7 +119,7 @@ function FansRow({ summary }: { summary: FanSummary | undefined }) {
           <t.icon className={cn("h-4 w-4", t.tint, t.icon === Heart || t.icon === Star ? "fill-current" : "")} aria-hidden="true" />
           <p className="mt-1 text-lg font-semibold tabular-nums">{t.value ?? "…"}</p>
           <p className="truncate text-[11px] text-muted-foreground">
-            {t.label}{t.week ? <span className="font-medium text-emerald-600"> +{t.week}</span> : null}
+            {t.label}{t.week ? <span className="font-medium text-foreground"> +{t.week}</span> : null}
           </p>
         </Link>
       ))}
@@ -128,16 +129,15 @@ function FansRow({ summary }: { summary: FanSummary | undefined }) {
 
 /** One-line reminder of how sellers earn, opening the full explanation. */
 function EarnCard() {
+  const { t } = useTranslation();
   const { data: rates } = useEarningRates();
   return (
     <Link to="/vendor/earnings" className="flex items-center gap-3 rounded-2xl border bg-card p-3.5 active:bg-muted/60">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-        <Wallet className="h-5 w-5" />
-      </span>
+      <Wallet className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
       <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold">How you earn</span>
+        <span className="block text-sm font-semibold">{t("seller.earn.pageTitle")}</span>
         <span className="block text-xs text-muted-foreground">
-          App orders: {rates && rates.checkout > 0 ? `${100 - rates.checkout}%` : "100%"} of your price · Through our chat: {100 - (rates?.chat ?? 10)}% · Private deals: all yours
+          {t("seller.earn.summary", { app: 100 - (rates?.checkout ?? 0), chat: 100 - (rates?.chat ?? 10) })}
         </span>
       </span>
       <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />

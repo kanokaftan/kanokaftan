@@ -196,7 +196,7 @@ export default function Cart() {
 
         {/* Current discount badge */}
         {currentDiscount && (
-          <div className="mt-4 flex items-center justify-center gap-2 rounded-full bg-green-100 px-4 py-2 text-sm font-medium text-green-700">
+          <div className="mt-4 flex items-center justify-center gap-2 rounded-full bg-muted px-4 py-2 text-sm font-medium text-foreground">
             <Percent className="h-4 w-4" />
             <span>You're getting {currentDiscount}!</span>
           </div>

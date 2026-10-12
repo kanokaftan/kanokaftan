@@ -44,7 +44,7 @@ export function ReviewSummary({
             return (
               <div key={stars} className="flex items-center gap-2 text-xs">
                 <span className="w-3 text-muted-foreground">{stars}</span>
-                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                <Star className="h-3 w-3 fill-foreground text-foreground" />
                 <Progress value={percentage} className="h-1.5 flex-1" />
                 <span className="w-6 text-right text-muted-foreground">{count}</span>
               </div>
@@ -55,7 +55,7 @@ export function ReviewSummary({
 
       {/* Recommendation */}
       {recommendedPercent > 0 && (
-        <div className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-green-50 p-2 text-sm text-green-700 dark:bg-green-950 dark:text-green-400">
+        <div className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-muted p-2 text-sm text-foreground">
           <ThumbsUp className="h-4 w-4" />
           <span>{recommendedPercent}% of buyers recommend this product</span>
         </div>

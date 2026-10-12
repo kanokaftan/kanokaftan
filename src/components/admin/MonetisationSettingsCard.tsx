@@ -104,7 +104,7 @@ export function MonetisationSettingsCard() {
           <CardTitle className="text-lg">Verification & promotion fees</CardTitle>
         </div>
         <CardDescription>
-          What sellers pay for the verified badge and for homepage spots. Set any fee to 0 to make it free —
+          What sellers pay for the verified badge and for homepage spots. Set any fee to 0 to make it free:
           requests then go straight to review (verification) or start immediately (promotions).
         </CardDescription>
       </CardHeader>

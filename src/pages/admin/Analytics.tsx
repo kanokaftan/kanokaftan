@@ -79,7 +79,7 @@ function Delta({ now, before }: { now: number; before: number }) {
   const change = ((now - before) / before) * 100;
   const Icon = Math.abs(change) < 0.5 ? Minus : change > 0 ? ArrowUpRight : ArrowDownRight;
   return (
-    <span className={cn("inline-flex items-center gap-0.5 text-xs font-medium", change > 0 ? "text-green-700 dark:text-green-400" : change < 0 ? "text-red-700 dark:text-red-400" : "text-muted-foreground")}>
+    <span className={cn("inline-flex items-center gap-0.5 text-xs font-medium", change > 0 ? "text-foreground" : change < 0 ? "text-red-700 dark:text-red-400" : "text-muted-foreground")}>
       <Icon className="h-3.5 w-3.5" aria-hidden="true" />
       {Math.abs(change).toFixed(0)}%<span className="sr-only">{change >= 0 ? " up" : " down"} from the previous period</span>
     </span>
@@ -282,8 +282,8 @@ function LiveCard() {
     <Card>
       <CardContent className="flex items-start gap-3 p-4">
         <span className="relative mt-1.5 flex h-2.5 w-2.5" aria-hidden="true">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-60" />
-          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-sm">

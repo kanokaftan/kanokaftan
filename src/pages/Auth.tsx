@@ -280,9 +280,9 @@ export default function AuthPage() {
           {mode === "forgot" && (
             <div className="mt-8">
               {forgotSent ? (
-                <div className="rounded-xl bg-green-50 border border-green-200 p-4 text-center">
-                  <p className="font-medium text-green-800 mb-1">{t("auth.checkEmail")}</p>
-                  <p className="text-sm text-green-700">{t("auth.resetEmailSent")} <strong>{forgotEmail}</strong>.</p>
+                <div className="rounded-xl bg-muted border border-border p-4 text-center">
+                  <p className="font-medium text-foreground mb-1">{t("auth.checkEmail")}</p>
+                  <p className="text-sm text-foreground">{t("auth.resetEmailSent")} <strong>{forgotEmail}</strong>.</p>
                   <button
                     type="button"
                     onClick={() => { setMode("login"); setForgotSent(false); }}

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Bell, Package, CreditCard, AlertCircle, Info, Star, Megaphone, MessageCircle, X, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNotifications, Notification } from "@/hooks/useNotifications";
+import { useNotifications, Notification, localizedNotification } from "@/hooks/useNotifications";
 import { formatDistanceToNow } from "date-fns";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 const categoryIcons: Record<string, React.ElementType> = {
   order: Package,
@@ -19,11 +20,11 @@ const categoryIcons: Record<string, React.ElementType> = {
 };
 
 const typeColors: Record<string, string> = {
-  info: "bg-blue-100 text-blue-600",
-  success: "bg-green-100 text-green-600",
-  warning: "bg-yellow-100 text-yellow-600",
+  info: "bg-muted text-foreground",
+  success: "bg-muted text-foreground",
+  warning: "bg-muted text-foreground",
   order: "bg-primary/10 text-primary",
-  payment: "bg-emerald-100 text-emerald-600",
+  payment: "bg-muted text-foreground",
   system: "bg-muted text-muted-foreground",
 };
 
@@ -37,6 +38,8 @@ export interface NotificationItemProps {
 
 export function NotificationItem({ notification, isNew, onMarkAsRead, onDelete, onNavigate }: NotificationItemProps) {
   const Icon = categoryIcons[notification.category] || Info;
+  const { i18n } = useTranslation();
+  const text = localizedNotification(notification, i18n.language ?? "en");
 
   return (
     <div
@@ -64,10 +67,10 @@ export function NotificationItem({ notification, isNew, onMarkAsRead, onDelete, 
       {/* WhatsApp-style divider: starts after the icon, none under the last row */}
       <div className="min-w-0 flex-1 border-b border-border/60 py-3 pr-10 group-last:border-b-0">
         <p className={cn("line-clamp-2 break-words text-sm leading-snug", !notification.is_read ? "font-semibold text-foreground" : "font-medium text-foreground/80")}>
-          {notification.title}
+          {text.title}
         </p>
         <p className="mt-0.5 line-clamp-2 break-words text-xs leading-relaxed text-muted-foreground">
-          {notification.message}
+          {text.message}
         </p>
         <p className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
           {!notification.is_read && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />}
