@@ -69,7 +69,10 @@ export default function Terms() {
           body: (
             <ul>
               <li>Sellers must list only items they have the right to sell, describe them honestly, and ship on time.</li>
-              <li>We charge a commission on each sale made through Kano Kaftan, shown in your seller dashboard. Payouts are sent to your verified bank account through Paystack: part when the order is paid and the rest after delivery is confirmed or the delivery window ends.</li>
+              <li>Orders customers place and pay for in the app: the seller receives their full item price and Kano Kaftan keeps the delivery fee paid by the customer.</li>
+              <li>Orders Kano Kaftan arranges for a customer through its chat: Kano Kaftan keeps a commission (shown in your seller dashboard) plus the delivery fee.</li>
+              <li>Deals a seller closes privately with a customer outside Kano Kaftan checkout carry no Kano Kaftan fees, and are not covered by Kano Kaftan buyer protection or delivery.</li>
+              <li>Payouts are sent to your verified bank account through Paystack: part when the order is paid and the rest after delivery is confirmed or the delivery window ends.</li>
               <li>We may hold payouts while a dispute is open and may deduct refunds owed to customers.</li>
               <li>Sellers are responsible for their own taxes.</li>
             </ul>

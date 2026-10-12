@@ -121,7 +121,8 @@ export function PayoutAccountCard({ vendorId }: { vendorId: string }) {
           Payout Account
         </CardTitle>
         <CardDescription className="text-xs md:text-sm">
-          You get half of each sale (after commission) when the customer pays, and the rest when they confirm delivery.
+          For orders through Kano Kaftan you get half when the customer pays and the rest after delivery. App orders pay
+          your full price; orders we sell for you through our chat have a small commission.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

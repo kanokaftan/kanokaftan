@@ -889,6 +889,7 @@ export type Database = {
           verification_fee: number
           verification_period_days: number | null
           auto_release_days: number
+          checkout_commission_percent: number
           commission_percent: number
           id: number
           updated_at: string
@@ -901,6 +902,7 @@ export type Database = {
           verification_fee?: number
           verification_period_days?: number | null
           auto_release_days?: number
+          checkout_commission_percent?: number
           commission_percent?: number
           id?: number
           updated_at?: string
@@ -913,6 +915,7 @@ export type Database = {
           verification_fee?: number
           verification_period_days?: number | null
           auto_release_days?: number
+          checkout_commission_percent?: number
           commission_percent?: number
           id?: number
           updated_at?: string

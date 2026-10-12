@@ -259,7 +259,7 @@ export function usePlatformSettings() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("platform_settings")
-        .select("commission_percent, auto_release_days")
+        .select("commission_percent, checkout_commission_percent, auto_release_days")
         .eq("id", 1)
         .single();
       if (error) throw error;
@@ -268,7 +268,7 @@ export function usePlatformSettings() {
   });
 
   const updateSettings = useMutation({
-    mutationFn: async (values: { commission_percent: number; auto_release_days: number }) => {
+    mutationFn: async (values: { commission_percent: number; checkout_commission_percent: number; auto_release_days: number }) => {
       const { error } = await supabase.from("platform_settings").update(values).eq("id", 1);
       if (error) throw error;
     },

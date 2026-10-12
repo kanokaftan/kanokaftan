@@ -54,6 +54,7 @@ import VendorPromote from "./pages/vendor/Promote";
 import VendorStories from "./pages/vendor/Stories";
 import VendorFans from "./pages/vendor/Fans";
 import VendorReviews from "./pages/vendor/Reviews";
+import VendorEarnings from "./pages/vendor/Earnings";
 import StoryViewer from "./pages/StoryViewer";
 import NotificationsPage from "./pages/Notifications";
 import SellerApply from "./pages/SellerApply";
@@ -143,6 +144,7 @@ const App = () => (
             <Route path="/vendor/stories" element={<VendorStories />} />
             <Route path="/vendor/fans" element={<VendorFans />} />
             <Route path="/vendor/reviews" element={<VendorReviews />} />
+            <Route path="/vendor/earnings" element={<VendorEarnings />} />
             <Route path="/stories/:vendorId" element={<StoryViewer />} />
 
             {/* Admin Routes */}

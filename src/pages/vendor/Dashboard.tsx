@@ -2,12 +2,13 @@ import { Link } from "react-router-dom";
 import { formatDistanceToNowStrict } from "date-fns";
 import {
   AlertTriangle, BadgeCheck, ChevronRight, CircleFadingPlus, Clock, Heart, Megaphone, MessageCircle, MessageSquareReply, Package, PackageX, Plus,
-  Share2, Star, Truck, UserCheck, type LucideIcon,
+  Share2, Star, Truck, UserCheck, Wallet, type LucideIcon,
 } from "lucide-react";
 import { VendorLayout, useVendorAuth } from "@/components/vendor/VendorLayout";
 import { PayoutsCard } from "@/components/vendor/PayoutsCard";
 import { ShopSetupChecklist } from "@/components/vendor/ShopSetupChecklist";
 import { ShopStatsCard } from "@/components/vendor/ShopStatsCard";
+import { useEarningRates } from "@/components/vendor/HowYouEarn";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useVendorProducts } from "@/hooks/useVendorProducts";
 import { useVendorOrders } from "@/hooks/useVendorOrders";
@@ -122,6 +123,25 @@ function FansRow({ summary }: { summary: FanSummary | undefined }) {
         </Link>
       ))}
     </section>
+  );
+}
+
+/** One-line reminder of how sellers earn, opening the full explanation. */
+function EarnCard() {
+  const { data: rates } = useEarningRates();
+  return (
+    <Link to="/vendor/earnings" className="flex items-center gap-3 rounded-2xl border bg-card p-3.5 active:bg-muted/60">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+        <Wallet className="h-5 w-5" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold">How you earn</span>
+        <span className="block text-xs text-muted-foreground">
+          App orders: {rates && rates.checkout > 0 ? `${100 - rates.checkout}%` : "100%"} of your price · Through our chat: {100 - (rates?.chat ?? 10)}% · Private deals: all yours
+        </span>
+      </span>
+      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+    </Link>
   );
 }
 
@@ -256,6 +276,8 @@ export default function VendorDashboard() {
         </section>
 
         <ShopStatsCard />
+
+        <EarnCard />
 
         {userId && <PayoutsCard vendorId={userId} />}
 

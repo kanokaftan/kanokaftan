@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import {
-  BadgeCheck, Bell, ChevronRight, CircleFadingPlus, ExternalLink, Headset, Heart, LogOut, Megaphone, Settings, Share2, ShoppingBag, Star,
+  BadgeCheck, Bell, ChevronRight, CircleFadingPlus, ExternalLink, Headset, Heart, LogOut, Megaphone, Settings, Share2, ShoppingBag, Star, Wallet,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -132,6 +132,11 @@ export default function VendorMore() {
               to: "/vendor/reviews",
             },
           ]}
+        />
+
+        <Group
+          title="Money"
+          rows={[{ icon: Wallet, label: "How you earn", hint: "Your 3 ways to sell and what Kano Kaftan keeps", to: "/vendor/earnings" }]}
         />
 
         <Group

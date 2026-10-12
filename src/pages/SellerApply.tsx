@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Eye, EyeOff, Handshake, Loader2, Store, Wallet, ShieldCheck, Megaphone, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, Loader2, Store, ShieldCheck, Megaphone, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { HowYouEarn } from "@/components/vendor/HowYouEarn";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -95,14 +96,13 @@ function HowSellingWorks() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("platform_settings")
-        .select("commission_percent, verification_fee")
+        .select("verification_fee")
         .eq("id", 1)
         .maybeSingle();
       if (error) throw error;
       return data;
     },
   });
-  const commission = settings?.commission_percent ?? 10;
 
   return (
     <Card>
@@ -114,19 +114,12 @@ function HowSellingWorks() {
           <Store className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary" />
           <p><strong>Free to apply.</strong> We review every shop. Once approved you get your own shop page and seller dashboard.</p>
         </div>
-        <div className="flex gap-3">
-          <Wallet className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary" />
-          <p>
-            <strong>Safe payments.</strong> Customers pay Kano Kaftan. You receive half when the order is paid and the rest once
-            it is delivered, minus a {commission}% commission, straight to your bank account.
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Handshake className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary" />
-          <p>
-            <strong>Close deals your way.</strong> Chat and call customers in the app, agree prices, and sell to them
-            personally if you prefer. Commission only applies to orders paid through Kano Kaftan, which also give your
-            buyers payment protection.
+        <div>
+          <p className="mb-2 font-semibold">Three ways to earn</p>
+          <HowYouEarn />
+          <p className="mt-2 text-xs text-muted-foreground">
+            Customers pay delivery separately; it never comes out of your price. Orders through Kano Kaftan pay you half when
+            the customer pays and the rest after delivery, straight to your bank account.
           </p>
         </div>
         <div className="flex gap-3">
