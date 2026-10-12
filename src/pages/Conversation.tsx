@@ -447,15 +447,16 @@ export default function Conversation({ admin = false, seller = false }: { admin?
         {/* Header */}
         <div
           className={cn(
-            "liquid-glass absolute inset-x-0 top-0 z-30 flex items-center gap-2.5 border-b border-white/30 px-2 py-2 dark:border-white/10",
+            // No bar: floating glass pieces over the chat, like WhatsApp; the messages fade out behind them.
+            "absolute inset-x-0 top-0 z-30 flex items-center gap-2 bg-gradient-to-b from-background via-background/85 to-transparent px-3 pb-5 pt-2",
             !admin && "pt-[calc(env(safe-area-inset-top)+0.5rem)]",
           )}
         >
-          <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 rounded-full" onClick={() => navigate(basePath)} aria-label={t("chat.backToMessages")}>
+          <Button variant="ghost" size="icon" className="liquid-glass liquid-glass-press h-12 w-12 shrink-0 rounded-full" onClick={() => navigate(basePath)} aria-label={t("chat.backToMessages")}>
             <ChevronLeft className="h-5 w-5" />
           </Button>
           {conversation ? (
-            <>
+            <div className="liquid-glass flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-full py-1 pl-1 pr-4">
               <div className="relative shrink-0">
                 <Avatar className="h-10 w-10 ring-2 ring-white/70 shadow-sm dark:ring-white/10">
                   <AvatarImage src={conversation.other_party_avatar || undefined} alt="" />
@@ -491,33 +492,33 @@ export default function Conversation({ admin = false, seller = false }: { admin?
                   )
                 )}
               </div>
-            </>
+            </div>
           ) : (
-            <Skeleton className="h-10 flex-1 rounded-full" />
+            <Skeleton className="h-12 flex-1 rounded-full" />
           )}
           {conversation && (
+            <div className="liquid-glass flex h-12 shrink-0 items-center rounded-full px-1">
             <Button
               variant="ghost"
               size="icon"
-              className="liquid-glass h-10 w-10 shrink-0 rounded-full"
-              aria-label={`Voice call ${conversation.other_party_name}`}
-              disabled={inCall || chatBlocked}
-              onClick={() => startCall(conversation.id, { name: conversation.other_party_name, avatar: conversation.other_party_avatar })}
-            >
-              <Phone className="h-5 w-5" />
-            </Button>
-          )}
-          {conversation && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="liquid-glass h-10 w-10 shrink-0 rounded-full"
+              className="h-9 w-10 shrink-0 rounded-full hover:bg-foreground/5"
               aria-label={`Video call ${conversation.other_party_name}`}
               disabled={inCall || chatBlocked}
               onClick={() => startCall(conversation.id, { name: conversation.other_party_name, avatar: conversation.other_party_avatar }, "video")}
             >
-              <Video className="h-5 w-5" />
+              <Video className="h-[22px] w-[22px]" />
             </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-10 shrink-0 rounded-full hover:bg-foreground/5"
+              aria-label={`Voice call ${conversation.other_party_name}`}
+              disabled={inCall || chatBlocked}
+              onClick={() => startCall(conversation.id, { name: conversation.other_party_name, avatar: conversation.other_party_avatar })}
+            >
+              <Phone className="h-[21px] w-[21px]" />
+            </Button>
+            </div>
           )}
           {conversation && canModerate && (
             <DropdownMenu>
@@ -525,7 +526,7 @@ export default function Conversation({ admin = false, seller = false }: { admin?
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-10 w-8 shrink-0 rounded-full"
+                  className="liquid-glass liquid-glass-press h-12 w-9 shrink-0 rounded-full"
                   aria-label="More options"
                 >
                   <MoreVertical className="h-5 w-5" />
@@ -549,7 +550,7 @@ export default function Conversation({ admin = false, seller = false }: { admin?
             </DropdownMenu>
           )}
           {conversation?.role === "support_team" && conversation.other_party_id && (
-            <Button size="sm" className="shrink-0 rounded-full" onClick={() => setOrderOpen(true)}>
+            <Button size="sm" className="h-12 shrink-0 rounded-full" onClick={() => setOrderOpen(true)}>
               <ShoppingBag className="mr-1 h-4 w-4" />
               {t("chat.createOrder")}
             </Button>
@@ -1097,7 +1098,8 @@ function MessageBubble({
   const isImage = message.message_type === "image" && !!message.media_path;
   const isVoice = message.message_type === "voice" && !!message.media_path;
   // Media messages carry a default label body; any other body on an image is its caption.
-  const caption = isImage && message.body !== MEDIA_LABELS.image ? message.body : null;
+  const cleanBody = withoutLeadingEmoji(message.body);
+  const caption = isImage && cleanBody && cleanBody !== MEDIA_LABELS.image ? cleanBody : null;
 
   return (
     <div
@@ -1106,7 +1108,7 @@ function MessageBubble({
         isImage ? "overflow-hidden p-1" : isVoice ? "px-2.5 py-2" : "px-3.5 py-2",
         quoted && !isImage && "pt-1.5",
         mine
-          ? "rounded-br-md bg-gradient-to-br from-primary to-primary/85 text-primary-foreground shadow-[0_6px_20px_-8px_hsl(var(--primary)/0.6)]"
+          ? "chat-bubble-out rounded-br-md text-primary-foreground shadow-[0_6px_20px_-8px_hsl(var(--chat-out)/0.6)]"
           : "rounded-bl-md border border-white/50 bg-background/80 shadow-[0_4px_16px_-8px_rgba(0,0,0,0.2)] backdrop-blur dark:border-white/10",
       )}
     >

@@ -222,7 +222,7 @@ export function VoicePlayer({
         aria-label={playing ? "Pause voice note" : "Play voice note"}
         className={cn(
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-full shadow-sm transition-transform active:scale-90 disabled:opacity-50",
-          dark ? "bg-white/90 text-primary" : "bg-primary text-primary-foreground",
+          dark ? "bg-white/90 text-[hsl(var(--chat-out))]" : "bg-primary text-primary-foreground",
         )}
       >
         {loading && waiting ? (

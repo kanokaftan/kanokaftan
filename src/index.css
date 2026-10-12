@@ -28,6 +28,8 @@
 
     --primary: 0 0% 8%;
     --primary-foreground: 0 0% 98%;
+    /* Outgoing chat bubble: always dark enough for white text and voice controls. */
+    --chat-out: 0 0% 8%;
 
     --secondary: 0 0% 94%;
     --secondary-foreground: 0 0% 8%;
@@ -69,6 +71,7 @@
 
     --primary: 0 0% 94%;
     --primary-foreground: 0 0% 8%;
+    --chat-out: 162 62% 22%;
 
     --secondary: 0 0% 18%;
     --secondary-foreground: 0 0% 94%;
@@ -218,6 +221,14 @@
    surface where the browser can't blur (and for "reduce transparency").
    ───────────────────────────────────────────────────────────────────────── */
 @layer components {
+  /* Outgoing chat bubble. Anything inside that uses primary-foreground
+     (time, ticks, quotes, voice notes) stays white in light and dark mode. */
+  .chat-bubble-out {
+    --primary-foreground: 0 0% 100%;
+    background-color: hsl(var(--chat-out));
+    color: hsl(var(--primary-foreground));
+  }
+
   .liquid-glass {
     --lg-tint: 0 0% 100%;
     --lg-tint-alpha: 0.42;
