@@ -84,9 +84,46 @@ export function usePayment() {
     }
   };
 
+  /**
+   * One tap from "Pay now" to the Paystack page. If an earlier checkout was
+   * opened and abandoned, first check it really wasn't paid, then start a
+   * fresh one (the server issues a new reference each time).
+   */
+  const payOrder = async (
+    order: { id: string; payment_reference?: string | null },
+    email: string,
+  ): Promise<PayOrderResult> => {
+    if (order.payment_reference) {
+      const earlier = await verifyPayment(order.payment_reference, order.id);
+      if (earlier.success) return { outcome: "already_paid", amount: earlier.amount };
+    }
+    const started = await initiatePayment(order.id, email);
+    if (started.success && started.authorization_url) {
+      window.location.assign(started.authorization_url);
+      return { outcome: "redirecting" };
+    }
+    return { outcome: "failed", error: started.error || "We couldn't open the payment page. Please try again.", code: started.code };
+  };
+
   return {
     initiatePayment,
     verifyPayment,
+    payOrder,
     isProcessing,
   };
+}
+
+export type PayOrderResult =
+  | { outcome: "redirecting" }
+  | { outcome: "already_paid"; amount?: number }
+  | { outcome: "failed"; error: string; code?: string };
+
+/**
+ * Paystack needs an email. Accounts made with a phone number may not have one,
+ * so give Paystack a stable placeholder instead of blocking the payment.
+ */
+export function paymentEmail(user: { id: string; email?: string | null } | null | undefined): string | null {
+  if (!user) return null;
+  const email = user.email?.trim();
+  return email ? email : `customer-${user.id.slice(0, 8)}@kanokaftan.shop`;
 }

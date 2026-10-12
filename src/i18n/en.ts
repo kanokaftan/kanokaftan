@@ -169,6 +169,7 @@ export const en = {
     paymentProcessing: "Payment Processing",
     paymentProcessingDesc: "Your payment is being verified. Click below to check the status.",
     verifyPayment: "Verify Payment Status",
+    alreadyPaidCheck: "Already paid? Check again",
     verifying: "Verifying...",
     verifyingPayment: "Verifying payment...",
     confirmReceipt: "Confirm Receipt",

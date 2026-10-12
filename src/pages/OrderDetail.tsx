@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrders, Order } from "@/hooks/useOrders";
-import { usePayment } from "@/hooks/usePayment";
+import { paymentEmail, usePayment } from "@/hooks/usePayment";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -58,12 +58,17 @@ export default function OrderDetail() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const { orders, isLoading } = useOrders();
-  const { initiatePayment, verifyPayment, isProcessing } = usePayment();
+  const { payOrder, verifyPayment, isProcessing } = usePayment();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [order, setOrder] = useState<Order | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [hasAutoVerified, setHasAutoVerified] = useState(false);
+  // "?pay=1" links (e.g. sent in chat or WhatsApp) open checkout straight away;
+  // payOrder() checks any earlier attempt itself, so skip the separate auto-check.
+  const payOnOpen = searchParams.get("pay") === "1";
+  const [hasAutoVerified, setHasAutoVerified] = useState(payOnOpen);
+  const [hasAutoPaid, setHasAutoPaid] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const refetchOrders = useCallback(() => {
     if (user?.id) {
@@ -126,21 +131,41 @@ export default function OrderDetail() {
     }
   }, [orders, isLoading, id]);
 
-  const handleRetryPayment = async () => {
-    if (!order || !user?.email) {
-      toast.error("Unable to process payment");
+  const handleRetryPayment = useCallback(async () => {
+    const email = paymentEmail(user);
+    if (!order || !email) {
+      toast.error("Please sign in to pay for this order.");
       return;
     }
-
-    const paymentResult = await initiatePayment(order.id, user.email);
-
-    if (paymentResult.success && paymentResult.authorization_url) {
-      toast.success("Redirecting to payment...");
-      window.location.href = paymentResult.authorization_url;
-    } else {
-      toast.error(paymentResult.error || "Failed to initialize payment");
+    setIsRedirecting(true);
+    try {
+      const result = await payOrder(order, email);
+      if (result.outcome === "redirecting") {
+        toast.success("Opening secure checkout…");
+        return; // keep the button busy while the browser leaves for Paystack
+      }
+      if (result.outcome === "already_paid") {
+        recordPurchase(order.id, Number(order.total));
+        toast.success("Payment confirmed!");
+        refetchOrders();
+      } else {
+        toast.error(result.error);
+      }
+    } catch (error) {
+      console.error("[OrderDetail] could not start payment", { orderId: order.id, error });
+      toast.error("We couldn't open the payment page. Please try again.");
     }
-  };
+    setIsRedirecting(false);
+  }, [order, user, payOrder, refetchOrders]);
+
+  useEffect(() => {
+    if (!payOnOpen || hasAutoPaid || !order) return;
+    setHasAutoPaid(true);
+    window.history.replaceState({}, "", `/orders/${order.id}`);
+    if (order.status === "pending_payment" && order.payment_status === "pending") {
+      handleRetryPayment();
+    }
+  }, [payOnOpen, hasAutoPaid, order, handleRetryPayment]);
 
   if (isLoading || isVerifying) {
     return (
@@ -177,12 +202,11 @@ export default function OrderDetail() {
 
   const status = statusConfig[order.status] || statusConfig.processing;
   const StatusIcon = status.icon;
-  const showPayButton = order.status === "pending_payment" &&
-                        order.payment_status === "pending" &&
-                        !order.payment_reference;
-  const showVerifyButton = order.payment_status === "pending" &&
-                           order.payment_reference &&
-                           !isVerifying;
+  // Still unpaid: always offer to pay, even after an abandoned checkout.
+  const showPayButton = order.status === "pending_payment" && order.payment_status === "pending";
+  // A checkout was started before: also let the buyer re-check it.
+  const showVerifyButton = showPayButton && !!order.payment_reference && !isVerifying;
+  const paying = isProcessing || isRedirecting;
 
   const handleManualVerify = async () => {
     if (!order?.payment_reference) return;
@@ -194,8 +218,12 @@ export default function OrderDetail() {
         toast.success("Payment confirmed!");
         refetchOrders();
       } else {
-        toast.error(result.error || "Verification failed");
+        // Usually the checkout was closed before paying; point them back to Pay.
+        toast.info("We haven't received this payment yet. Tap Pay to finish paying.");
       }
+    } catch (error) {
+      console.error("[OrderDetail] manual payment check failed", { orderId: order.id, error });
+      toast.error("We couldn't check the payment. Please try again.");
     } finally {
       setIsVerifying(false);
     }
@@ -232,9 +260,9 @@ export default function OrderDetail() {
             <Button
               className="w-full"
               onClick={handleRetryPayment}
-              disabled={isProcessing}
+              disabled={paying}
             >
-              {isProcessing ? (
+              {paying ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   {t("checkout.processing")}
@@ -246,37 +274,17 @@ export default function OrderDetail() {
                 </>
               )}
             </Button>
-          </div>
-        )}
-
-        {/* Verify Payment Banner */}
-        {showVerifyButton && (
-          <div className="mb-4 rounded-xl bg-blue-50 border border-blue-200 p-4">
-            <div className="flex items-center gap-2 text-blue-800 mb-3">
-              <RefreshCw className="h-5 w-5" />
-              <span className="font-medium">{t("orders.paymentProcessing")}</span>
-            </div>
-            <p className="text-sm text-blue-700 mb-3">
-              {t("orders.paymentProcessingDesc")}
-            </p>
-            <Button
-              className="w-full"
-              variant="outline"
-              onClick={handleManualVerify}
-              disabled={isVerifying}
-            >
-              {isVerifying ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t("orders.verifying")}
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  {t("orders.verifyPayment")}
-                </>
-              )}
-            </Button>
+            {showVerifyButton && (
+              <button
+                type="button"
+                onClick={handleManualVerify}
+                disabled={paying}
+                className="mt-3 flex w-full items-center justify-center gap-1.5 text-sm font-medium text-yellow-800 underline-offset-2 hover:underline dark:text-yellow-200"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                {t("orders.alreadyPaidCheck", "Already paid? Check again")}
+              </button>
+            )}
           </div>
         )}
 

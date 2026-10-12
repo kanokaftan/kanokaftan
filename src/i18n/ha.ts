@@ -169,6 +169,7 @@ export const ha = {
     paymentProcessing: "Ana Aiwatar da Biya",
     paymentProcessingDesc: "Ana tabbatar da biyan ku. Danna a ƙasa don duba halin.",
     verifyPayment: "Tabbatar da Halin Biya",
+    alreadyPaidCheck: "Kun riga kun biya? Sake dubawa",
     verifying: "Ana Tabbatarwa...",
     verifyingPayment: "Ana tabbatar da biya...",
     confirmReceipt: "Tabbatar da Karɓa",

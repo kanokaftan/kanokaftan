@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, CreditCard, Package, ShieldCheck } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { CheckCircle2, Clock, CreditCard, Loader2, Package, ShieldCheck } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { paymentEmail, usePayment } from "@/hooks/usePayment";
 import { formatNaira } from "@/hooks/useVerification";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -55,9 +59,63 @@ function useChatOrder(orderId: string) {
   });
 }
 
-/** Same rule as the order page: unpaid and no payment started yet. */
+/** Same rule as the order page: still unpaid (an abandoned checkout can be retried). */
 function needsPayment(order: ChatOrder): boolean {
-  return order.status === "pending_payment" && order.payment_status === "pending" && !order.payment_reference;
+  return order.status === "pending_payment" && order.payment_status === "pending";
+}
+
+/** "Pay now": straight to the Paystack page, no stop at the order screen. */
+function PayNowButton({ order }: { order: ChatOrder }) {
+  const { user } = useAuth();
+  const { payOrder } = usePayment();
+  const queryClient = useQueryClient();
+  const [opening, setOpening] = useState(false);
+
+  const pay = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    const email = paymentEmail(user);
+    if (!email) {
+      toast.error("Please sign in to pay for this order.");
+      return;
+    }
+    setOpening(true);
+    try {
+      const result = await payOrder(order, email);
+      if (result.outcome === "already_paid") {
+        toast.success("This order is already paid. Thank you!");
+        queryClient.invalidateQueries({ queryKey: ["chat-order", order.id] });
+        queryClient.invalidateQueries({ queryKey: ["orders"] });
+      } else if (result.outcome === "failed") {
+        toast.error(result.error);
+      }
+      // "redirecting": the browser is leaving for Paystack; keep the spinner.
+      if (result.outcome !== "redirecting") setOpening(false);
+    } catch (error) {
+      console.error("[OrderCard] could not start payment", { orderId: order.id, error });
+      toast.error("We couldn't open the payment page. Please try again.");
+      setOpening(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={pay}
+      disabled={opening}
+      className="flex w-full items-center justify-center gap-2 bg-emerald-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-90"
+    >
+      {opening ? (
+        <><Loader2 className="h-4 w-4 animate-spin" /> Opening secure checkout…</>
+      ) : (
+        <>
+          <CreditCard className="h-4 w-4" /> Pay now
+          <span className="flex items-center gap-1 text-[11px] font-normal opacity-90">
+            <ShieldCheck className="h-3.5 w-3.5" /> protected
+          </span>
+        </>
+      )}
+    </button>
+  );
 }
 
 /**
@@ -71,7 +129,7 @@ export function OrderCard({ orderId, mine }: { orderId: string; mine: boolean })
   // Couldn't load it (e.g. it's someone else's order): fall back to a plain link.
   if (isError || !order) {
     return (
-      <Link to={`/orders/${orderId}`} className={cn("font-semibold underline", mine ? "text-primary-foreground" : "text-primary")}>
+      <Link to={`/orders/${orderId}?pay=1`} className={cn("font-semibold underline", mine ? "text-primary-foreground" : "text-primary")}>
         Open order
       </Link>
     );
@@ -96,17 +154,12 @@ export function OrderCard({ orderId, mine }: { orderId: string; mine: boolean })
           </span>
         </span>
       </Link>
-      {unpaid ? (
-        <Link
-          to={`/orders/${order.id}`}
-          onClick={(e) => e.stopPropagation()}
-          className="flex items-center justify-center gap-2 bg-emerald-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 active:bg-emerald-800"
-        >
-          <CreditCard className="h-4 w-4" /> Pay now
-          <span className="flex items-center gap-1 text-[11px] font-normal opacity-90">
-            <ShieldCheck className="h-3.5 w-3.5" /> protected
-          </span>
-        </Link>
+      {unpaid && mine ? (
+        <span className="flex items-center justify-center gap-1.5 border-t border-white/20 py-2 text-xs font-medium">
+          <Clock className="h-4 w-4" /> Waiting for payment
+        </span>
+      ) : unpaid ? (
+        <PayNowButton order={order} />
       ) : (
         <span className={cn("flex items-center justify-center gap-1.5 border-t py-2 text-xs font-medium animate-in fade-in-0 zoom-in-95 duration-300", mine ? "border-white/20" : "")}>
           <CheckCircle2 className="h-4 w-4 text-emerald-500" />
