@@ -5,8 +5,7 @@ import {
   Tag, DollarSign, BarChart, Settings, MessageCircle,
   Menu, X, LogOut, ShoppingBag, Shield, Store, Megaphone, Flag, AlertTriangle, Truck
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { forgetThisDevice } from "@/lib/push";
+import { signOutThisDevice } from "@/lib/signOut";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
@@ -49,13 +48,8 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const handleLogout = async () => {
-    // End the admin unlock too, so the key is needed again next time.
-    await supabase.functions.invoke("admin-unlock", { body: { action: "lock" } }).catch(() => undefined);
-    await forgetThisDevice();
-    await supabase.auth.signOut({ scope: "local" });
-    navigate("/");
-  };
+  // End the admin unlock too, so the key is needed again next time.
+  const handleLogout = () => signOutThisDevice({ redirectTo: "/", lockAdmin: true });
 
   if (isLoading || !isAdmin) {
     return (

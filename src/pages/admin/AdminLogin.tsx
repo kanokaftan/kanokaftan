@@ -120,7 +120,7 @@ export default function AdminLogin() {
                 {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
                 Unlock admin
               </Button>
-              <Button type="button" variant="ghost" className="w-full" onClick={() => signOut()}>
+              <Button type="button" variant="ghost" className="w-full" onClick={() => signOut("/admin")}>
                 Use a different account
               </Button>
             </form>

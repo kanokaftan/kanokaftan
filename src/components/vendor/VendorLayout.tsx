@@ -9,8 +9,7 @@ import { useVendorAuth } from "@/hooks/useVendorAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
-import { forgetThisDevice } from "@/lib/push";
+import { signOutThisDevice } from "@/lib/signOut";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { BubbleTabBar } from "@/components/layout/BubbleTabBar";
 
@@ -45,11 +44,7 @@ export function VendorLayout({ children, title }: VendorLayoutProps) {
   const navigate = useNavigate();
   const unreadChats = useSellerUnreadChats();
 
-  const handleLogout = async () => {
-    await forgetThisDevice();
-    await supabase.auth.signOut({ scope: "local" });
-    navigate("/vendor/login");
-  };
+  const handleLogout = () => signOutThisDevice({ redirectTo: "/vendor/login" });
 
   if (isLoading || !isVendor) {
     return (

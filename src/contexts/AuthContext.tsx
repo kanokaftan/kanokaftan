@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { forgetThisDevice } from "@/lib/push";
+import { signOutThisDevice } from "@/lib/signOut";
 
 interface AuthContextType {
   user: User | null;
@@ -11,7 +11,7 @@ interface AuthContextType {
   isAdmin: boolean;
   rolesLoading: boolean;
   refreshRoles: () => Promise<void>;
-  signOut: () => Promise<void>;
+  signOut: (redirectTo?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -90,11 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data.user) await loadRoles(data.user.id);
   };
 
-  const signOut = async () => {
-    // Stop this phone getting the next person's notifications (needs the session, so first).
-    await forgetThisDevice();
-    await supabase.auth.signOut({ scope: "local" });
-  };
+  const signOut = (redirectTo = "/") => signOutThisDevice({ redirectTo });
 
   return (
     <AuthContext.Provider value={{ user, session, isLoading, isVendor, isAdmin, rolesLoading, refreshRoles, signOut }}>

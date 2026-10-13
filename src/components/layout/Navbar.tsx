@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { BrandLogo } from "@/components/brand/BrandLogo";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Menu, X, Heart, User, LogOut, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { forgetThisDevice } from "@/lib/push";
+import { signOutThisDevice } from "@/lib/signOut";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { useTranslation } from "react-i18next";
@@ -13,7 +13,6 @@ export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { t } = useTranslation();
   const [user, setUser] = useState<SupabaseUser | null>(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -27,11 +26,7 @@ export function Navbar() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleLogout = async () => {
-    await forgetThisDevice();
-    await supabase.auth.signOut({ scope: "local" });
-    navigate("/");
-  };
+  const handleLogout = () => signOutThisDevice({ redirectTo: "/" });
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

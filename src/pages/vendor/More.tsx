@@ -10,8 +10,7 @@ import { useMyFanSummary } from "@/hooks/useShopFans";
 import { VendorLayout, useVendorAuth } from "@/components/vendor/VendorLayout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/integrations/supabase/client";
-import { forgetThisDevice } from "@/lib/push";
+import { signOutThisDevice } from "@/lib/signOut";
 import { useStartSupportConversation } from "@/hooks/useChat";
 import { cn } from "@/lib/utils";
 
@@ -81,16 +80,7 @@ export default function VendorMore() {
     }
   };
 
-  const logOut = async () => {
-    try {
-      await forgetThisDevice();
-      await supabase.auth.signOut({ scope: "local" });
-      navigate("/vendor/login");
-    } catch (error) {
-      console.error("[VendorMore] sign out failed", error);
-      toast.error("Could not sign out. Please try again.");
-    }
-  };
+  const logOut = () => signOutThisDevice({ redirectTo: "/vendor/login" });
 
   return (
     <VendorLayout title="More">

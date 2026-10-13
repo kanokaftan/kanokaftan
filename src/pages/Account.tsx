@@ -146,10 +146,7 @@ export default function Account() {
     }
   };
 
-  const handleLogout = async () => {
-    await signOut();
-    navigate("/");
-  };
+  const handleLogout = () => signOut("/");
 
   if (isLoading) {
     return (

@@ -1,7 +1,6 @@
 import { Activity, LayoutDashboard, Users, Store, Package, ShoppingCart, FolderTree, Settings, LogOut, ArrowLeftRight, DollarSign, FileText, MessageCircle, Megaphone, Flag, AlertTriangle, Truck } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { supabase } from "@/integrations/supabase/client";
-import { forgetThisDevice } from "@/lib/push";
+import { signOutThisDevice } from "@/lib/signOut";
 import { useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -37,13 +36,8 @@ const menuItems = [
 export function AdminSidebar() {
   const navigate = useNavigate();
 
-  const handleLogout = async () => {
-    // End the admin unlock too, so the key is needed again next time.
-    await supabase.functions.invoke("admin-unlock", { body: { action: "lock" } }).catch(() => undefined);
-    await forgetThisDevice();
-    await supabase.auth.signOut({ scope: "local" });
-    navigate("/");
-  };
+  // End the admin unlock too, so the key is needed again next time.
+  const handleLogout = () => signOutThisDevice({ redirectTo: "/", lockAdmin: true });
 
   return (
     <Sidebar className="border-r">

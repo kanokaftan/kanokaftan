@@ -12,7 +12,7 @@ import {
   MapPin,
   Bell,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,7 +26,6 @@ import { useTranslation } from "react-i18next";
 export default function Profile() {
   const { t } = useTranslation();
   const { user, isVendor, isAdmin, isLoading, signOut } = useAuth();
-  const navigate = useNavigate();
 
   // Fetch user profile data
   const { data: profile } = useQuery({
@@ -64,10 +63,7 @@ export default function Profile() {
     enabled: !!user?.id,
   });
 
-  const handleLogout = async () => {
-    await signOut();
-    navigate("/");
-  };
+  const handleLogout = () => signOut("/");
 
   if (isLoading) {
     return (
