@@ -47,7 +47,7 @@ export function VendorLayout({ children, title }: VendorLayoutProps) {
 
   const handleLogout = async () => {
     await forgetThisDevice();
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: "local" });
     navigate("/vendor/login");
   };
 

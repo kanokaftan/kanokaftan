@@ -84,7 +84,7 @@ export default function VendorMore() {
   const logOut = async () => {
     try {
       await forgetThisDevice();
-      await supabase.auth.signOut();
+      await supabase.auth.signOut({ scope: "local" });
       navigate("/vendor/login");
     } catch (error) {
       console.error("[VendorMore] sign out failed", error);

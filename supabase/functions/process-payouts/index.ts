@@ -34,8 +34,11 @@ serve(async (req) => {
 
     if (!isCron) {
       const caller = await getCaller(req);
-      if (!caller || !(await isAdmin(caller.id))) {
-        return json({ success: false, error: 'Not allowed' }, 403);
+      if (!caller) {
+        return json({ success: false, error: 'Your sign-in on this device has ended. Please sign out and sign in again.' }, 401);
+      }
+      if (!(await isAdmin(caller.id))) {
+        return json({ success: false, error: 'Only admins can send payouts. Unlock the admin area with your admin key and try again.' }, 403);
       }
     }
 

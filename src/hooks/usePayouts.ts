@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeFunction } from "@/lib/invokeFunction";
 import { NIGERIAN_BANKS, type Bank } from "@/lib/nigerianBanks";
 
 export type PayoutStatus = "held" | "on_hold" | "pending" | "processing" | "paid" | "failed" | "cancelled";
@@ -210,10 +211,11 @@ export function useAdminPayouts() {
 
   const runPayouts = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke("process-payouts", { body: {} });
-      if (error) throw error;
+      const data = await invokeFunction<{ success?: boolean; error?: string; released: number; sent: number; failed: number; waitingForBankAccount: number }>(
+        "process-payouts", {}, "Payout run failed. Please try again.",
+      );
       if (!data?.success) throw new Error(data?.error || "Payout run failed");
-      return data as { released: number; sent: number; failed: number; waitingForBankAccount: number };
+      return data;
     },
     onSuccess: invalidate,
   });

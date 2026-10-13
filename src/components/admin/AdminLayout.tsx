@@ -53,7 +53,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
     // End the admin unlock too, so the key is needed again next time.
     await supabase.functions.invoke("admin-unlock", { body: { action: "lock" } }).catch(() => undefined);
     await forgetThisDevice();
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: "local" });
     navigate("/");
   };
 

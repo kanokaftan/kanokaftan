@@ -33,7 +33,7 @@ export function VendorSidebar() {
 
   const handleLogout = async () => {
     await forgetThisDevice();
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: "local" });
     navigate("/");
   };
 

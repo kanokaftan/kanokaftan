@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     // Stop this phone getting the next person's notifications (needs the session, so first).
     await forgetThisDevice();
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: "local" });
   };
 
   return (
