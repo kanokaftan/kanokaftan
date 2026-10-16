@@ -36,10 +36,11 @@ export function ShopTile({ shop, showDistance = false }: { shop: DirectoryShop; 
           <AvatarImage src={shop.avatar_url || undefined} alt="" loading="lazy" />
           <AvatarFallback className="bg-primary text-sm font-bold text-primary-foreground">{shop.store_name.charAt(0)}</AvatarFallback>
         </Avatar>
-        <div className="mt-1 flex min-w-0 items-center gap-1">
-          <h3 className="truncate text-sm font-semibold leading-tight">{shop.store_name}</h3>
-          {shop.is_verified && <VerifiedBadge tier={shop.verification_tier} className="h-3.5 w-3.5" />}
-        </div>
+        {/* Names wrap to two lines rather than being cut mid-word. */}
+        <h3 className="mt-1 line-clamp-2 break-words text-sm font-semibold leading-tight" title={shop.store_name}>
+          {shop.store_name}
+          {shop.is_verified && <VerifiedBadge tier={shop.verification_tier} className="ml-1 inline-block h-3.5 w-3.5 align-[-2px]" />}
+        </h3>
         <p className="mt-0.5 flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground">
           {tailor ? <Scissors className="h-3 w-3 shrink-0" /> : <ShoppingBag className="h-3 w-3 shrink-0" />}
           <span className="shrink-0">{tailor ? "Tailor" : "Seller"}</span>
