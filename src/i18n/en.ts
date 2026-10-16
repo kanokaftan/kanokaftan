@@ -19,6 +19,8 @@ export const en = {
     seeMore: "See More",
   },
   nav: {
+    products: "Products",
+    shops: "Shops",
     home: "Home",
     shop: "Shop",
     cart: "Cart",
@@ -301,7 +303,7 @@ export const en = {
     saving: "Saving...",
     orders: "My Orders",
     ordersLabel: "Orders",
-    wishlist: "Wishlist",
+    wishlist: "Favorites",
     addresses: "Addresses",
     settings: "Settings",
     help: "Help & Support",

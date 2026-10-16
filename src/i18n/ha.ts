@@ -19,6 +19,8 @@ export const ha = {
     seeMore: "Duba Ƙari",
   },
   nav: {
+    products: "Kayayyaki",
+    shops: "Shaguna",
     home: "Gida",
     shop: "Shago",
     cart: "Kwando",
