@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { SetupRequiredBanner } from "@/components/vendor/SetupRequiredBanner";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Package, ShoppingCart, Settings, LogOut, User, BadgeCheck, Megaphone, CircleFadingPlus,
@@ -122,7 +123,10 @@ export function VendorLayout({ children, title }: VendorLayoutProps) {
           <header className="hidden md:flex h-16 border-b bg-background items-center px-6">
             <h1 className="text-xl font-semibold">{title}</h1>
           </header>
-          <div className="flex-1 p-4 md:p-6 pb-28 md:pb-6">{children}</div>
+          <div className="flex-1 p-4 md:p-6 pb-28 md:pb-6">
+            <SetupRequiredBanner />
+            {children}
+          </div>
         </main>
       </div>
 

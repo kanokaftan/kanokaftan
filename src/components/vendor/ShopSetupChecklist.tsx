@@ -4,6 +4,7 @@ import { CheckCircle2, Circle, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
+import { useShopSetup } from "@/hooks/useShopSetup";
 import { cn } from "@/lib/utils";
 
 interface Step {
@@ -16,37 +17,37 @@ interface Step {
 
 /** "Get your shop ready" steps for new sellers. Hides itself once the required steps are done. */
 export function ShopSetupChecklist({ vendorId }: { vendorId: string | null }) {
+  const { data: required } = useShopSetup(!!vendorId);
   const { data } = useQuery({
     queryKey: ["shop-setup", vendorId],
     enabled: !!vendorId,
     queryFn: async () => {
-      const [profile, payout, products, verified] = await Promise.all([
+      const [profile, products, verified] = await Promise.all([
         supabase.from("profiles").select("avatar_url, store_name").eq("id", vendorId!).maybeSingle(),
-        supabase.from("vendor_payout_accounts").select("vendor_id").eq("vendor_id", vendorId!).maybeSingle(),
         supabase.from("products").select("id", { count: "exact", head: true }).eq("vendor_id", vendorId!),
         supabase.rpc("vendor_is_verified", { p_vendor_id: vendorId! }),
       ]);
       return {
         hasLogo: !!profile.data?.avatar_url,
-        hasPayout: !!payout.data,
         productCount: products.count ?? 0,
         isVerified: verified.data === true,
       };
     },
   });
 
-  if (!data) return null;
+  if (!data || !required) return null;
 
   const steps: Step[] = [
     { done: true, title: "Open your shop", hint: "Done", href: "/vendor/settings" },
     { done: data.hasLogo, title: "Add your logo and banner", hint: "Buyers trust shops with branding", href: "/vendor/settings" },
-    { done: data.hasPayout, title: "Add your bank account", hint: "Needed to receive your payouts", href: "/vendor/settings" },
+    { done: required.has_phone, title: "Add your phone number", hint: "Required: customers and riders call you", href: "/vendor/settings" },
+    { done: required.has_location, title: "Save your exact shop location", hint: "Required: tap \"Use my current location\" in your shop", href: "/vendor/settings" },
+    { done: required.has_payout, title: "Add your bank account", hint: "Required: this is where your money is paid", href: "/vendor/settings" },
     { done: data.productCount > 0, title: "List your first product", hint: "Photos, price, sizes and colours", href: "/vendor/products/new" },
     { done: data.isVerified, title: "Get verified", hint: "Badge + homepage promotions", href: "/vendor/verification", optional: true },
   ];
 
-  const required = steps.filter((s) => !s.optional);
-  if (required.every((s) => s.done)) return null;
+  if (steps.filter((s) => !s.optional).every((s) => s.done)) return null;
 
   const doneCount = steps.filter((s) => s.done).length;
 

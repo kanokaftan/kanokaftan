@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { missingSetupItems, useShopSetup } from "@/hooks/useShopSetup";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { VendorLayout, useVendorAuth } from "@/components/vendor/VendorLayout";
 import { useVendorProduct } from "@/hooks/useVendorProducts";
@@ -34,6 +35,7 @@ export default function ProductForm() {
   const { createProduct, updateProduct, uploadImage } = useProductMutations(userId);
 
   const isEditing = !!id;
+  const { data: setup } = useShopSetup(!id);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -161,6 +163,21 @@ export default function ProductForm() {
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-32 w-full" />
           <Skeleton className="h-10 w-full" />
+        </div>
+      </VendorLayout>
+    );
+  }
+
+  // New products need phone, exact location and bank account first (the database enforces it too).
+  if (!isEditing && setup && !setup.complete) {
+    return (
+      <VendorLayout title="Add New Product">
+        <div className="mx-auto max-w-md rounded-2xl border bg-card p-6 text-center">
+          <p className="font-semibold">Complete your shop setup first</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Add your {missingSetupItems(setup).join(", ")} in Settings. Then you can list products.
+          </p>
+          <Button asChild className="mt-4 rounded-full"><Link to="/vendor/settings">Open Settings</Link></Button>
         </div>
       </VendorLayout>
     );

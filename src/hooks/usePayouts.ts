@@ -119,6 +119,8 @@ export function useVendorPayoutAccount(vendorId: string | null) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payout-account", vendorId] });
       queryClient.invalidateQueries({ queryKey: ["vendor-payouts", vendorId] });
+      // Bank account is one of the required setup steps.
+      queryClient.invalidateQueries({ queryKey: ["shop-setup"] });
     },
   });
 

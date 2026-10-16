@@ -2051,6 +2051,8 @@ export type Database = {
       }
       my_ambassador_id: { Args: Record<PropertyKey, never>; Returns: string | null }
       my_ambassador_dashboard: { Args: Record<PropertyKey, never>; Returns: Json }
+      my_shop_setup: { Args: Record<PropertyKey, never>; Returns: Json }
+      vendor_setup_status: { Args: { p_vendor_id: string }; Returns: Json }
       list_shops: {
         Args: { p_search?: string | null; p_limit?: number; p_offset?: number }
         Returns: {

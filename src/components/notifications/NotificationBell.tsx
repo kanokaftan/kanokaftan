@@ -119,7 +119,7 @@ export function NotificationBell({ href = "/notifications" }: NotificationBellPr
   }, [notifications, isLoading]);
 
   return (
-    <Button asChild variant="ghost" size="icon" className="relative">
+    <Button asChild variant="ghost" size="icon" className="relative h-9 w-9 rounded-full">
       <Link to={href} aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}>
         <Bell className={cn("h-5 w-5 transition-transform", isWiggling && "animate-wiggle")} />
         {unreadCount > 0 && (

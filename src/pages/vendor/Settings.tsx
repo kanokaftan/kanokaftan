@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useRefreshShopSetup } from "@/hooks/useShopSetup";
 import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,10 +33,13 @@ const GPS_TIMEOUT_MS = 20000;
 const settingsSchema = z.object({
   store_name: z.string().min(2, "Store name must be at least 2 characters"),
   store_description: z.string().optional(),
-  phone: z.string().optional(),
-  store_street: z.string().optional(),
-  store_city: z.string().optional(),
-  store_state: z.string().optional(),
+  phone: z.string().trim().refine(
+    (v) => /^(234|0)?[789][01]\d{8}$/.test(v.replace(/\D/g, "")),
+    "Enter a Nigerian phone number customers and riders can reach, e.g. 0803 123 4567",
+  ),
+  store_street: z.string().trim().min(3, "Enter your shop's street address"),
+  store_city: z.string().trim().min(2, "Enter your town or city"),
+  store_state: z.string().min(2, "Choose your state"),
 });
 
 const NIGERIAN_STATES = [
@@ -51,6 +55,7 @@ type SettingsFormData = z.infer<typeof settingsSchema>;
 export default function VendorSettings() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const refreshShopSetup = useRefreshShopSetup();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [isLoading, setIsLoading] = useState(true);
@@ -211,9 +216,28 @@ export default function VendorSettings() {
     }
   };
 
+  /** Required fields missing: say which, since the field may be off screen on a phone. */
+  const onInvalid = (errors: Record<string, { message?: string } | undefined>) => {
+    const first = Object.values(errors).find((e) => e?.message);
+    toast({ title: "Some required details are missing", description: first?.message, variant: "destructive" });
+  };
+
   const onSubmit = async (data: SettingsFormData) => {
     if (!user) return;
     
+    // An exact spot is required so riders find the shop and "Near me" is accurate.
+    const hasExactSpot = !!gpsSpot
+      || (!!pickedStoreSpot && pickedStoreSpot.street === data.store_street)
+      || (!!savedSpot && savedSpot.street === data.store_street);
+    if (!hasExactSpot) {
+      toast({
+        title: "Add your exact shop location",
+        description: "Tap \"Use my current location\" while in your shop, or pick your street from the suggestions.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSaving(true);
     try {
       // Geocode store address if provided
@@ -267,6 +291,7 @@ export default function VendorSettings() {
 
       if (error) throw error;
 
+      refreshShopSetup();
       toast({
         title: "Settings saved",
         description: "Your store settings have been updated successfully.",
@@ -376,7 +401,7 @@ export default function VendorSettings() {
           </CardContent>
         </Card>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-4 md:space-y-6">
           {/* Store Information */}
           <Card>
             <CardHeader className="pb-3 md:pb-6">
@@ -416,12 +441,16 @@ export default function VendorSettings() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-sm">Phone Number</Label>
+                <Label htmlFor="phone" className="text-sm">Phone Number *</Label>
                 <Input
                   id="phone"
                   {...form.register("phone")}
-                  placeholder="+234 xxx xxx xxxx"
+                  placeholder="0803 123 4567"
+                  inputMode="tel"
                 />
+                {form.formState.errors.phone && (
+                  <p className="text-xs text-destructive">{form.formState.errors.phone.message}</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -465,6 +494,9 @@ export default function VendorSettings() {
                   stateHint={form.watch("store_state") || undefined}
                   placeholder="Start typing, e.g. Ibrahim Taiwo Road"
                 />
+                {form.formState.errors.store_street && (
+                  <p className="text-xs text-destructive">{form.formState.errors.store_street.message}</p>
+                )}
               </div>
 
               <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
@@ -475,6 +507,9 @@ export default function VendorSettings() {
                     {...form.register("store_city")}
                     placeholder="e.g., Kano"
                   />
+                  {form.formState.errors.store_city && (
+                    <p className="text-xs text-destructive">{form.formState.errors.store_city.message}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -500,7 +535,7 @@ export default function VendorSettings() {
               <div className="rounded-lg border p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium">Exact shop location</p>
+                    <p className="text-sm font-medium">Exact shop location *</p>
                     <p className="text-xs text-muted-foreground">
                       {gpsSpot || savedSpot
                         ? "Saved. Customers nearby see how far your shop is."
