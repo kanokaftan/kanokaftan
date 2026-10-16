@@ -61,6 +61,7 @@ const StoryViewer = lazy(() => import("./pages/StoryViewer"));
 const NotificationsPage = lazy(() => import("./pages/Notifications"));
 const SellerApply = lazy(() => import("./pages/SellerApply"));
 const AmbassadorLink = lazy(() => import("./pages/AmbassadorLink"));
+const AmbassadorDashboard = lazy(() => import("./pages/AmbassadorDashboard"));
 const SellerLogin = lazy(() => import("./pages/SellerLogin"));
 const VendorProfilePage = lazy(() => import("./pages/VendorProfile"));
 const Shops = lazy(() => import("./pages/Shops"));
@@ -164,6 +165,7 @@ const App = () => (
             <Route path="/vendor/:vendorId" element={<VendorProfilePage />} />
             <Route path="/sell" element={<SellerApply />} />
             <Route path="/r/:code" element={<AmbassadorLink />} />
+            <Route path="/ambassador" element={<AmbassadorDashboard />} />
             <Route path="/become-vendor" element={<Navigate to="/sell" replace />} />
             <Route path="/vendor/login" element={<SellerLogin />} />
             <Route path="/vendor" element={<Navigate to="/vendor/dashboard" replace />} />

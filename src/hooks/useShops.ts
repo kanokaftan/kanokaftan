@@ -23,49 +23,121 @@ export function useShop({ slug, vendorId }: { slug?: string; vendorId?: string }
   });
 }
 
-export type DirectoryShop = Database["public"]["Functions"]["browse_shops"]["Returns"][number];
+export type DirectoryShop = Database["public"]["Functions"]["shop_directory"]["Returns"][number];
 export type ShopBadgeFilter = "all" | "gold" | "verified" | "unverified";
 export type ShopTypeFilter = "all" | "tailor" | "seller";
 export type ShopType = "tailor" | "seller";
+export type ShopSort = "recommended" | "near" | "followers" | "newest" | "rating";
 /** Badge counts are within the chosen type, type counts within the chosen badge ("everyone" = both types). */
 export type ShopFilterCounts = Record<ShopBadgeFilter | ShopType | "everyone" | "total", number>;
 
+export interface ShopDirectoryQuery {
+  search: string;
+  badge: ShopBadgeFilter;
+  type: ShopTypeFilter;
+  town: string | null;
+  sort: ShopSort;
+  /** The shopper's position, only for "near". */
+  position: { lat: number; lng: number } | null;
+}
+
 /** Shops loaded per page while scrolling the directory. */
 export const SHOP_PAGE_SIZE = 30;
+/** Gold shops shown in the strip at the top of the Shops page. */
+const GOLD_STRIP_SIZE = 12;
 
-/** The shop directory, filtered on the server and loaded a page at a time. */
-export function useBrowseShops({ search, badge, type }: { search: string; badge: ShopBadgeFilter; type: ShopTypeFilter }) {
+async function fetchDirectory(q: ShopDirectoryQuery, limit: number, offset: number): Promise<DirectoryShop[]> {
+  const { data, error } = await supabase.rpc("shop_directory", {
+    p_search: q.search || null,
+    p_badge: q.badge,
+    p_type: q.type,
+    p_town: q.town,
+    p_sort: q.sort,
+    p_lat: q.position?.lat ?? null,
+    p_lng: q.position?.lng ?? null,
+    p_limit: limit,
+    p_offset: offset,
+  });
+  if (error) throw error;
+  return (data ?? []).map((s) => ({ ...s, distance_km: s.distance_km == null ? null : Number(s.distance_km) }));
+}
+
+/** The shop directory, filtered and sorted on the server and loaded a page at a time. */
+export function useBrowseShops(q: ShopDirectoryQuery) {
+  // Position only matters for "near"; rounding to ~100 m keeps small GPS jitter from refetching.
+  const positionKey = q.sort === "near" && q.position ? `${q.position.lat.toFixed(3)},${q.position.lng.toFixed(3)}` : null;
   return useInfiniteQuery({
-    queryKey: ["shops", "browse", search, badge, type],
+    queryKey: ["shops", "browse", q.search, q.badge, q.type, q.town, q.sort, positionKey],
     initialPageParam: 0,
-    queryFn: async ({ pageParam }): Promise<DirectoryShop[]> => {
-      const { data, error } = await supabase.rpc("browse_shops", {
-        p_search: search || null,
-        p_badge: badge,
-        p_type: type,
-        p_limit: SHOP_PAGE_SIZE,
-        p_offset: pageParam,
-      });
-      if (error) throw error;
-      return data ?? [];
-    },
+    queryFn: ({ pageParam }) => fetchDirectory(q, SHOP_PAGE_SIZE, pageParam),
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length < SHOP_PAGE_SIZE ? undefined : allPages.length * SHOP_PAGE_SIZE,
   });
 }
 
-/** How many shops each filter chip would show, for the current search and filters. */
-export function useShopFilterCounts({ search, badge, type }: { search: string; badge: ShopBadgeFilter; type: ShopTypeFilter }) {
+/** Gold shops for the strip at the top of the Shops page. */
+export function useGoldShops() {
   return useQuery({
-    queryKey: ["shops", "counts", search, badge, type],
+    queryKey: ["shops", "gold-strip"],
+    staleTime: 5 * 60 * 1000,
+    queryFn: () =>
+      fetchDirectory({ search: "", badge: "gold", type: "all", town: null, sort: "recommended", position: null }, GOLD_STRIP_SIZE, 0),
+  });
+}
+
+/** How many shops each filter chip would show, for the current search, town and filters. */
+export function useShopFilterCounts({ search, badge, type, town }: Pick<ShopDirectoryQuery, "search" | "badge" | "type" | "town">) {
+  return useQuery({
+    queryKey: ["shops", "counts", search, badge, type, town],
     staleTime: 60 * 1000,
     placeholderData: keepPreviousData,
     queryFn: async (): Promise<ShopFilterCounts> => {
-      const { data, error } = await supabase.rpc("shop_filter_counts", { p_search: search || null, p_badge: badge, p_type: type });
+      const { data, error } = await supabase.rpc("shop_directory_counts", {
+        p_search: search || null, p_badge: badge, p_type: type, p_town: town,
+      });
       if (error) throw error;
       return data as unknown as ShopFilterCounts;
     },
   });
+}
+
+/** Towns that have shops, busiest first. */
+export function useShopTowns() {
+  return useQuery({
+    queryKey: ["shops", "towns"],
+    staleTime: 10 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("shop_towns");
+      if (error) throw error;
+      return (data ?? []).map((t) => ({ town: t.town, shops: Number(t.shops) }));
+    },
+  });
+}
+
+/** Admin: a shop's type, and changing it. */
+export function useAdminShopType(vendorId: string | undefined) {
+  const queryClient = useQueryClient();
+  const query = useQuery({
+    queryKey: ["admin-shop-type", vendorId],
+    enabled: !!vendorId,
+    queryFn: async (): Promise<ShopType> => {
+      const { data, error } = await supabase.rpc("admin_shop_type", { p_vendor_id: vendorId! });
+      if (error) throw error;
+      return data === "tailor" ? "tailor" : "seller";
+    },
+  });
+  const save = useMutation({
+    mutationFn: async (type: ShopType) => {
+      const { error } = await supabase.rpc("admin_set_shop_type", { p_vendor_id: vendorId!, p_type: type });
+      if (error) throw new Error(error.message || "Couldn't change the shop type.");
+      return type;
+    },
+    onSuccess: (type) => {
+      queryClient.setQueryData(["admin-shop-type", vendorId], type);
+      queryClient.invalidateQueries({ queryKey: ["shops"] });
+    },
+  });
+  return { ...query, save };
 }
 
 /** The signed-in seller's shop type (chosen, or guessed from the shop description). */

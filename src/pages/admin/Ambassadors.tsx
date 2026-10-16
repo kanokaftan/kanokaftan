@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  useAmbassadorOverview, useAmbassadorReferrals, useMarkReferralPaid, useSaveAmbassador,
+  useAmbassadorAccounts, useAmbassadorOverview, useAmbassadorReferrals, useLinkAmbassadorAccount, useMarkReferralPaid, useSaveAmbassador,
   type AmbassadorInput, type AmbassadorReferral, type AmbassadorSummary, type ReferralStatus,
 } from "@/hooks/useAmbassadors";
 import { whatsappNumber } from "@/hooks/useLogistics";
@@ -66,6 +66,8 @@ function welcomeMessage(ambassador: Pick<AmbassadorSummary, "full_name" | "code"
     `Your code: ${ambassador.code}`,
     ``,
     `Share it with tailors and fashion sellers. When someone opens a shop through your link and makes their first sale, you earn ${naira(reward)}.`,
+    ``,
+    `See your sellers and earnings any time: ${window.location.origin}/ambassador (sign in with the email you gave us).`,
   ].join("\n");
 }
 
@@ -94,6 +96,46 @@ function CopyButton({ text, label, className }: { text: string; label: string; c
   );
 }
 
+/** Which app account sees this ambassador's dashboard. */
+function AccountLink({ ambassador, linkedEmail }: { ambassador: AmbassadorSummary; linkedEmail: string | null }) {
+  const link = useLinkAmbassadorAccount();
+  const [value, setValue] = useState(ambassador.email ?? ambassador.phone ?? "");
+
+  const submit = async (emailOrPhone: string) => {
+    try {
+      const result = await link.mutateAsync({ ambassadorId: ambassador.id, emailOrPhone });
+      toast.success(result.linked ? `Linked to ${result.email ?? "their account"}. They've been notified.` : "Account unlinked");
+    } catch (error) {
+      console.error("[Ambassadors] link account failed", { ambassadorId: ambassador.id, error });
+      toast.error(errorMessage(error, "Couldn't link the account."));
+    }
+  };
+
+  return (
+    <div className="rounded-xl border p-3">
+      <p className="text-sm font-medium">Their app account</p>
+      {linkedEmail ? (
+        <div className="mt-1 flex items-center justify-between gap-2">
+          <p className="min-w-0 truncate text-sm text-muted-foreground">Linked to {linkedEmail}. They can open their dashboard.</p>
+          <Button type="button" size="sm" variant="ghost" disabled={link.isPending} onClick={() => submit("")}>Unlink</Button>
+        </div>
+      ) : (
+        <>
+          <p className="mt-1 text-xs text-muted-foreground">
+            If they sign up with the email above, it links by itself. Otherwise enter the email or phone number they signed up with.
+          </p>
+          <div className="mt-2 flex gap-2">
+            <Input value={value} onChange={(e) => setValue(e.target.value)} placeholder="Email or phone" className="h-9 text-sm" />
+            <Button type="button" size="sm" className="h-9 shrink-0" disabled={link.isPending || !value.trim()} onClick={() => submit(value.trim())}>
+              {link.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Link"}
+            </Button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function AmbassadorSheet({ ambassador, open, onClose, onSaved }: {
   ambassador: AmbassadorSummary | null;
   open: boolean;
@@ -101,6 +143,7 @@ function AmbassadorSheet({ ambassador, open, onClose, onSaved }: {
   onSaved: (saved: { full_name: string; code: string; phone: string | null }) => void;
 }) {
   const save = useSaveAmbassador();
+  const { data: accounts } = useAmbassadorAccounts();
   const [form, setForm] = useState<AmbassadorInput>(EMPTY);
 
   useEffect(() => {
@@ -187,6 +230,7 @@ function AmbassadorSheet({ ambassador, open, onClose, onSaved }: {
               </div>
             </div>
           </div>
+          {ambassador && <AccountLink key={ambassador.id} ambassador={ambassador} linkedEmail={accounts?.get(ambassador.id)?.account_email ?? null} />}
           <div className="space-y-1.5">
             <Label htmlFor="amb-notes">Notes</Label>
             <Textarea id="amb-notes" rows={2} value={form.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Area they cover, agreement signed on…" />
@@ -294,9 +338,10 @@ function ReferralsSheet({ ambassador, onClose }: { ambassador: AmbassadorSummary
   );
 }
 
-function AmbassadorCard({ ambassador, reward, onEdit, onView }: {
+function AmbassadorCard({ ambassador, reward, linked, onEdit, onView }: {
   ambassador: AmbassadorSummary;
   reward: number;
+  linked: boolean;
   onEdit: () => void;
   onView: () => void;
 }) {
@@ -316,6 +361,7 @@ function AmbassadorCard({ ambassador, reward, onEdit, onView }: {
           <div className="flex items-center gap-2">
             <p className="truncate font-semibold">{ambassador.full_name}</p>
             {!ambassador.is_active && <Badge variant="secondary">Paused</Badge>}
+            {linked && <Badge variant="outline" className="text-[10px]">Has dashboard</Badge>}
           </div>
           <p className="text-xs text-muted-foreground">{ambassador.phone || ambassador.email || "No contact saved"}</p>
         </div>
@@ -367,6 +413,7 @@ function AmbassadorCard({ ambassador, reward, onEdit, onView }: {
 export default function AdminAmbassadors() {
   const { data: ambassadors, isLoading, isError, refetch } = useAmbassadorOverview();
   const { data: reward = DEFAULT_SELLER_REWARD } = useSellerReward();
+  const { data: accounts } = useAmbassadorAccounts();
   const [editing, setEditing] = useState<AmbassadorSummary | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [viewing, setViewing] = useState<AmbassadorSummary | null>(null);
@@ -456,6 +503,7 @@ export default function AdminAmbassadors() {
                 key={a.id}
                 ambassador={a}
                 reward={reward}
+                linked={!!accounts?.has(a.id)}
                 onEdit={() => { setEditing(a); setSheetOpen(true); }}
                 onView={() => setViewing(a)}
               />

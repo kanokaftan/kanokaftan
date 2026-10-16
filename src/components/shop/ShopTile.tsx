@@ -5,8 +5,15 @@ import { VerifiedBadge } from "@/components/shop/VerifiedBadge";
 import type { DirectoryShop } from "@/hooks/useShops";
 import { cn } from "@/lib/utils";
 
+/** Below this, distances read better in metres. */
+const METRES_BELOW_KM = 1;
+
+function formatDistance(km: number): string {
+  return km < METRES_BELOW_KM ? `${Math.max(100, Math.round((km * 1000) / 100) * 100)} m` : `${km.toFixed(km < 10 ? 1 : 0)} km`;
+}
+
 /** Small shop card for the directory grid: two per row on a phone. */
-export function ShopTile({ shop }: { shop: DirectoryShop }) {
+export function ShopTile({ shop, showDistance = false }: { shop: DirectoryShop; showDistance?: boolean }) {
   const gold = shop.verification_tier === "gold";
   const tailor = shop.shop_type === "tailor";
   const place = shop.city || shop.state;
@@ -36,7 +43,13 @@ export function ShopTile({ shop }: { shop: DirectoryShop }) {
         <p className="mt-0.5 flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground">
           {tailor ? <Scissors className="h-3 w-3 shrink-0" /> : <ShoppingBag className="h-3 w-3 shrink-0" />}
           <span className="shrink-0">{tailor ? "Tailor" : "Seller"}</span>
-          {place && (
+          {showDistance && shop.distance_km != null ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <MapPin className="h-3 w-3 shrink-0" />
+              <span className="truncate font-medium text-foreground">{formatDistance(shop.distance_km)}</span>
+            </>
+          ) : place && (
             <>
               <span aria-hidden="true">·</span>
               <MapPin className="h-3 w-3 shrink-0" />

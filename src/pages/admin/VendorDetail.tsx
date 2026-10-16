@@ -2,9 +2,10 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNowStrict } from "date-fns";
 import {
-  BadgeCheck, Building2, Calendar, ChevronLeft, ExternalLink, Mail, MapPin, MessageCircle, Package, Phone, ShoppingBag,
+  BadgeCheck, Building2, Calendar, ChevronLeft, ExternalLink, Mail, MapPin, MessageCircle, Package, Phone, Scissors, ShoppingBag,
   Star, Store, Users, Wallet,
 } from "lucide-react";
+import { toast } from "sonner";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminChatList } from "@/components/admin/oversight/AdminChatList";
 import { BadgeTierControl, TierChip } from "@/components/admin/BadgeTierControl";
@@ -19,6 +20,7 @@ import {
   usePersonProfile, useVendorOrders, useVendorOverview, useVendorPayoutsAdmin, useVendorProductsAdmin,
 } from "@/hooks/useAdminOversight";
 import { payoutStatusLabels, type PayoutStatus } from "@/hooks/usePayouts";
+import { useAdminShopType, type ShopType } from "@/hooks/useShops";
 import { cn } from "@/lib/utils";
 
 type Tab = "overview" | "chats" | "products" | "orders" | "payouts";
@@ -50,6 +52,54 @@ function InfoRow({ icon: Icon, children }: { icon: typeof Mail; children: React.
       <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
       <div className="min-w-0 flex-1 break-words">{children}</div>
     </div>
+  );
+}
+
+/** Tailor or Seller: which tab the shop appears under in the Shops directory. */
+function AdminShopTypeCard({ vendorId }: { vendorId: string }) {
+  const { data: current, isLoading, save } = useAdminShopType(vendorId);
+
+  const choose = async (type: ShopType) => {
+    if (type === current) return;
+    try {
+      await save.mutateAsync(type);
+      toast.success(`Now listed under ${type === "tailor" ? "Tailors" : "Sellers"}`);
+    } catch (error) {
+      console.error("[AdminVendorDetail] shop type change failed", { vendorId, type, error });
+      toast.error(error instanceof Error ? error.message : "Couldn't change the shop type.");
+    }
+  };
+
+  return (
+    <Card>
+      <CardContent className="space-y-2 p-4">
+        <p className="text-sm font-semibold">Shop type</p>
+        <p className="text-xs text-muted-foreground">Decides whether the shop shows under Tailors or Sellers. The seller can also change it.</p>
+        {isLoading ? (
+          <Skeleton className="h-10 rounded-full" />
+        ) : (
+          <div role="radiogroup" aria-label="Shop type" className="grid grid-cols-2 rounded-full bg-muted p-1">
+            {(["tailor", "seller"] as const).map((type) => (
+              <button
+                key={type}
+                type="button"
+                role="radio"
+                aria-checked={current === type}
+                disabled={save.isPending}
+                onClick={() => choose(type)}
+                className={cn(
+                  "flex h-9 items-center justify-center gap-1.5 rounded-full text-sm font-medium transition-all",
+                  current === type ? "bg-background shadow-sm" : "text-muted-foreground",
+                )}
+              >
+                {type === "tailor" ? <Scissors className="h-3.5 w-3.5" /> : <ShoppingBag className="h-3.5 w-3.5" />}
+                {type === "tailor" ? "Tailor" : "Seller"}
+              </button>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -112,6 +162,8 @@ function OverviewTab({ vendorId }: { vendorId: string }) {
           )}
         </CardContent>
       </Card>
+
+      <AdminShopTypeCard vendorId={profile.id} />
 
       <Card>
         <CardContent className="space-y-2 p-4">

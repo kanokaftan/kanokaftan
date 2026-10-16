@@ -236,6 +236,7 @@ export type Database = {
           notes: string | null
           is_active: boolean
           link_visits: number
+          user_id: string | null
           created_by: string | null
           created_at: string
           updated_at: string
@@ -2005,6 +2006,51 @@ export type Database = {
       shop_filter_counts: { Args: { p_search?: string | null; p_badge?: string; p_type?: string }; Returns: Json }
       set_my_shop_type: { Args: { p_type: string }; Returns: string }
       my_shop_type: { Args: Record<PropertyKey, never>; Returns: string | null }
+      shop_directory: {
+        Args: {
+          p_search?: string | null
+          p_badge?: string
+          p_type?: string
+          p_town?: string | null
+          p_sort?: string
+          p_lat?: number | null
+          p_lng?: number | null
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: {
+          id: string
+          store_name: string
+          store_slug: string
+          store_description: string | null
+          avatar_url: string | null
+          store_banner_url: string | null
+          is_verified: boolean
+          verification_tier: string | null
+          city: string | null
+          state: string | null
+          joined_at: string
+          product_count: number
+          follower_count: number
+          items_sold: number
+          rating: number | null
+          review_count: number
+          shop_type: string
+          location_precise: boolean
+          distance_km: number | null
+        }[]
+      }
+      shop_directory_counts: { Args: { p_search?: string | null; p_badge?: string; p_type?: string; p_town?: string | null }; Returns: Json }
+      shop_towns: { Args: Record<PropertyKey, never>; Returns: { town: string; shops: number }[] }
+      admin_set_shop_type: { Args: { p_vendor_id: string; p_type: string }; Returns: string }
+      admin_shop_type: { Args: { p_vendor_id: string }; Returns: string | null }
+      admin_link_ambassador_account: { Args: { p_ambassador_id: string; p_email_or_phone: string }; Returns: Json }
+      admin_ambassador_accounts: {
+        Args: Record<PropertyKey, never>
+        Returns: { ambassador_id: string; user_id: string; account_email: string | null; account_name: string | null }[]
+      }
+      my_ambassador_id: { Args: Record<PropertyKey, never>; Returns: string | null }
+      my_ambassador_dashboard: { Args: Record<PropertyKey, never>; Returns: Json }
       list_shops: {
         Args: { p_search?: string | null; p_limit?: number; p_offset?: number }
         Returns: {

@@ -105,3 +105,80 @@ export function useMarkReferralPaid(ambassadorId: string) {
     },
   });
 }
+
+// ---------------------------------------------------------------------------
+// Ambassador's own dashboard
+// ---------------------------------------------------------------------------
+
+export interface MyAmbassadorSeller {
+  shop_name: string;
+  shop_slug: string | null;
+  owner_first_name: string;
+  status: ReferralStatus;
+  reward_amount: number | null;
+  joined_at: string;
+  approved_at: string | null;
+  earned_at: string | null;
+  paid_at: string | null;
+}
+
+export interface MyAmbassadorDashboard {
+  code: string;
+  full_name: string;
+  is_active: boolean;
+  link_visits: number;
+  reward_per_seller: number;
+  payout_account: string | null;
+  totals: { sign_ups: number; approved: number; selling: number; owed: number; paid: number };
+  sellers: MyAmbassadorSeller[];
+}
+
+const MY_DASHBOARD_KEY = ["ambassador", "me"];
+
+/** Null when the signed-in person isn't an ambassador. Links them by email the first time. */
+export function useMyAmbassadorDashboard(enabled: boolean) {
+  return useQuery({
+    queryKey: MY_DASHBOARD_KEY,
+    enabled,
+    queryFn: async (): Promise<MyAmbassadorDashboard | null> => {
+      const { data, error } = await supabase.rpc("my_ambassador_dashboard");
+      if (error) throw readableError(error, "Couldn't load your ambassador dashboard.");
+      if (!data) return null;
+      const d = data as unknown as MyAmbassadorDashboard;
+      return {
+        ...d,
+        reward_per_seller: Number(d.reward_per_seller),
+        totals: { ...d.totals, owed: Number(d.totals.owed), paid: Number(d.totals.paid) },
+        sellers: d.sellers.map((s) => ({ ...s, reward_amount: s.reward_amount == null ? null : Number(s.reward_amount) })),
+      };
+    },
+  });
+}
+
+/** Admin: which ambassadors have an app account linked. */
+export function useAmbassadorAccounts() {
+  return useQuery({
+    queryKey: ["ambassadors", "accounts"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_ambassador_accounts");
+      if (error) throw readableError(error, "Couldn't load linked accounts.");
+      return new Map((data ?? []).map((a) => [a.ambassador_id, a]));
+    },
+  });
+}
+
+/** Admin: link an ambassador to the account they signed up with (empty text unlinks). */
+export function useLinkAmbassadorAccount() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ambassadorId, emailOrPhone }: { ambassadorId: string; emailOrPhone: string }) => {
+      const { data, error } = await supabase.rpc("admin_link_ambassador_account", {
+        p_ambassador_id: ambassadorId,
+        p_email_or_phone: emailOrPhone,
+      });
+      if (error) throw readableError(error, "Couldn't link the account.");
+      return data as { linked: boolean; name?: string | null; email?: string };
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ambassadors"] }),
+  });
+}

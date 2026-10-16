@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { 
   Store, Save, Loader2, Camera, BadgeCheck, 
-  ShieldCheck, MapPin
+  ShieldCheck, MapPin, LocateFixed
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { VendorLayout } from "@/components/vendor/VendorLayout";
@@ -25,6 +25,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { AVATAR_MAX_DIMENSION, compressImage } from "@/lib/compressImage";
 import { AddressAutocomplete } from "@/components/address/AddressAutocomplete";
 
+
+/** How long to wait for a GPS fix inside a shop. */
+const GPS_TIMEOUT_MS = 20000;
 
 const settingsSchema = z.object({
   store_name: z.string().min(2, "Store name must be at least 2 characters"),
@@ -58,6 +61,11 @@ export default function VendorSettings() {
   const [isGeocodingStore, setIsGeocodingStore] = useState(false);
   /** Exact spot from a picked address suggestion. */
   const [pickedStoreSpot, setPickedStoreSpot] = useState<{ street: string; latitude: number; longitude: number } | null>(null);
+  /** Exact spot from "Use my current location" (the seller standing in the shop). */
+  const [gpsSpot, setGpsSpot] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
+  /** The exact spot already saved, kept when the street hasn't changed. */
+  const [savedSpot, setSavedSpot] = useState<{ street: string; latitude: number; longitude: number } | null>(null);
 
   const form = useForm<SettingsFormData>({
     resolver: zodResolver(settingsSchema),
@@ -70,6 +78,32 @@ export default function VendorSettings() {
       store_state: "",
     },
   });
+
+  /** Seller in their shop: take the phone's GPS position as the exact pickup spot (saved with the form). */
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast({ title: "Location isn't available on this device", variant: "destructive" });
+      return;
+    }
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGpsSpot({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+        setIsLocating(false);
+        toast({ title: "Location found", description: "Tap Save to keep it." });
+      },
+      (error) => {
+        console.warn("[VendorSettings] GPS failed", { code: error.code, message: error.message });
+        setIsLocating(false);
+        toast({
+          title: error.code === error.PERMISSION_DENIED ? "Location is turned off for Kano Kaftan" : "Couldn't find your location",
+          description: error.code === error.PERMISSION_DENIED ? "Allow location in your phone's settings, then try again." : "Move near a window or outside and try again.",
+          variant: "destructive",
+        });
+      },
+      { enableHighAccuracy: true, timeout: GPS_TIMEOUT_MS, maximumAge: 0 },
+    );
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -95,6 +129,7 @@ export default function VendorSettings() {
             state?: string; 
             latitude?: number; 
             longitude?: number;
+            location_precise?: boolean;
           } | null;
           
           form.reset({
@@ -107,6 +142,9 @@ export default function VendorSettings() {
           });
           setAvatarUrl(profile.avatar_url);
           setIsVerified(profile.is_verified || false);
+          if (storeAddress?.location_precise && storeAddress.latitude != null && storeAddress.longitude != null) {
+            setSavedSpot({ street: storeAddress.street || "", latitude: storeAddress.latitude, longitude: storeAddress.longitude });
+          }
         }
       } catch (error) {
         console.error("Failed to load profile:", error);
@@ -161,11 +199,11 @@ export default function VendorSettings() {
         title: "Profile picture updated",
         description: "Your profile picture has been uploaded successfully.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Avatar upload failed:", error);
       toast({
         title: "Upload failed",
-        description: error.message || "Failed to upload profile picture",
+        description: (error instanceof Error && error.message) || "Failed to upload profile picture",
         variant: "destructive",
       });
     } finally {
@@ -183,8 +221,10 @@ export default function VendorSettings() {
       if (data.store_street && data.store_city && data.store_state) {
         setIsGeocodingStore(true);
         try {
-          // A picked suggestion already has the exact spot; otherwise look it up.
-          const exact = pickedStoreSpot && pickedStoreSpot.street === data.store_street ? pickedStoreSpot : null;
+          // GPS in the shop, a picked suggestion or an unchanged saved spot is exact; otherwise look it up.
+          const exact = gpsSpot
+            ?? (pickedStoreSpot && pickedStoreSpot.street === data.store_street ? pickedStoreSpot : null)
+            ?? (savedSpot && savedSpot.street === data.store_street ? savedSpot : null);
           const { data: geoData } = exact
             ? { data: { latitude: exact.latitude, longitude: exact.longitude } }
             : await supabase.functions.invoke('geocode-address', {
@@ -200,6 +240,8 @@ export default function VendorSettings() {
             state: data.store_state,
             latitude: geoData?.latitude || null,
             longitude: geoData?.longitude || null,
+            // Only exact spots show a distance under "Near me"; looked-up ones may be the town centre.
+            location_precise: !!exact,
           } as unknown as Record<string, unknown>;
         } catch (geoError) {
           console.error('Geocoding failed:', geoError);
@@ -229,10 +271,11 @@ export default function VendorSettings() {
         title: "Settings saved",
         description: "Your store settings have been updated successfully.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      console.error("Saving store settings failed:", error);
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Couldn't save your settings",
+        description: (error instanceof Error && error.message) || "Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -451,6 +494,23 @@ export default function VendorSettings() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+
+              <div className="rounded-lg border p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">Exact shop location</p>
+                    <p className="text-xs text-muted-foreground">
+                      {gpsSpot || savedSpot
+                        ? "Saved. Customers nearby see how far your shop is."
+                        : "Stand in your shop and tap the button, so nearby customers find you first."}
+                    </p>
+                  </div>
+                  <Button type="button" size="sm" variant={gpsSpot || savedSpot ? "outline" : "default"} disabled={isLocating} onClick={useCurrentLocation} className="shrink-0">
+                    {isLocating ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <LocateFixed className="mr-1.5 h-4 w-4" />}
+                    {gpsSpot ? "Updated" : "Use my current location"}
+                  </Button>
                 </div>
               </div>
 

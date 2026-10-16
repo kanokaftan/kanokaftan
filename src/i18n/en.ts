@@ -302,6 +302,8 @@ export const en = {
     save: "Save Changes",
     saving: "Saving...",
     orders: "My Orders",
+    ambassadorDashboard: "Ambassador dashboard",
+    ambassadorDashboardDesc: "Your link, sellers and earnings",
     ordersLabel: "Orders",
     wishlist: "Favorites",
     addresses: "Addresses",

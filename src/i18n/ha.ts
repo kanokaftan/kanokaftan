@@ -302,6 +302,8 @@ export const ha = {
     save: "Ajiye Canje-canje",
     saving: "Ana ajiye...",
     orders: "Oda-odana",
+    ambassadorDashboard: "Allon jakada",
+    ambassadorDashboardDesc: "Hanyar gayyatarka, masu sayarwa da kuɗinka",
     ordersLabel: "Oda-oda",
     wishlist: "Jerin So",
     addresses: "Adireshi-adireshi",

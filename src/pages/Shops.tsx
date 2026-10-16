@@ -1,15 +1,20 @@
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { Loader2, Search, Store, X } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { Loader2, LocateFixed, Search, Store, X } from "lucide-react";
+import { toast } from "sonner";
 import { MobileLayout } from "@/components/layout/MobileLayout";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ShopTile } from "@/components/shop/ShopTile";
+import { VerifiedBadge } from "@/components/shop/VerifiedBadge";
 import {
-  useBrowseShops, useShopFilterCounts,
-  type ShopBadgeFilter, type ShopFilterCounts, type ShopTypeFilter,
+  useBrowseShops, useGoldShops, useShopFilterCounts, useShopTowns,
+  type ShopBadgeFilter, type ShopFilterCounts, type ShopSort, type ShopTypeFilter,
 } from "@/hooks/useShops";
+import { useNearMe } from "@/hooks/useNearMe";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +22,7 @@ const SEARCH_DELAY_MS = 300;
 /** Start loading the next page this far before the end of the list. */
 const PRELOAD_MARGIN = "600px";
 const SKELETON_TILES = 6;
+const ALL_TOWNS = "__all";
 
 const BADGES: { value: ShopBadgeFilter; label: string }[] = [
   { value: "all", label: "All" },
@@ -31,49 +37,98 @@ const TYPES: { value: ShopTypeFilter; label: string }[] = [
   { value: "seller", label: "Sellers" },
 ];
 
+const SORTS: { value: ShopSort; label: string }[] = [
+  { value: "recommended", label: "Recommended" },
+  { value: "near", label: "Nearest to me" },
+  { value: "followers", label: "Most followed" },
+  { value: "rating", label: "Top rated" },
+  { value: "newest", label: "Newest" },
+];
+
 const isBadge = (v: string | null): v is ShopBadgeFilter => BADGES.some((b) => b.value === v);
 const isType = (v: string | null): v is ShopTypeFilter => TYPES.some((t) => t.value === v);
+const isSort = (v: string | null): v is ShopSort => SORTS.some((s) => s.value === v);
 
-function badgeCount(counts: ShopFilterCounts | undefined, key: ShopBadgeFilter): number | undefined {
-  return counts?.[key];
-}
+const badgeCount = (counts: ShopFilterCounts | undefined, key: ShopBadgeFilter) => counts?.[key];
+const typeCount = (counts: ShopFilterCounts | undefined, key: ShopTypeFilter) => counts?.[key === "all" ? "everyone" : key];
 
-function typeCount(counts: ShopFilterCounts | undefined, key: ShopTypeFilter): number | undefined {
-  return counts?.[key === "all" ? "everyone" : key];
+/** Gold shops in a row of round logos, like stories. */
+function GoldStrip() {
+  const { data: gold } = useGoldShops();
+  if (!gold?.length) return null;
+  return (
+    <section aria-label="Gold shops">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#9A7400]">Gold shops</p>
+      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {gold.map((shop) => (
+          <Link key={shop.id} to={`/shop/${shop.store_slug}`} className="flex w-[68px] shrink-0 flex-col items-center gap-1 active:opacity-70">
+            <Avatar className="h-[60px] w-[60px] ring-2 ring-[#9A7400] ring-offset-2 ring-offset-background">
+              <AvatarImage src={shop.avatar_url || undefined} alt="" loading="lazy" />
+              <AvatarFallback className="bg-primary font-bold text-primary-foreground">{shop.store_name.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <span className="flex w-full items-center justify-center gap-0.5">
+              <span className="truncate text-[11px] font-medium">{shop.store_name}</span>
+              <VerifiedBadge tier="gold" className="h-3 w-3" />
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
 }
 
 export default function Shops() {
   const [params, setParams] = useSearchParams();
   const badge: ShopBadgeFilter = isBadge(params.get("badge")) ? (params.get("badge") as ShopBadgeFilter) : "all";
   const type: ShopTypeFilter = isType(params.get("type")) ? (params.get("type") as ShopTypeFilter) : "all";
+  const requestedSort: ShopSort = isSort(params.get("sort")) ? (params.get("sort") as ShopSort) : "recommended";
+  const town = params.get("town") || null;
   const [input, setInput] = useState(params.get("q") ?? "");
   const [search, setSearch] = useState(input.trim());
+  const nearMe = useNearMe();
+  // "Nearest" needs a position; until we have one, keep the normal order.
+  const sort: ShopSort = requestedSort === "near" && !nearMe.position ? "recommended" : requestedSort;
 
-  const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useBrowseShops({ search, badge, type });
-  const { data: counts } = useShopFilterCounts({ search, badge, type });
+  const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useBrowseShops({
+    search, badge, type, town, sort, position: nearMe.position,
+  });
+  const { data: counts } = useShopFilterCounts({ search, badge, type, town });
+  const { data: towns } = useShopTowns();
   const shops = data?.pages.flat() ?? [];
   const sentinel = useRef<HTMLDivElement>(null);
+  const filtered = badge !== "all" || type !== "all" || !!search || !!town;
 
   useDocumentMeta({
     title: "Shops - Kano Kaftan",
-    description: "Browse tailors and sellers on Kano Kaftan: verified and gold shops, clothing, fabrics, shoes, caps and accessories.",
+    description: "Browse tailors and sellers on Kano Kaftan: shops near you, verified and gold shops, clothing, fabrics, shoes, caps and accessories.",
   });
 
-  // Search as you type, and keep it in the address so Back returns to the same list.
+  const updateParams = (changes: Record<string, string | null>) =>
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      for (const [key, value] of Object.entries(changes)) {
+        if (value === null || value === "" || value === "all" || value === "recommended") next.delete(key);
+        else next.set(key, value);
+      }
+      return next;
+    }, { replace: true });
+
   useEffect(() => {
     const timer = setTimeout(() => setSearch(input.trim()), SEARCH_DELAY_MS);
     return () => clearTimeout(timer);
   }, [input]);
 
   useEffect(() => {
-    setParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (search) next.set("q", search); else next.delete("q");
-      return next;
-    }, { replace: true });
-  }, [search, setParams]);
+    updateParams({ q: search || null });
+    // updateParams only wraps setParams, which is stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
-  // Load the next page when the end of the list comes into view.
+  // Opening a shared "?sort=near" link asks for the position once.
+  useEffect(() => {
+    if (requestedSort === "near" && !nearMe.position && nearMe.status === "idle") nearMe.locate();
+  }, [requestedSort, nearMe]);
+
   useEffect(() => {
     const node = sentinel.current;
     if (!node || !hasNextPage) return;
@@ -87,19 +142,30 @@ export default function Shops() {
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage, shops.length]);
 
-  const setFilter = (key: "badge" | "type", value: string) =>
-    setParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (value === "all") next.delete(key); else next.set(key, value);
-      return next;
-    }, { replace: true });
+  const chooseSort = async (value: ShopSort) => {
+    if (value !== "near") {
+      updateParams({ sort: value });
+      return;
+    }
+    const result = nearMe.position ? { position: nearMe.position, status: "ready" as const } : await nearMe.locate();
+    if (result.position) {
+      updateParams({ sort: "near" });
+    } else {
+      toast.error(
+        result.status === "denied"
+          ? "Location is turned off for Kano Kaftan. Allow it in your phone's settings to see shops near you."
+          : "Couldn't find your location. Check that location is on and try again.",
+      );
+    }
+  };
 
-  const filtered = badge !== "all" || type !== "all" || !!search;
   const clearAll = () => {
     setInput("");
     setSearch("");
     setParams({}, { replace: true });
   };
+
+  const showingNear = sort === "near";
 
   return (
     <MobileLayout>
@@ -110,6 +176,8 @@ export default function Shops() {
             {counts ? `${counts.total.toLocaleString()} tailors and sellers on Kano Kaftan` : "Tailors and sellers on Kano Kaftan"}
           </p>
         </div>
+
+        {!filtered && !showingNear && <GoldStrip />}
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -127,7 +195,6 @@ export default function Shops() {
           )}
         </div>
 
-        {/* Shop type */}
         <div role="tablist" aria-label="Shop type" className="grid grid-cols-3 rounded-full bg-muted p-1">
           {TYPES.map((t) => {
             const n = typeCount(counts, t.value);
@@ -137,7 +204,7 @@ export default function Shops() {
                 type="button"
                 role="tab"
                 aria-selected={type === t.value}
-                onClick={() => setFilter("type", t.value)}
+                onClick={() => updateParams({ type: t.value })}
                 className={cn("h-9 rounded-full text-[13px] font-medium transition-all", type === t.value ? "bg-background shadow-sm" : "text-muted-foreground")}
               >
                 {t.label}{n !== undefined && t.value !== "all" && <span className="ml-1 text-muted-foreground">{n}</span>}
@@ -146,8 +213,19 @@ export default function Shops() {
           })}
         </div>
 
-        {/* Badge */}
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Filter by badge">
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Filter shops">
+          <button
+            type="button"
+            aria-pressed={showingNear}
+            onClick={() => (showingNear ? updateParams({ sort: null }) : chooseSort("near"))}
+            className={cn(
+              "flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-medium transition-colors",
+              showingNear ? "border-foreground bg-foreground text-background" : "bg-background",
+            )}
+          >
+            {nearMe.status === "locating" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LocateFixed className="h-3.5 w-3.5" />}
+            Near me
+          </button>
           {BADGES.map((b) => {
             const n = badgeCount(counts, b.value);
             const active = badge === b.value;
@@ -156,7 +234,7 @@ export default function Shops() {
                 key={b.value}
                 type="button"
                 aria-pressed={active}
-                onClick={() => setFilter("badge", b.value)}
+                onClick={() => updateParams({ badge: b.value })}
                 className={cn(
                   "flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-medium transition-colors",
                   active ? "border-foreground bg-foreground text-background" : "bg-background text-foreground",
@@ -170,6 +248,28 @@ export default function Shops() {
             );
           })}
         </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <Select value={town ?? ALL_TOWNS} onValueChange={(v) => updateParams({ town: v === ALL_TOWNS ? null : v })}>
+            <SelectTrigger className="h-10 rounded-full text-[13px]" aria-label="Town"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_TOWNS}>All towns</SelectItem>
+              {(towns ?? []).map((t) => <SelectItem key={t.town} value={t.town}>{t.town} ({t.shops})</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={sort} onValueChange={(v) => chooseSort(v as ShopSort)}>
+            <SelectTrigger className="h-10 rounded-full text-[13px]" aria-label="Sort shops"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {SORTS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {showingNear && (
+          <p className="text-xs text-muted-foreground">
+            Closest first. Exact distances show for shops that saved their exact spot; others are placed by their town.
+          </p>
+        )}
 
         {isLoading ? (
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
@@ -189,7 +289,7 @@ export default function Shops() {
         ) : (
           <>
             <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
-              {shops.map((shop) => <ShopTile key={shop.id} shop={shop} />)}
+              {shops.map((shop) => <ShopTile key={shop.id} shop={shop} showDistance={showingNear} />)}
             </div>
             <div ref={sentinel} className="flex justify-center py-4">
               {isFetchingNextPage ? (
