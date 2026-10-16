@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { VendorLayout } from "@/components/vendor/VendorLayout";
 import { PayoutAccountCard } from "@/components/vendor/PayoutAccountCard";
 import { ShopBrandingCard } from "@/components/vendor/ShopBrandingCard";
+import { ShopTypePicker } from "@/components/vendor/ShopTypePicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -345,6 +346,8 @@ export default function VendorSettings() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <ShopTypePicker />
+
               <div className="space-y-2">
                 <Label htmlFor="store_name" className="text-sm">Store Name *</Label>
                 <Input

@@ -1980,6 +1980,31 @@ export type Database = {
           unread: boolean
         }[]
       }
+      browse_shops: {
+        Args: { p_search?: string | null; p_badge?: string; p_type?: string; p_limit?: number; p_offset?: number }
+        Returns: {
+          id: string
+          store_name: string
+          store_slug: string
+          store_description: string | null
+          avatar_url: string | null
+          store_banner_url: string | null
+          is_verified: boolean
+          city: string | null
+          state: string | null
+          joined_at: string
+          product_count: number
+          follower_count: number
+          items_sold: number
+          rating: number | null
+          review_count: number
+          verification_tier: string | null
+          shop_type: string
+        }[]
+      }
+      shop_filter_counts: { Args: { p_search?: string | null; p_badge?: string; p_type?: string }; Returns: Json }
+      set_my_shop_type: { Args: { p_type: string }; Returns: string }
+      my_shop_type: { Args: Record<PropertyKey, never>; Returns: string | null }
       list_shops: {
         Args: { p_search?: string | null; p_limit?: number; p_offset?: number }
         Returns: {

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Product } from "@/hooks/useProducts";
@@ -20,6 +20,79 @@ export function useShop({ slug, vendorId }: { slug?: string; vendorId?: string }
       return data?.[0] ?? null;
     },
     enabled: !!slug || !!vendorId,
+  });
+}
+
+export type DirectoryShop = Database["public"]["Functions"]["browse_shops"]["Returns"][number];
+export type ShopBadgeFilter = "all" | "gold" | "verified" | "unverified";
+export type ShopTypeFilter = "all" | "tailor" | "seller";
+export type ShopType = "tailor" | "seller";
+/** Badge counts are within the chosen type, type counts within the chosen badge ("everyone" = both types). */
+export type ShopFilterCounts = Record<ShopBadgeFilter | ShopType | "everyone" | "total", number>;
+
+/** Shops loaded per page while scrolling the directory. */
+export const SHOP_PAGE_SIZE = 30;
+
+/** The shop directory, filtered on the server and loaded a page at a time. */
+export function useBrowseShops({ search, badge, type }: { search: string; badge: ShopBadgeFilter; type: ShopTypeFilter }) {
+  return useInfiniteQuery({
+    queryKey: ["shops", "browse", search, badge, type],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }): Promise<DirectoryShop[]> => {
+      const { data, error } = await supabase.rpc("browse_shops", {
+        p_search: search || null,
+        p_badge: badge,
+        p_type: type,
+        p_limit: SHOP_PAGE_SIZE,
+        p_offset: pageParam,
+      });
+      if (error) throw error;
+      return data ?? [];
+    },
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length < SHOP_PAGE_SIZE ? undefined : allPages.length * SHOP_PAGE_SIZE,
+  });
+}
+
+/** How many shops each filter chip would show, for the current search and filters. */
+export function useShopFilterCounts({ search, badge, type }: { search: string; badge: ShopBadgeFilter; type: ShopTypeFilter }) {
+  return useQuery({
+    queryKey: ["shops", "counts", search, badge, type],
+    staleTime: 60 * 1000,
+    placeholderData: keepPreviousData,
+    queryFn: async (): Promise<ShopFilterCounts> => {
+      const { data, error } = await supabase.rpc("shop_filter_counts", { p_search: search || null, p_badge: badge, p_type: type });
+      if (error) throw error;
+      return data as unknown as ShopFilterCounts;
+    },
+  });
+}
+
+/** The signed-in seller's shop type (chosen, or guessed from the shop description). */
+export function useMyShopType(enabled: boolean) {
+  return useQuery({
+    queryKey: ["my-shop-type"],
+    enabled,
+    queryFn: async (): Promise<ShopType> => {
+      const { data, error } = await supabase.rpc("my_shop_type");
+      if (error) throw error;
+      return data === "tailor" ? "tailor" : "seller";
+    },
+  });
+}
+
+export function useSetMyShopType() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (type: ShopType) => {
+      const { error } = await supabase.rpc("set_my_shop_type", { p_type: type });
+      if (error) throw new Error(error.message || "Couldn't save your shop type.");
+      return type;
+    },
+    onSuccess: (type) => {
+      queryClient.setQueryData(["my-shop-type"], type);
+      queryClient.invalidateQueries({ queryKey: ["shops"] });
+    },
   });
 }
 
