@@ -561,6 +561,7 @@ export const en = {
       signInLink: "Sign in",
       justShopping: "Just shopping?",
       customerAccount: "Create a customer account",
+      invitedBy: "{{name}} invited you to sell on Kano Kaftan.",
       receivedTitle: "Application received",
       receivedBody: "Thank you. Our team will check your shop and contact you on {{phone}} (call or WhatsApp) once it is ready, usually within 1–2 working days.",
       confirmEmail: "If we sent you a confirmation email, open the link in it so you can sign in later.",

@@ -223,6 +223,47 @@ export type Database = {
           },
         ]
       }
+      ambassadors: {
+        Row: {
+          id: string
+          code: string
+          full_name: string
+          phone: string | null
+          email: string | null
+          bank_name: string | null
+          account_number: string | null
+          account_name: string | null
+          notes: string | null
+          is_active: boolean
+          link_visits: number
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      seller_referrals: {
+        Row: {
+          seller_id: string
+          ambassador_id: string
+          status: string
+          reward_amount: number | null
+          source: string
+          approved_at: string | null
+          first_sale_order_id: string | null
+          earned_at: string | null
+          paid_at: string | null
+          paid_by: string | null
+          payment_note: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       admin_unlocks: {
         Row: {
           unlocked_until: string
@@ -890,6 +931,7 @@ export type Database = {
           verification_period_days: number | null
           auto_release_days: number
           checkout_commission_percent: number
+          ambassador_seller_reward: number
           commission_percent: number
           id: number
           updated_at: string
@@ -903,6 +945,7 @@ export type Database = {
           verification_period_days?: number | null
           auto_release_days?: number
           checkout_commission_percent?: number
+          ambassador_seller_reward?: number
           commission_percent?: number
           id?: number
           updated_at?: string
@@ -916,6 +959,7 @@ export type Database = {
           verification_period_days?: number | null
           auto_release_days?: number
           checkout_commission_percent?: number
+          ambassador_seller_reward?: number
           commission_percent?: number
           id?: number
           updated_at?: string
@@ -1607,6 +1651,68 @@ export type Database = {
         Returns: undefined
       }
       admin_logistics_overview: { Args: Record<PropertyKey, never>; Returns: Json }
+      get_ambassador_invite: { Args: { p_code: string }; Returns: { code: string; first_name: string }[] }
+      record_ambassador_visit: { Args: { p_code: string }; Returns: undefined }
+      claim_seller_referral: { Args: { p_code: string }; Returns: boolean }
+      admin_save_ambassador: {
+        Args: {
+          p_id: string | null
+          p_full_name: string
+          p_phone?: string | null
+          p_email?: string | null
+          p_bank_name?: string | null
+          p_account_number?: string | null
+          p_account_name?: string | null
+          p_notes?: string | null
+          p_is_active?: boolean
+          p_code?: string | null
+        }
+        Returns: Database["public"]["Tables"]["ambassadors"]["Row"]
+      }
+      admin_ambassador_overview: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          code: string
+          full_name: string
+          phone: string | null
+          email: string | null
+          bank_name: string | null
+          account_number: string | null
+          account_name: string | null
+          notes: string | null
+          is_active: boolean
+          link_visits: number
+          created_at: string
+          sign_ups: number
+          approved: number
+          selling: number
+          owed: number
+          paid: number
+        }[]
+      }
+      admin_ambassador_referrals: {
+        Args: { p_ambassador_id: string }
+        Returns: {
+          seller_id: string
+          shop_name: string | null
+          seller_name: string | null
+          seller_phone: string | null
+          status: string
+          source: string
+          reward_amount: number | null
+          created_at: string
+          approved_at: string | null
+          earned_at: string | null
+          paid_at: string | null
+          payment_note: string | null
+        }[]
+      }
+      admin_mark_referral_paid: {
+        Args: { p_seller_id: string; p_note?: string | null }
+        Returns: Database["public"]["Tables"]["seller_referrals"]["Row"]
+      }
+      admin_assign_seller_referral: { Args: { p_seller_id: string; p_code: string }; Returns: boolean }
       reply_to_review: { Args: { p_review_id: string; p_reply: string }; Returns: undefined }
       admin_vendor_overview: { Args: { p_vendor_id: string }; Returns: Json }
       admin_customer_overview: { Args: { p_user_id: string }; Returns: Json }

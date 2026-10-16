@@ -561,6 +561,7 @@ export const ha = {
       signInLink: "Shiga",
       justShopping: "Siyayya kawai kake yi?",
       customerAccount: "Bude asusun mai saye",
+      invitedBy: "{{name}} ya gayyace ka ka fara sayarwa a Kano Kaftan.",
       receivedTitle: "An karbi bukatarka",
       receivedBody: "Mun gode. Tawagarmu za ta duba shagonka ta tuntube ka a {{phone}} (kira ko WhatsApp) idan ya shirya, yawanci cikin kwanakin aiki 1–2.",
       confirmEmail: "Idan mun aiko maka da imel na tabbatarwa, bude mahadar da ke ciki domin ka iya shiga daga baya.",

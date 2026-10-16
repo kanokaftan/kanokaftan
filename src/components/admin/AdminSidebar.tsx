@@ -1,4 +1,4 @@
-import { Activity, LayoutDashboard, Users, Store, Package, ShoppingCart, FolderTree, Settings, LogOut, ArrowLeftRight, DollarSign, FileText, MessageCircle, Megaphone, Flag, AlertTriangle, Truck } from "lucide-react";
+import { Activity, LayoutDashboard, Users, Store, Package, ShoppingCart, FolderTree, Settings, LogOut, ArrowLeftRight, DollarSign, FileText, MessageCircle, Megaphone, Flag, AlertTriangle, Truck, UserPlus } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { signOutThisDevice } from "@/lib/signOut";
 import { useNavigate } from "react-router-dom";
@@ -23,6 +23,7 @@ const menuItems = [
   { title: "Sellers", url: "/admin/vendors", icon: Store },
   { title: "Orders", url: "/admin/orders", icon: ShoppingCart },
   { title: "Logistics", url: "/admin/logistics", icon: Truck },
+  { title: "Ambassadors", url: "/admin/ambassadors", icon: UserPlus },
   { title: "Messages", url: "/admin/messages", icon: MessageCircle },
   { title: "Categories", url: "/admin/categories", icon: FolderTree },
   { title: "Finance", url: "/admin/finance", icon: DollarSign },

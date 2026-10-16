@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { BrandLogo } from "@/components/brand/BrandLogo";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Eye, EyeOff, Loader2, Store, ShieldCheck, Megaphone, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, Loader2, Store, ShieldCheck, Megaphone, Clock, CheckCircle2, AlertCircle, UserCheck } from "lucide-react";
+import { useAmbassadorInvite } from "@/hooks/useAmbassadors";
+import { clearReferral, rememberReferral, storedReferral } from "@/lib/referral";
 import { HowYouEarn } from "@/components/vendor/HowYouEarn";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,6 +56,10 @@ export default function SellerApply() {
   const { data: application, isLoading: appLoading } = useMyVendorApplication(user?.id);
   const [submittedPhone, setSubmittedPhone] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
+  const [searchParams] = useSearchParams();
+  // An ambassador's link (/r/CODE or /sell?ref=CODE) credits them when this person applies.
+  const [referralCode] = useState(() => rememberReferral(searchParams.get("ref")) ?? storedReferral());
+  const { data: invite } = useAmbassadorInvite(referralCode);
 
   useEffect(() => {
     if (user && !rolesLoading && isVendor) navigate("/vendor/dashboard", { replace: true });
@@ -73,6 +79,8 @@ export default function SellerApply() {
       <ApplicationForm
         signedIn={!!user}
         initial={application ?? undefined}
+        referralCode={invite ? invite.code : null}
+        invitedBy={invite?.first_name ?? null}
         onSubmitted={(phone) => {
           setEditing(false);
           setSubmittedPhone(phone);
@@ -155,13 +163,24 @@ function HowSellingWorks() {
   );
 }
 
+/** Credits the ambassador for a signed-in customer who applies; never blocks the application. */
+async function claimReferral(code: string) {
+  const { data, error } = await supabase.rpc("claim_seller_referral", { p_code: code });
+  if (error) console.error("[SellerApply] could not credit the ambassador", { code, error });
+  else if (!data) console.info("[SellerApply] referral not counted (already credited or not eligible)", { code });
+}
+
 function ApplicationForm({
   signedIn,
   initial,
+  referralCode,
+  invitedBy,
   onSubmitted,
 }: {
   signedIn: boolean;
   initial?: VendorApplication;
+  referralCode: string | null;
+  invitedBy: string | null;
   onSubmitted: (phone: string) => void;
 }) {
   const { t } = useTranslation();
@@ -194,6 +213,7 @@ function ApplicationForm({
     try {
       if (signedIn) {
         await submitApplication.mutateAsync({ ...shop, phone, full_name: account.full_name });
+        if (referralCode) await claimReferral(referralCode);
       } else {
         // The application rides along with the sign-up, so it is saved even
         // before the seller confirms their email.
@@ -205,6 +225,7 @@ function ApplicationForm({
             data: {
               full_name: account.full_name.trim(),
               phone,
+              ...(referralCode ? { ambassador_code: referralCode } : {}),
               vendor_application: {
                 shop_name: shop.shop_name.trim(),
                 phone,
@@ -222,6 +243,7 @@ function ApplicationForm({
           throw error;
         }
       }
+      clearReferral();
       onSubmitted(phone);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : t("seller.apply.errors.failed");
@@ -240,6 +262,13 @@ function ApplicationForm({
           {initial?.status === "rejected" ? t("seller.apply.introRejected") : t("seller.apply.intro")}
         </p>
       </div>
+
+      {invitedBy && (
+        <div className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm">
+          <UserCheck className="h-5 w-5 shrink-0 text-primary" />
+          <p>{t("seller.apply.invitedBy", { name: invitedBy })}</p>
+        </div>
+      )}
 
       {!initial && <HowSellingWorks />}
 
