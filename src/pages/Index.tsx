@@ -13,7 +13,7 @@ import { Link } from "react-router-dom";
 
 const Index = () => {
   return (
-    <MobileLayout>
+    <MobileLayout headerSearch>
       <MobileHero />
       <PushPrompt />
       <StoryStrip />

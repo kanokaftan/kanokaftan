@@ -11,10 +11,11 @@ import { useCart } from "@/hooks/useCart";
 
 /**
  * Top bar: the logo on its own on the left and a small glass pill of actions
- * on the right (search, notifications, cart) instead of one long bubble.
- * Search opens on tap rather than taking space on every page.
+ * on the right (notifications, cart). The search icon is only shown where a
+ * page asks for it (the home page); Products and Shops have their own search
+ * box, and chat and profile don't need one.
  */
-export function MobileHeader() {
+export function MobileHeader({ showSearch = false }: { showSearch?: boolean }) {
   const { count: cartCount } = useCart();
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -26,7 +27,7 @@ export function MobileHeader() {
 
   return (
     <header className="sticky top-0 z-50 w-full bg-gradient-to-b from-background via-background/85 to-transparent px-3 pb-2 pt-2">
-      {searching ? (
+      {searching && showSearch ? (
         <div className="flex h-12 items-center gap-2">
           <LiveSearch className="min-w-0 flex-1" placeholder={t("products.searchPlaceholder")} autoFocus />
           <button
@@ -44,14 +45,16 @@ export function MobileHeader() {
           </Link>
 
           <div className="liquid-glass flex h-11 items-center gap-0.5 rounded-full px-1">
-            <button
-              type="button"
-              onClick={() => setSearching(true)}
-              className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-foreground/5 active:scale-95"
-              aria-label={t("products.searchPlaceholder")}
-            >
-              <Search className="h-[21px] w-[21px]" />
-            </button>
+            {showSearch && (
+              <button
+                type="button"
+                onClick={() => setSearching(true)}
+                className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-foreground/5 active:scale-95"
+                aria-label={t("products.searchPlaceholder")}
+              >
+                <Search className="h-[21px] w-[21px]" />
+              </button>
+            )}
             {user && <NotificationBell />}
             <Link
               to="/cart"

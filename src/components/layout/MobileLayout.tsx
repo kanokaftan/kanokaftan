@@ -8,6 +8,8 @@ interface MobileLayoutProps {
   children: ReactNode;
   hideHeader?: boolean;
   hideBottomNav?: boolean;
+  /** Show the search icon in the top bar (home page only; other pages have their own search or don't need one). */
+  headerSearch?: boolean;
 }
 
 /** Tab order, used to slide pages in from the side you are moving towards. */
@@ -31,7 +33,7 @@ function enterAnimation(pathname: string): string {
   return "animate-in fade-in-0 slide-in-from-bottom-2 duration-300";
 }
 
-export function MobileLayout({ children, hideHeader = false, hideBottomNav = false }: MobileLayoutProps) {
+export function MobileLayout({ children, hideHeader = false, hideBottomNav = false, headerSearch = false }: MobileLayoutProps) {
   const { pathname } = useLocation();
   // Worked out once per page, so a re-render mid-slide doesn't cut it short.
   const animation = useMemo(() => enterAnimation(pathname), [pathname]);
@@ -41,7 +43,7 @@ export function MobileLayout({ children, hideHeader = false, hideBottomNav = fal
 
   return (
     <div className="flex min-h-screen flex-col overflow-x-clip bg-background">
-      {!hideHeader && <MobileHeader />}
+      {!hideHeader && <MobileHeader showSearch={headerSearch} />}
       <main key={pathname} className={cn("flex-1 motion-reduce:animate-none", !hideBottomNav && "pb-28", animation)}>
         {children}
       </main>

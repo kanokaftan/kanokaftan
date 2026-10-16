@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Grid2X2, LayoutGrid } from "lucide-react";
+import { Grid2X2, LayoutGrid, Search, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { ProductGrid } from "@/components/products/ProductGrid";
 import { ProductFilters } from "@/components/products/ProductFilters";
@@ -11,14 +12,37 @@ import { useProducts, useCategories, type Product } from "@/hooks/useProducts";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 
+const SEARCH_DELAY_MS = 350;
+
 export default function Products() {
   const { t } = useTranslation();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const categorySlug = searchParams.get("category") || undefined;
   const search = searchParams.get("search") || undefined;
   const featured = searchParams.get("featured") === "true";
   const page = parseInt(searchParams.get("page") || "1", 10);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+  const [searchInput, setSearchInput] = useState(search ?? "");
+
+  // Back/forward or a link changed the search: show it in the box.
+  useEffect(() => {
+    setSearchInput((current) => (current.trim() === (search ?? "") ? current : search ?? ""));
+  }, [search]);
+
+  // Search as you type; a new search starts again from page 1.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const next = searchInput.trim();
+      if (next === (search ?? "")) return;
+      setSearchParams((prev) => {
+        const params = new URLSearchParams(prev);
+        if (next) params.set("search", next); else params.delete("search");
+        params.delete("page");
+        return params;
+      }, { replace: true });
+    }, SEARCH_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [searchInput, search, setSearchParams]);
 
   // Grid density preference - persisted in localStorage
   const [isCompactGrid, setIsCompactGrid] = useState(() => {
@@ -99,6 +123,29 @@ export default function Products() {
                 <LayoutGrid className="h-4 w-4" />
               </button>
             </div>
+          </div>
+
+          <div className="relative mt-3">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              enterKeyHint="search"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder={t("products.searchPlaceholder")}
+              className="h-11 rounded-full bg-background pl-9 pr-9"
+              aria-label={t("products.searchPlaceholder")}
+            />
+            {searchInput && (
+              <button
+                type="button"
+                onClick={() => setSearchInput("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground"
+                aria-label="Clear search"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
       </section>

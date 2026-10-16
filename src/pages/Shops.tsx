@@ -173,7 +173,7 @@ export default function Shops() {
         <div>
           <h1 className="font-display text-xl font-bold">Shops</h1>
           <p className="text-sm text-muted-foreground">
-            {counts ? `${counts.total.toLocaleString()} tailors and sellers on Kano Kaftan` : "Tailors and sellers on Kano Kaftan"}
+            {typeof counts?.total === "number" ? `${counts.total.toLocaleString()} tailors and sellers on Kano Kaftan` : "Tailors and sellers on Kano Kaftan"}
           </p>
         </div>
 
