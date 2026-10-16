@@ -100,7 +100,7 @@ export function FeaturedShopsStrip() {
     return (
       <section className="py-3" aria-label={t("home.featuredShops", "Featured shops")}>
         {header}
-        <div className="flex gap-3 overflow-x-auto px-4 pb-1 scrollbar-hide">
+        <div className="flex gap-3 overflow-x-auto px-4 py-1 scrollbar-hide">
           {shops.map((shop) => <ShopLogo key={shop.id} shop={shop} />)}
         </div>
       </section>

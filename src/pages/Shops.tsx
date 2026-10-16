@@ -114,8 +114,8 @@ function GoldStrip() {
   if (!gold?.length) return null;
   return (
     <section aria-label="Gold shops">
-      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-[#9A7400]">Gold shops</p>
-      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <p className="mb-0.5 text-xs font-semibold uppercase tracking-wide text-[#9A7400]">Gold shops</p>
+      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {gold.map((shop) => (
           <Link key={shop.id} to={`/shop/${shop.store_slug}`} className="flex w-[60px] shrink-0 flex-col items-center gap-1 active:opacity-70">
             <Avatar className="h-[52px] w-[52px] ring-2 ring-[#9A7400] ring-offset-2 ring-offset-background">
