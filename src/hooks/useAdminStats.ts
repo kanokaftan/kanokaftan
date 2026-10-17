@@ -48,7 +48,8 @@ export function useAdminStats() {
       // Get total products count
       const { count: totalProducts } = await supabase
         .from("products")
-        .select("*", { count: "exact", head: true });
+        .select("*", { count: "exact", head: true })
+        .is("deleted_at", null);
 
       // Get paid orders count (actual confirmed orders)
       const { count: totalPaidOrders } = await supabase

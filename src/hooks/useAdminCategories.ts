@@ -27,7 +27,8 @@ export function useAdminCategories() {
       // Get product counts per category
       const { data: products } = await supabase
         .from("products")
-        .select("category_id");
+        .select("category_id")
+        .is("deleted_at", null);
 
       const countByCategory = products?.reduce((acc, p) => {
         if (p.category_id) {

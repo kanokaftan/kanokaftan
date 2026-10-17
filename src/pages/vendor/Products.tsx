@@ -299,7 +299,7 @@ export default function VendorProducts() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this product?</AlertDialogTitle>
             <AlertDialogDescription>
-              "{deleteFor?.name}" will be removed from your shop for good. To take it down for a while, hide it instead.
+              "{deleteFor?.name}" will be removed from your shop. If someone has ordered it before, the old orders keep its details. To take it down for a while, hide it instead.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

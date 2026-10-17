@@ -1055,6 +1055,7 @@ export type Database = {
           category_id: string | null
           compare_at_price: number | null
           created_at: string
+          deleted_at: string | null
           description: string | null
           featured: boolean
           id: string
@@ -1074,6 +1075,7 @@ export type Database = {
           category_id?: string | null
           compare_at_price?: number | null
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           featured?: boolean
           id?: string
@@ -1093,6 +1095,7 @@ export type Database = {
           category_id?: string | null
           compare_at_price?: number | null
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           featured?: boolean
           id?: string
@@ -1532,6 +1535,10 @@ export type Database = {
       }
     }
     Functions: {
+      delete_product: {
+        Args: { p_product_id: string }
+        Returns: string
+      }
       send_product_card: { Args: { p_conversation_id: string; p_product_id: string }; Returns: undefined }
       request_protected_purchase: { Args: { p_product_id: string }; Returns: string }
       conversation_block_state: {

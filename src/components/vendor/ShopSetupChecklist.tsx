@@ -24,7 +24,7 @@ export function ShopSetupChecklist({ vendorId }: { vendorId: string | null }) {
     queryFn: async () => {
       const [profile, products, verified] = await Promise.all([
         supabase.from("profiles").select("avatar_url, store_name").eq("id", vendorId!).maybeSingle(),
-        supabase.from("products").select("id", { count: "exact", head: true }).eq("vendor_id", vendorId!),
+        supabase.from("products").select("id", { count: "exact", head: true }).eq("vendor_id", vendorId!).is("deleted_at", null),
         supabase.rpc("vendor_is_verified", { p_vendor_id: vendorId! }),
       ]);
       return {

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { removeProductMessage } from "@/lib/removeProduct";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Search, Star, Trash2, Plus, Pencil } from "lucide-react";
 import { toast } from "sonner";
@@ -55,10 +56,11 @@ export default function AdminProducts() {
 
   const handleDelete = async (productId: string) => {
     try {
-      await deleteProduct.mutateAsync(productId);
-      toast.success("Product deleted");
-    } catch {
-      toast.error("Failed to delete product");
+      const outcome = await deleteProduct.mutateAsync(productId);
+      toast.success("Product deleted", { description: removeProductMessage(outcome) });
+    } catch (error) {
+      console.error("[admin] delete product failed", error);
+      toast.error(error instanceof Error ? error.message : "Couldn't delete product");
     }
   };
 
@@ -145,7 +147,7 @@ export default function AdminProducts() {
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>Delete Product?</AlertDialogTitle>
-                        <AlertDialogDescription>This will permanently delete "{product.name}".</AlertDialogDescription>
+                        <AlertDialogDescription>"{product.name}" will be removed. If it has been ordered before, it is archived so past orders stay intact.</AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -234,7 +236,7 @@ export default function AdminProducts() {
                         <AlertDialogContent>
                           <AlertDialogHeader>
                             <AlertDialogTitle>Delete Product?</AlertDialogTitle>
-                            <AlertDialogDescription>This will permanently delete "{product.name}". This action cannot be undone.</AlertDialogDescription>
+                            <AlertDialogDescription>"{product.name}" will be removed. If it has been ordered before, it is archived so past orders stay intact.</AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>

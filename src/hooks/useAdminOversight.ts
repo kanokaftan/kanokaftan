@@ -223,6 +223,7 @@ export function useVendorProductsAdmin(vendorId: string | undefined, enabled = t
       const { data, error } = await supabase
         .from("products")
         .select("id, name, slug, price, stock_quantity, is_active, created_at, product_images(url, is_primary)")
+        .is("deleted_at", null)
         .eq("vendor_id", vendorId!)
         .order("created_at", { ascending: false });
       if (error) fail("seller products", error);

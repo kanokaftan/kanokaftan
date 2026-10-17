@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { removeProduct, removeProductMessage } from "@/lib/removeProduct";
 import { useToast } from "@/hooks/use-toast";
 import { compressImage } from "@/lib/compressImage";
 
@@ -157,26 +158,17 @@ export function useProductMutations(vendorId: string | null) {
   });
 
   const deleteProduct = useMutation({
-    mutationFn: async (productId: string) => {
-      const { error } = await supabase
-        .from("products")
-        .delete()
-        .eq("id", productId);
-
-      if (error) throw error;
-      return { productId };
-    },
-    onSuccess: () => {
+    mutationFn: async (productId: string) => ({ productId, outcome: await removeProduct(productId) }),
+    onSuccess: ({ outcome }) => {
       queryClient.invalidateQueries({ queryKey: ["vendor-products"] });
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
-      toast({
-        title: "Product deleted",
-        description: "The product has been removed",
-      });
+      queryClient.invalidateQueries({ queryKey: ["shop-setup"] });
+      toast({ title: "Product deleted", description: removeProductMessage(outcome) });
     },
     onError: (error) => {
+      console.error("[products] delete failed", error);
       toast({
-        title: "Error deleting product",
+        title: "Couldn't delete product",
         description: error.message,
         variant: "destructive",
       });

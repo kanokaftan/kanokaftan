@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { removeProduct } from "@/lib/removeProduct";
 
 export interface AdminProduct {
   id: string;
@@ -30,6 +31,7 @@ export function useAdminProducts() {
           vendor:profiles!products_vendor_id_fkey(store_name, full_name),
           product_images(url, is_primary, display_order)
         `)
+        .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data || []).map((p: any) => ({
@@ -61,8 +63,7 @@ export function useAdminProducts() {
 
   const deleteProduct = useMutation({
     mutationFn: async (productId: string) => {
-      const { error } = await supabase.from("products").delete().eq("id", productId);
-      if (error) throw error;
+      return removeProduct(productId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });

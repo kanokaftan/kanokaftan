@@ -1,15 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { isToday, isYesterday } from "date-fns";
+import { isThisWeek, isToday, isYesterday } from "date-fns";
 import { Bell, CheckCheck, ChevronLeft, Loader2, Settings2, Trash2 } from "lucide-react";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { VendorLayout } from "@/components/vendor/VendorLayout";
-import { NotificationItem } from "@/components/notifications/NotificationBell";
+import { NotificationRow } from "@/components/notifications/NotificationRow";
 import { NotificationSettingsSheet } from "@/components/notifications/NotificationSettingsSheet";
 import { useNotifications, type Notification } from "@/hooks/useNotifications";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,18 +23,39 @@ import { cn } from "@/lib/utils";
 import { LanguageToggle } from "@/components/LanguageToggle";
 
 type Area = "shop" | "seller" | "admin";
-type Filter = "all" | "unread";
+type Category = Notification["category"];
+type Filter = "all" | "unread" | "orders" | "messages" | "payments" | "reviews" | "offers" | "updates";
 
 /** How long a freshly arrived notification keeps its slide-in highlight. */
 const NEW_HIGHLIGHT_MS = 2000;
+const SKELETON_ROWS = 5;
+
+/** Chips above the list. Topic chips only show when there is something in them. */
+const FILTERS: { value: Filter; label: string; categories?: Category[] }[] = [
+  { value: "all", label: "All" },
+  { value: "unread", label: "Unread" },
+  { value: "orders", label: "Orders", categories: ["order", "product"] },
+  { value: "messages", label: "Messages", categories: ["message", "call"] },
+  { value: "payments", label: "Payments", categories: ["payment"] },
+  { value: "reviews", label: "Reviews", categories: ["review"] },
+  { value: "offers", label: "Offers", categories: ["promotion"] },
+  { value: "updates", label: "Updates", categories: ["system", "general"] },
+];
+
+function matches(filter: Filter, n: Notification): boolean {
+  if (filter === "all") return true;
+  if (filter === "unread") return !n.is_read;
+  return FILTERS.find((f) => f.value === filter)?.categories?.includes(n.category) ?? false;
+}
 
 function groupLabel(date: Date): string {
   if (isToday(date)) return "Today";
   if (isYesterday(date)) return "Yesterday";
+  if (isThisWeek(date)) return "This week";
   return "Earlier";
 }
 
-/** Today / Yesterday / Earlier, keeping the newest-first order. */
+/** Today / Yesterday / This week / Earlier, keeping the newest-first order. */
 function groupByDay(list: Notification[]): { label: string; items: Notification[] }[] {
   const groups: { label: string; items: Notification[] }[] = [];
   for (const n of list) {
@@ -45,6 +65,32 @@ function groupByDay(list: Notification[]): { label: string; items: Notification[
     else groups.push({ label, items: [n] });
   }
   return groups;
+}
+
+const EMPTY_TEXT: Record<Filter, { title: string; body: string }> = {
+  all: { title: "You're all caught up", body: "Order updates, messages and offers will show up here." },
+  unread: { title: "Nothing unread", body: "You've read everything. Nice." },
+  orders: { title: "No order updates", body: "When an order is placed, shipped or delivered, you'll see it here." },
+  messages: { title: "No messages", body: "New chats and missed calls will show up here." },
+  payments: { title: "No payment updates", body: "Payments and payouts will show up here." },
+  reviews: { title: "No reviews yet", body: "Reviews and replies will show up here." },
+  offers: { title: "No offers right now", body: "Deals from shops you follow will show up here." },
+  updates: { title: "No updates", body: "News from Kano Kaftan will show up here." },
+};
+
+function IconButton({ label, onClick, disabled, children, className }: { label: string; onClick: () => void; disabled?: boolean; children: React.ReactNode; className?: string }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      disabled={disabled}
+      className={cn("flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-foreground/5 active:scale-95 disabled:opacity-40", className)}
+    >
+      {children}
+    </button>
+  );
 }
 
 function NotificationsContent({ area }: { area: Area }) {
@@ -70,72 +116,90 @@ function NotificationsContent({ area }: { area: Area }) {
     seenIds.current = ids;
   }, [notifications, isLoading]);
 
-  const visible = filter === "unread" ? notifications.filter((n) => !n.is_read) : notifications;
-  const groups = groupByDay(visible);
+  const chips = useMemo(
+    () =>
+      FILTERS.map((f) => ({ ...f, count: notifications.filter((n) => matches(f.value, n)).length })).filter(
+        (f) => f.value === "all" || f.value === "unread" || f.count > 0 || f.value === filter,
+      ),
+    [notifications, filter],
+  );
 
-  const open = (url: string | null) => {
-    if (url) navigate(url);
+  const visible = notifications.filter((n) => matches(filter, n));
+  const groups = groupByDay(visible);
+  const empty = EMPTY_TEXT[filter];
+
+  const openNotification = (n: Notification) => {
+    if (!n.is_read) markAsRead.mutate(n.id);
+    if (n.action_url) navigate(n.action_url);
   };
 
   return (
-    <div className={cn(area === "shop" && "pt-2")}>
-      {/* Title row */}
-      <div className="mb-3 flex items-center gap-2 px-4">
+    <div className={cn("pb-24", area === "shop" && "pt-1")}>
+      {/* Large title with a glass pill of actions, iOS style */}
+      <div className="flex items-center gap-1 px-4">
         {area === "shop" && (
-          <Button variant="ghost" size="icon" className="-ml-2 h-9 w-9 rounded-full" onClick={() => navigate(-1)} aria-label="Back">
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            aria-label="Back"
+            className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full active:bg-muted"
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </button>
         )}
-        <h1 className={cn("font-display text-2xl font-bold", area !== "shop" && "sr-only")}>Notifications</h1>
-        {unreadCount > 0 && (
-          <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground animate-in zoom-in-50">
-            {unreadCount} new
-          </span>
-        )}
-        <LanguageToggle className="ml-auto" />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9 rounded-full"
-          onClick={() => setSettingsOpen(true)}
-          aria-label="Notification settings"
-        >
-          <Settings2 className="h-5 w-5" />
-        </Button>
-      </div>
-
-      <div className="mb-2 flex items-center justify-between gap-2 px-4">
-        <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-          <TabsList className="h-9 rounded-full">
-            <TabsTrigger value="all" className="rounded-full px-4">All</TabsTrigger>
-            <TabsTrigger value="unread" className="rounded-full px-4">Unread</TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <div className="flex items-center">
-          {unreadCount > 0 && (
-            <Button variant="ghost" size="sm" className="h-9 rounded-full text-xs" onClick={() => markAllAsRead.mutate()} disabled={markAllAsRead.isPending}>
-              <CheckCheck className="mr-1 h-4 w-4" /> Mark all read
-            </Button>
-          )}
-          {notifications.length > 0 && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-full text-muted-foreground hover:text-destructive"
-              onClick={() => setConfirmClear(true)}
-              aria-label="Clear all notifications"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
+        <div className="liquid-glass ml-auto flex h-11 items-center gap-0.5 rounded-full px-1">
+          <IconButton label="Mark all as read" onClick={() => markAllAsRead.mutate()} disabled={unreadCount === 0 || markAllAsRead.isPending}>
+            <CheckCheck className="h-[19px] w-[19px]" />
+          </IconButton>
+          <IconButton label="Clear all notifications" onClick={() => setConfirmClear(true)} disabled={notifications.length === 0}>
+            <Trash2 className="h-[18px] w-[18px]" />
+          </IconButton>
+          <IconButton label="Notification settings" onClick={() => setSettingsOpen(true)}>
+            <Settings2 className="h-[19px] w-[19px]" />
+          </IconButton>
         </div>
       </div>
 
+      <div className="mt-1 flex items-end justify-between gap-3 px-4">
+        <div className="min-w-0">
+          <h1 className="font-display text-[28px] font-bold leading-tight">Notifications</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            {isLoading ? "Loading…" : unreadCount > 0 ? `${unreadCount} unread` : "No new notifications"}
+          </p>
+        </div>
+        <LanguageToggle className="mb-0.5 shrink-0" />
+      </div>
+
+      {/* One row of chips */}
+      <div className="mt-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="Filter notifications">
+        {chips.map((chip) => {
+          const active = filter === chip.value;
+          return (
+            <button
+              key={chip.value}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setFilter(chip.value)}
+              className={cn(
+                "flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 text-[13px] font-medium transition-colors active:scale-95",
+                active ? "border-foreground bg-foreground text-background" : "bg-background",
+              )}
+            >
+              {chip.label}
+              {chip.value !== "all" && chip.count > 0 && (
+                <span className={cn("tabular-nums", active ? "text-background/70" : "text-muted-foreground")}>{chip.count}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
       {isLoading ? (
-        <div className="space-y-4 px-4 py-3">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="flex animate-pulse gap-3">
-              <div className="h-10 w-10 shrink-0 rounded-full bg-muted" />
+        <div className="mx-4 mt-4 overflow-hidden rounded-2xl border bg-card">
+          {Array.from({ length: SKELETON_ROWS }, (_, i) => (
+            <div key={i} className="flex animate-pulse gap-3 border-b px-3.5 py-3 last:border-b-0">
+              <div className="h-10 w-10 shrink-0 rounded-xl bg-muted" />
               <div className="flex-1 space-y-2 pt-1">
                 <div className="h-3 w-3/4 rounded bg-muted" />
                 <div className="h-3 w-1/2 rounded bg-muted" />
@@ -144,39 +208,44 @@ function NotificationsContent({ area }: { area: Area }) {
           ))}
         </div>
       ) : visible.length === 0 ? (
-        <div className="px-6 py-20 text-center animate-in fade-in-0 duration-300">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-            <Bell className="h-8 w-8 text-muted-foreground/50" />
+        <div className="px-8 py-20 text-center animate-in fade-in-0 duration-300">
+          <div className="liquid-glass mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-[28px]">
+            <Bell className="h-9 w-9 text-muted-foreground" />
           </div>
-          <p className="font-medium">{filter === "unread" ? "No unread notifications" : "All caught up!"}</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {filter === "unread" ? "You've read everything." : "Order updates, messages and offers will show up here."}
-          </p>
+          <p className="text-lg font-semibold">{empty.title}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{empty.body}</p>
+          {filter !== "all" && (
+            <Button variant="outline" size="sm" className="mt-4 rounded-full" onClick={() => setFilter("all")}>
+              Show all
+            </Button>
+          )}
         </div>
       ) : (
-        groups.map((group) => (
-          <section key={group.label} aria-label={group.label}>
-            <h2 className="px-4 pb-1 pt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{group.label}</h2>
-            <div>
-              {group.items.map((notification) => (
-                <NotificationItem
-                  key={notification.id}
-                  notification={notification}
-                  isNew={newIds.has(notification.id)}
-                  onMarkAsRead={(id) => markAsRead.mutate(id)}
-                  onDelete={(id) => deleteNotification.mutate(id)}
-                  onNavigate={open}
-                />
-              ))}
-            </div>
-          </section>
-        ))
+        <>
+          {groups.map((group) => (
+            <section key={group.label} aria-label={group.label} className="mt-4 px-4">
+              <h2 className="mb-1.5 px-1 text-[13px] font-semibold text-muted-foreground">{group.label}</h2>
+              <ul className="divide-y divide-border/70 overflow-hidden rounded-2xl border bg-card">
+                {group.items.map((notification) => (
+                  <NotificationRow
+                    key={notification.id}
+                    notification={notification}
+                    isNew={newIds.has(notification.id)}
+                    onOpen={openNotification}
+                    onDelete={(id) => deleteNotification.mutate(id)}
+                  />
+                ))}
+              </ul>
+            </section>
+          ))}
+          <p className="mt-4 px-4 text-center text-xs text-muted-foreground sm:hidden">Swipe left on a notification to delete it.</p>
+        </>
       )}
 
       <NotificationSettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
 
       <AlertDialog open={confirmClear} onOpenChange={setConfirmClear}>
-        <AlertDialogContent className="rounded-2xl">
+        <AlertDialogContent className="max-w-[90vw] rounded-2xl md:max-w-lg">
           <AlertDialogHeader>
             <AlertDialogTitle>Clear all notifications?</AlertDialogTitle>
             <AlertDialogDescription>This removes them from this list. It can't be undone.</AlertDialogDescription>

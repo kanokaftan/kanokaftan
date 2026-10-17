@@ -63,7 +63,8 @@ export function useAdminVendors() {
       // Get product counts per vendor
       const { data: productCounts, error: productsError } = await supabase
         .from("products")
-        .select("vendor_id");
+        .select("vendor_id")
+        .is("deleted_at", null);
 
       if (productsError) throw productsError;
 

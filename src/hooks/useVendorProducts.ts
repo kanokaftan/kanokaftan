@@ -49,6 +49,7 @@ export function useVendorProducts(vendorId: string | null) {
           category:categories(id, name, slug),
           product_images(id, url, is_primary, alt_text)
         `)
+        .is("deleted_at", null)
         .eq("vendor_id", vendorId)
         .order("created_at", { ascending: false });
 
@@ -83,6 +84,7 @@ export function useVendorProduct(productId: string | null) {
           category:categories(id, name, slug),
           product_images(id, url, is_primary, alt_text, display_order)
         `)
+        .is("deleted_at", null)
         .eq("id", productId)
         .single();
 
