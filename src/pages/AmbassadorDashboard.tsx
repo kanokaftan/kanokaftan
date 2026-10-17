@@ -105,10 +105,10 @@ export default function AmbassadorDashboard() {
           <UserPlus className="mx-auto h-10 w-10 text-muted-foreground" />
           <h1 className="mt-4 font-display text-xl font-bold">You're not an ambassador yet</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            This page is for Kano Kaftan ambassadors. If the team registered you, make sure you signed in with the same email you gave them,
-            or ask them to link your account.
+            Apply to become one: you get your own link and earn a bonus for every seller you bring. If the team already registered you,
+            sign in with the same email you gave them.
           </p>
-          <Button asChild variant="outline" className="mt-6 rounded-full"><Link to="/help">Contact Kano Kaftan</Link></Button>
+          <Button asChild className="mt-6 rounded-full"><Link to="/ambassadors/join">Become an ambassador</Link></Button>
         </div>
       </MobileLayout>
     );

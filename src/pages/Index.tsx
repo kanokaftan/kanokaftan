@@ -2,6 +2,7 @@ import { MobileLayout } from "@/components/layout/MobileLayout";
 import { MobileHero } from "@/components/home/MobileHero";
 import { CategoryPills } from "@/components/home/CategoryPills";
 import { FeaturedShopsStrip } from "@/components/home/FeaturedShopsStrip";
+import { PartnerSpotlight } from "@/components/home/PartnerSpotlight";
 import { StoryStrip } from "@/components/stories/StoryStrip";
 import { MobileFeaturedProducts } from "@/components/home/MobileFeaturedProducts";
 import { AllProductsSection } from "@/components/home/AllProductsSection";
@@ -18,6 +19,7 @@ const Index = () => {
       <PushPrompt />
       <StoryStrip />
       <CategoryPills />
+      <PartnerSpotlight />
       <FeaturedShopsStrip />
       <FlashSalesSection />
       <MobileFeaturedProducts />

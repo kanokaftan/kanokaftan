@@ -304,6 +304,8 @@ export const ha = {
     orders: "Oda-odana",
     ambassadorDashboard: "Allon jakada",
     ambassadorDashboardDesc: "Hanyar gayyatarka, masu sayarwa da kuɗinka",
+    partnerDashboard: "Allon abokin hulɗa",
+    partnerDashboardDesc: "Ba da \"{{label}}\" ka ga kuɗinka",
     ordersLabel: "Oda-oda",
     wishlist: "Jerin So",
     addresses: "Adireshi-adireshi",

@@ -182,3 +182,97 @@ export function useLinkAmbassadorAccount() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ambassadors"] }),
   });
 }
+
+// ---------------------------------------------------------------------------
+// Ambassador sign-up
+// ---------------------------------------------------------------------------
+
+export type AmbassadorApplicationStatus = "pending" | "approved" | "rejected" | "ambassador";
+
+export interface MyAmbassadorApplication {
+  status: AmbassadorApplicationStatus;
+  created_at?: string;
+  admin_note?: string | null;
+}
+
+export interface AmbassadorApplication {
+  id: string;
+  user_id: string;
+  full_name: string;
+  phone: string;
+  email: string | null;
+  city: string | null;
+  about: string | null;
+  status: Exclude<AmbassadorApplicationStatus, "ambassador">;
+  admin_note: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+}
+
+const APPLICATIONS_KEY = ["ambassadors", "applications"];
+
+export function useMyAmbassadorApplication(enabled: boolean) {
+  return useQuery({
+    queryKey: [...APPLICATIONS_KEY, "mine"],
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("my_ambassador_application");
+      if (error) {
+        console.error("[ambassadors] my_ambassador_application failed", error);
+        throw readableError(error, "Couldn't check your application.");
+      }
+      return (data ?? null) as unknown as MyAmbassadorApplication | null;
+    },
+  });
+}
+
+export function useSubmitAmbassadorApplication() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { full_name: string; phone: string; city?: string; about?: string }) => {
+      const { error } = await supabase.rpc("submit_ambassador_application", {
+        p_full_name: input.full_name,
+        p_phone: input.phone,
+        p_city: input.city || null,
+        p_about: input.about || null,
+      });
+      if (error) {
+        console.error("[ambassadors] submit_ambassador_application failed", error);
+        throw readableError(error, "Couldn't send your application. Please try again.");
+      }
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: APPLICATIONS_KEY }),
+  });
+}
+
+export function useAmbassadorApplications() {
+  return useQuery({
+    queryKey: [...APPLICATIONS_KEY, "admin"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_ambassador_applications");
+      if (error) {
+        console.error("[ambassadors] admin_ambassador_applications failed", error);
+        throw readableError(error, "Couldn't load applications.");
+      }
+      return (data ?? []) as unknown as AmbassadorApplication[];
+    },
+  });
+}
+
+export function useReviewAmbassadorApplication() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, approve, note }: { id: string; approve: boolean; note?: string }) => {
+      const { error } = await supabase.rpc("admin_review_ambassador_application", { p_id: id, p_approve: approve, p_note: note || null });
+      if (error) {
+        console.error("[ambassadors] review application failed", error);
+        throw readableError(error, "Couldn't save your decision.");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: APPLICATIONS_KEY });
+      queryClient.invalidateQueries({ queryKey: OVERVIEW_KEY });
+      queryClient.invalidateQueries({ queryKey: ["ambassadors", "accounts"] });
+    },
+  });
+}

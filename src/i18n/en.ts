@@ -304,6 +304,8 @@ export const en = {
     orders: "My Orders",
     ambassadorDashboard: "Ambassador dashboard",
     ambassadorDashboardDesc: "Your link, sellers and earnings",
+    partnerDashboard: "Partner dashboard",
+    partnerDashboardDesc: "Give \"{{label}}\" and see your earnings",
     ordersLabel: "Orders",
     wishlist: "Favorites",
     addresses: "Addresses",

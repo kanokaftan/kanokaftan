@@ -23,6 +23,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 import { toast } from "sonner";
 import { VerifiedBadge } from "@/components/shop/VerifiedBadge";
+import { ShopMarks } from "@/components/partners/PartnerMarks";
 import { StoryRing, storyRingState } from "@/components/stories/StoryRing";
 import { useVendorStories } from "@/hooks/useStories";
 import { cn } from "@/lib/utils";
@@ -224,6 +225,7 @@ export default function VendorProfile() {
           <h1 className="font-display text-xl font-bold">{shop.store_name}</h1>
           {shop.is_verified && <VerifiedBadge className="h-5 w-5" tier={shop.verification_tier} />}
         </div>
+        <ShopMarks vendorId={shop.id} className="mt-1.5" />
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
           {(shop.city || shop.state) && (
             <span className="flex items-center gap-1">

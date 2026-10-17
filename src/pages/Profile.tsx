@@ -11,7 +11,7 @@ import {
   Package,
   MapPin,
   Bell,
-  UserPlus
+  UserPlus, Gem
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -24,12 +24,14 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
 import { useMyAmbassadorDashboard } from "@/hooks/useAmbassadors";
+import { useMyPartner } from "@/hooks/usePartners";
 
 export default function Profile() {
   const { t } = useTranslation();
   const { user, isVendor, isAdmin, isLoading, signOut } = useAuth();
   // Only ambassadors get a dashboard link; this also links them by email the first time.
   const { data: ambassador } = useMyAmbassadorDashboard(!!user);
+  const { data: partner } = useMyPartner(!!user);
 
   // Fetch user profile data
   const { data: profile } = useQuery({
@@ -132,6 +134,15 @@ export default function Profile() {
     { icon: Bell, label: t("settings.notifications"), description: t("profile.notificationsDesc"), href: "/settings" },
     { icon: HelpCircle, label: t("profile.help"), description: t("profile.helpDesc"), href: "/help" },
   ];
+
+  if (partner) {
+    menuItems.unshift({
+      icon: Gem,
+      label: t("profile.partnerDashboard"),
+      description: t("profile.partnerDashboardDesc", { label: partner.choice_label }),
+      href: "/partner",
+    });
+  }
 
   if (ambassador) {
     menuItems.unshift({

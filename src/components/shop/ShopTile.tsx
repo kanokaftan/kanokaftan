@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { MapPin, Scissors, ShoppingBag, Star } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { VerifiedBadge } from "@/components/shop/VerifiedBadge";
+import { ShopMarks } from "@/components/partners/PartnerMarks";
 import type { DirectoryShop } from "@/hooks/useShops";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +42,7 @@ export function ShopTile({ shop, showDistance = false }: { shop: DirectoryShop; 
           {shop.store_name}
           {shop.is_verified && <VerifiedBadge tier={shop.verification_tier} className="ml-1 inline-block h-3.5 w-3.5 align-[-2px]" />}
         </h3>
+        <ShopMarks vendorId={shop.id} size="sm" className="mt-1" />
         <p className="mt-0.5 flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground">
           {tailor ? <Scissors className="h-3 w-3 shrink-0" /> : <ShoppingBag className="h-3 w-3 shrink-0" />}
           <span className="shrink-0">{tailor ? "Tailor" : "Seller"}</span>

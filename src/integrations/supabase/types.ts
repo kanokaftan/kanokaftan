@@ -1535,6 +1535,78 @@ export type Database = {
       }
     }
     Functions: {
+      admin_save_partner: {
+        Args: { p_id: string | null; p_data: Json }
+        Returns: string
+      }
+      admin_partner_overview: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      admin_add_partner_member: {
+        Args: { p_partner_id: string; p_email: string }
+        Returns: string
+      }
+      admin_remove_partner_member: {
+        Args: { p_partner_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      partner_statement: {
+        Args: { p_partner_id: string }
+        Returns: Json
+      }
+      admin_pay_partner: {
+        Args: { p_partner_id: string; p_reference?: string | null; p_note?: string | null }
+        Returns: string
+      }
+      admin_reverse_partner_commission: {
+        Args: { p_commission_id: string; p_reason: string }
+        Returns: undefined
+      }
+      my_partner: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      partner_choice_list: {
+        Args: { p_partner_id?: string | null }
+        Returns: Json
+      }
+      partner_award_choice: {
+        Args: { p_vendor_id: string; p_note?: string | null; p_partner_id?: string | null }
+        Returns: undefined
+      }
+      partner_withdraw_choice: {
+        Args: { p_vendor_id: string; p_partner_id?: string | null }
+        Returns: undefined
+      }
+      partner_find_shops: {
+        Args: { p_search: string }
+        Returns: Json
+      }
+      shop_marks: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      homepage_partners: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      my_ambassador_application: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      submit_ambassador_application: {
+        Args: { p_full_name: string; p_phone: string; p_city?: string | null; p_about?: string | null }
+        Returns: undefined
+      }
+      admin_ambassador_applications: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      admin_review_ambassador_application: {
+        Args: { p_id: string; p_approve: boolean; p_note?: string | null }
+        Returns: string
+      }
       delete_product: {
         Args: { p_product_id: string }
         Returns: string

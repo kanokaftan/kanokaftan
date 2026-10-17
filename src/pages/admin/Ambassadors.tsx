@@ -4,6 +4,7 @@ import { Check, Copy, Eye, Loader2, Pencil, Plus, Store, UserPlus, Users, Wallet
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { AmbassadorApplications } from "@/components/admin/AmbassadorApplications";
 import { BrandIcon } from "@/components/brand/BrandIcon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -463,6 +464,8 @@ export default function AdminAmbassadors() {
             </div>
           ))}
         </div>
+
+        <AmbassadorApplications />
 
         {justAdded && (
           <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4">

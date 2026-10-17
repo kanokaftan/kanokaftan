@@ -40,6 +40,7 @@ const AdminErrors = lazy(() => import("./pages/admin/Errors"));
 const AdminAnalytics = lazy(() => import("./pages/admin/Analytics"));
 const AdminLogistics = lazy(() => import("./pages/admin/Logistics"));
 const AdminAmbassadors = lazy(() => import("./pages/admin/Ambassadors"));
+const AdminPartners = lazy(() => import("./pages/admin/Partners"));
 const AdminVendorDetail = lazy(() => import("./pages/admin/VendorDetail"));
 const AdminCustomerDetail = lazy(() => import("./pages/admin/CustomerDetail"));
 const AdminChatTranscript = lazy(() => import("./pages/admin/ChatTranscript"));
@@ -62,6 +63,8 @@ const NotificationsPage = lazy(() => import("./pages/Notifications"));
 const SellerApply = lazy(() => import("./pages/SellerApply"));
 const AmbassadorLink = lazy(() => import("./pages/AmbassadorLink"));
 const AmbassadorDashboard = lazy(() => import("./pages/AmbassadorDashboard"));
+const AmbassadorJoin = lazy(() => import("./pages/AmbassadorJoin"));
+const PartnerDashboard = lazy(() => import("./pages/PartnerDashboard"));
 const SellerLogin = lazy(() => import("./pages/SellerLogin"));
 const VendorProfilePage = lazy(() => import("./pages/VendorProfile"));
 const Shops = lazy(() => import("./pages/Shops"));
@@ -166,6 +169,8 @@ const App = () => (
             <Route path="/sell" element={<SellerApply />} />
             <Route path="/r/:code" element={<AmbassadorLink />} />
             <Route path="/ambassador" element={<AmbassadorDashboard />} />
+            <Route path="/ambassadors/join" element={<AmbassadorJoin />} />
+            <Route path="/partner" element={<PartnerDashboard />} />
             <Route path="/become-vendor" element={<Navigate to="/sell" replace />} />
             <Route path="/vendor/login" element={<SellerLogin />} />
             <Route path="/vendor" element={<Navigate to="/vendor/dashboard" replace />} />
@@ -200,6 +205,7 @@ const App = () => (
             <Route path="/admin/orders" element={<AdminOrders />} />
             <Route path="/admin/logistics" element={<AdminLogistics />} />
             <Route path="/admin/ambassadors" element={<AdminAmbassadors />} />
+            <Route path="/admin/partners" element={<AdminPartners />} />
             <Route path="/admin/categories" element={<AdminCategories />} />
             <Route path="/admin/finance" element={<AdminFinance />} />
             <Route path="/admin/reports" element={<AdminReports />} />

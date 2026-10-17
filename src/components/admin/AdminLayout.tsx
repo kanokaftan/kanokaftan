@@ -3,7 +3,7 @@ import { useNavigate, Link, useLocation } from "react-router-dom";
 import {
   Activity, LayoutDashboard, Users, Package, ShoppingCart,
   Tag, DollarSign, BarChart, Settings, MessageCircle,
-  Menu, X, LogOut, ShoppingBag, Shield, Store, Megaphone, Flag, AlertTriangle, Truck, UserPlus
+  Menu, X, LogOut, ShoppingBag, Shield, Store, Megaphone, Flag, AlertTriangle, Truck, UserPlus, Gem
 } from "lucide-react";
 import { signOutThisDevice } from "@/lib/signOut";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
@@ -21,6 +21,7 @@ const navItems = [
   { title: "Orders", url: "/admin/orders", icon: ShoppingCart },
   { title: "Logistics", url: "/admin/logistics", icon: Truck },
   { title: "Ambassadors", url: "/admin/ambassadors", icon: UserPlus },
+  { title: "Partners", url: "/admin/partners", icon: Gem },
   { title: "Categories", url: "/admin/categories", icon: Tag },
   { title: "Finance", url: "/admin/finance", icon: DollarSign },
   { title: "Reports", url: "/admin/reports", icon: BarChart },
