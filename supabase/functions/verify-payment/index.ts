@@ -3,10 +3,19 @@ import { corsHeaders, json, paymentsNotConfigured } from "../_shared/cors.ts";
 import { isPaystackNotConfigured } from "../_shared/paystack.ts";
 import { serviceClient } from "../_shared/supabase.ts";
 import { confirmOrderPayment } from "../_shared/payments.ts";
+import { isRateLimited } from "../_shared/rateLimit.ts";
+
+/** Checks per IP per minute: plenty for a shopper refreshing a payment page. */
+const VERIFY_LIMIT_PER_MINUTE = 20;
+const MINUTE_SECONDS = 60;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  if (await isRateLimited(req, 'verify-payment', VERIFY_LIMIT_PER_MINUTE, MINUTE_SECONDS)) {
+    return json({ success: false, error: 'Too many checks. Please wait a minute and try again.' }, 429);
   }
 
   try {
@@ -27,8 +36,11 @@ serve(async (req) => {
     });
   } catch (error: unknown) {
     if (isPaystackNotConfigured(error)) return paymentsNotConfigured();
-    const message = error instanceof Error ? error.message : 'Unknown error';
+    // Full details stay in the logs; shoppers get a plain message (no database text or amounts).
     console.error('Verification error:', error);
+    const message = error instanceof Error && error.message === 'Payment reference is required'
+      ? error.message
+      : "We couldn't confirm this payment yet. If you were charged, it will be confirmed automatically within a few minutes.";
     return json({ success: false, error: message }, 400);
   }
 });

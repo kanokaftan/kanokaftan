@@ -39,7 +39,17 @@ export function useCart() {
   const cartQuery = useQuery({
     queryKey: ["cart", userId, sessionId],
     queryFn: async () => {
-      let query = supabase
+      // Guest carts are only reachable with their secret session id (guest_cart).
+      if (!userId) {
+        const { data, error } = await supabase.rpc("guest_cart", { p_session: sessionId });
+        if (error) {
+          console.error("[cart] guest cart failed", error);
+          throw error;
+        }
+        return (data ?? []) as unknown as CartItem[];
+      }
+
+      const query = supabase
         .from("cart_items")
         .select(`
           id,
@@ -58,13 +68,7 @@ export function useCart() {
           )
         `);
 
-      if (userId) {
-        query = query.eq("user_id", userId);
-      } else {
-        query = query.eq("session_id", sessionId).is("user_id", null);
-      }
-
-      const { data, error } = await query;
+      const { data, error } = await query.eq("user_id", userId);
       if (error) throw error;
 
       return (data || []).map(item => ({
@@ -82,17 +86,21 @@ export function useCart() {
       size?: string | null;
       color?: string | null;
     }) => {
+      if (!userId) {
+        const { error } = await supabase.rpc("guest_cart_add", {
+          p_session: sessionId, p_product_id: productId, p_quantity: quantity,
+          p_variant_id: variantId || null, p_size: size || null, p_color: color || null,
+        });
+        if (error) throw error;
+        return;
+      }
+
       // Check if item already exists
       let existingQuery = supabase
         .from("cart_items")
         .select("id, quantity")
-        .eq("product_id", productId);
-
-      if (userId) {
-        existingQuery = existingQuery.eq("user_id", userId);
-      } else {
-        existingQuery = existingQuery.eq("session_id", sessionId).is("user_id", null);
-      }
+        .eq("product_id", productId)
+        .eq("user_id", userId);
 
       if (variantId) {
         existingQuery = existingQuery.eq("variant_id", variantId);
@@ -121,8 +129,8 @@ export function useCart() {
             size: size || null,
             color: color || null,
             quantity,
-            user_id: userId || null,
-            session_id: userId ? null : sessionId,
+            user_id: userId,
+            session_id: null,
           });
         if (error) throw error;
       }
@@ -135,6 +143,11 @@ export function useCart() {
 
   const updateQuantity = useMutation({
     mutationFn: async ({ itemId, quantity }: { itemId: string; quantity: number }) => {
+      if (!userId) {
+        const { error } = await supabase.rpc("guest_cart_set_quantity", { p_session: sessionId, p_item_id: itemId, p_quantity: quantity });
+        if (error) throw error;
+        return;
+      }
       if (quantity <= 0) {
         const { error } = await supabase
           .from("cart_items")
@@ -156,6 +169,11 @@ export function useCart() {
 
   const removeItem = useMutation({
     mutationFn: async (itemId: string) => {
+      if (!userId) {
+        const { error } = await supabase.rpc("guest_cart_set_quantity", { p_session: sessionId, p_item_id: itemId, p_quantity: 0 });
+        if (error) throw error;
+        return;
+      }
       const { error } = await supabase
         .from("cart_items")
         .delete()
@@ -169,15 +187,12 @@ export function useCart() {
 
   const clearCart = useMutation({
     mutationFn: async () => {
-      let query = supabase.from("cart_items").delete();
-      
-      if (userId) {
-        query = query.eq("user_id", userId);
-      } else {
-        query = query.eq("session_id", sessionId).is("user_id", null);
+      if (!userId) {
+        const { error } = await supabase.rpc("guest_cart_clear", { p_session: sessionId });
+        if (error) throw error;
+        return;
       }
-
-      const { error } = await query;
+      const { error } = await supabase.from("cart_items").delete().eq("user_id", userId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -186,69 +201,14 @@ export function useCart() {
   });
 
   // Merge session cart into user cart on login
-  const mergeSessionCart = useCallback(async (newUserId: string) => {
-    const sessionId = getSessionId();
-    
-    // Get session cart items
-    const { data: sessionItems } = await supabase
-      .from("cart_items")
-      .select("product_id, variant_id, size, color, quantity")
-      .eq("session_id", sessionId)
-      .is("user_id", null);
-
-    if (!sessionItems || sessionItems.length === 0) return;
-
-    // For each session item, add to user's cart or update quantity
-    for (const item of sessionItems) {
-      // Check if user already has this product
-      let existingQuery = supabase
-        .from("cart_items")
-        .select("id, quantity")
-        .eq("user_id", newUserId)
-        .eq("product_id", item.product_id);
-
-      if (item.variant_id) {
-        existingQuery = existingQuery.eq("variant_id", item.variant_id);
-      } else {
-        existingQuery = existingQuery.is("variant_id", null);
-      }
-
-      existingQuery = item.size ? existingQuery.eq("size", item.size) : existingQuery.is("size", null);
-      existingQuery = item.color ? existingQuery.eq("color", item.color) : existingQuery.is("color", null);
-
-      const { data: existing } = await existingQuery.maybeSingle();
-
-      if (existing) {
-        // Update quantity
-        await supabase
-          .from("cart_items")
-          .update({ quantity: existing.quantity + item.quantity })
-          .eq("id", existing.id);
-      } else {
-        // Insert new item for user
-        await supabase
-          .from("cart_items")
-          .insert({
-            product_id: item.product_id,
-            variant_id: item.variant_id,
-            size: item.size,
-            color: item.color,
-            quantity: item.quantity,
-            user_id: newUserId,
-            session_id: null,
-          });
-      }
+  // Move the guest cart into the account at sign-in (quantities are added for lines already there).
+  const mergeSessionCart = useCallback(async (_newUserId: string) => {
+    const { data: moved, error } = await supabase.rpc("merge_guest_cart", { p_session: getSessionId() });
+    if (error) {
+      console.error("[cart] merge after sign-in failed", error);
+      return;
     }
-
-    // Delete session cart items
-    await supabase
-      .from("cart_items")
-      .delete()
-      .eq("session_id", sessionId)
-      .is("user_id", null);
-
-    // Refresh cart
-    queryClient.invalidateQueries({ queryKey: ["cart"] });
+    if (moved) queryClient.invalidateQueries({ queryKey: ["cart"] });
   }, [queryClient]);
 
   const cartItems = cartQuery.data || [];

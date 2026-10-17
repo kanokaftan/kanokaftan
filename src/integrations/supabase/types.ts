@@ -1535,6 +1535,14 @@ export type Database = {
       }
     }
     Functions: {
+      guest_cart: { Args: { p_session: string }; Returns: Json }
+      guest_cart_add: {
+        Args: { p_session: string; p_product_id: string; p_quantity?: number; p_variant_id?: string | null; p_size?: string | null; p_color?: string | null }
+        Returns: undefined
+      }
+      guest_cart_set_quantity: { Args: { p_session: string; p_item_id: string; p_quantity: number }; Returns: undefined }
+      guest_cart_clear: { Args: { p_session: string }; Returns: undefined }
+      merge_guest_cart: { Args: { p_session: string }; Returns: number }
       get_profile_private: {
         Args: { p_ids: string[] }
         Returns: {

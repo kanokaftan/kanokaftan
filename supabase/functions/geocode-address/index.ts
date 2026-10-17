@@ -1,4 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { isRateLimited } from "../_shared/rateLimit.ts";
+
+/** Address lookups per IP per minute: typing an address fires several suggestions. */
+const GEOCODE_LIMIT_PER_MINUTE = 60;
+const MINUTE_SECONDS = 60;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -142,6 +147,10 @@ serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  if (await isRateLimited(req, 'geocode', GEOCODE_LIMIT_PER_MINUTE, MINUTE_SECONDS)) {
+    return jsonResponse({ success: false, error: 'Too many address lookups. Please wait a minute.', suggestions: [] }, 429);
   }
 
   try {
