@@ -1,4 +1,23 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  ADMIN_LIST_STALE_TIME_MS,
+  adminRpcError,
+  bool,
+  fetchAllAdminPages,
+  num,
+  pagingArgs,
+  parseAdminListResult,
+  recordOrNull,
+  resolveListParams,
+  str,
+  strOrNull,
+  type AdminListPage,
+  type AdminListParams,
+  type ResolvedListParams,
+} from "@/hooks/adminList";
+
+const RPC = "admin_list_vendors";
 
 export type BadgeTier = "none" | "blue" | "gold";
 
@@ -7,8 +26,10 @@ export function badgeTierOf(vendor: { is_verified: boolean; verification_tier?: 
   if (!vendor.is_verified) return "none";
   return vendor.verification_tier === "gold" ? "gold" : "blue";
 }
-import { supabase } from "@/integrations/supabase/client";
-import { withProfilePrivate } from "@/lib/profilePrivate";
+
+export const ADMIN_VENDOR_FILTERS = ["all", "verified", "gold", "unverified"] as const;
+export type AdminVendorFilter = (typeof ADMIN_VENDOR_FILTERS)[number];
+export const DEFAULT_VENDOR_FILTER: AdminVendorFilter = "all";
 
 export interface AdminVendor {
   id: string;
@@ -19,6 +40,7 @@ export interface AdminVendor {
   is_verified: boolean;
   verification_tier?: string | null;
   store_name: string | null;
+  store_slug: string | null;
   store_description: string | null;
   created_at: string;
   product_count: number;
@@ -35,103 +57,131 @@ export interface AdminVendor {
   pending_payout: number;
 }
 
-export function useAdminVendors() {
+function toStoreAddress(value: unknown): AdminVendor["store_address"] {
+  const address = recordOrNull(value);
+  if (!address) return null;
+  return {
+    street: strOrNull(address.street) ?? undefined,
+    city: strOrNull(address.city) ?? undefined,
+    state: strOrNull(address.state) ?? undefined,
+  };
+}
+
+function toAdminVendor(row: Record<string, unknown>): AdminVendor {
+  return {
+    id: str(row.id),
+    email: str(row.email),
+    full_name: strOrNull(row.full_name),
+    phone: strOrNull(row.phone),
+    avatar_url: strOrNull(row.avatar_url),
+    is_verified: bool(row.is_verified),
+    verification_tier: strOrNull(row.verification_tier),
+    store_name: strOrNull(row.store_name),
+    store_slug: strOrNull(row.store_slug),
+    store_description: strOrNull(row.store_description),
+    created_at: str(row.created_at),
+    product_count: num(row.product_count),
+    bank_name: strOrNull(row.bank_name),
+    account_number: strOrNull(row.account_number),
+    account_name: strOrNull(row.account_name),
+    payout_preference: strOrNull(row.payout_preference),
+    store_address: toStoreAddress(row.store_address),
+    total_sales: num(row.total_sales),
+    pending_payout: num(row.pending_payout),
+  };
+}
+
+async function callListVendors(args: {
+  p_search: string | null;
+  p_filter: AdminVendorFilter;
+  p_limit: number;
+  p_offset: number;
+}): Promise<AdminListPage<AdminVendor>> {
+  const { data, error } = await supabase.rpc(RPC, args);
+  if (error) throw adminRpcError(RPC, error, args);
+  return parseAdminListResult(data, RPC, toAdminVendor);
+}
+
+const fetchVendorsPage = (params: ResolvedListParams<AdminVendorFilter>) =>
+  callListVendors({ ...pagingArgs(params), p_filter: params.filter });
+
+/** Sets a seller's badge directly; the database function also notifies the seller. */
+export function useSetVendorTier() {
   const queryClient = useQueryClient();
-
-  const vendorsQuery = useQuery({
-    queryKey: ["admin-vendors"],
-    queryFn: async (): Promise<AdminVendor[]> => {
-      // Get all vendor user IDs
-      const { data: vendorRoles, error: rolesError } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "vendor");
-
-      if (rolesError) throw rolesError;
-
-      const vendorIds = vendorRoles?.map(r => r.user_id) || [];
-      if (vendorIds.length === 0) return [];
-
-      // Get vendor profiles with bank details
-      const { data: profileRows, error: profilesError } = await supabase
-        .from("profiles")
-        .select("id, full_name, avatar_url, is_verified, verification_tier, store_name, store_description, created_at")
-        .in("id", vendorIds)
-        .order("created_at", { ascending: false });
-
-      if (profilesError) throw profilesError;
-      // Contact, address and bank details come from get_profile_private (admins only).
-      const profiles = await withProfilePrivate(profileRows ?? []);
-
-      // Get product counts per vendor
-      const { data: productCounts, error: productsError } = await supabase
-        .from("products")
-        .select("vendor_id")
-        .is("deleted_at", null);
-
-      if (productsError) throw productsError;
-
-      const countByVendor = productCounts?.reduce((acc, p) => {
-        acc[p.vendor_id] = (acc[p.vendor_id] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>) || {};
-
-      // Get sales data per vendor from order_items
-      const { data: orderItems, error: orderError } = await supabase
-        .from("order_items")
-        .select(`
-          vendor_id,
-          total_price,
-          order:orders!inner(payment_status, escrow_status)
-        `);
-
-      if (orderError) throw orderError;
-
-      const salesByVendor: Record<string, { total: number; pending: number }> = {};
-      orderItems?.forEach(item => {
-        const vendorId = item.vendor_id;
-        if (!salesByVendor[vendorId]) {
-          salesByVendor[vendorId] = { total: 0, pending: 0 };
-        }
-        const order = item.order as { payment_status: string; escrow_status: string } | null;
-        if (order?.payment_status === "paid") {
-          salesByVendor[vendorId].total += Number(item.total_price);
-          if (order?.escrow_status === "held") {
-            salesByVendor[vendorId].pending += Number(item.total_price);
-          }
-        }
-      });
-
-      return profiles?.map(p => ({
-        ...p,
-        store_address: p.store_address as AdminVendor["store_address"],
-        product_count: countByVendor[p.id] || 0,
-        total_sales: salesByVendor[p.id]?.total || 0,
-        pending_payout: salesByVendor[p.id]?.pending || 0,
-      })) || [];
-    },
-  });
-
-  // Admin sets the badge directly; the database function also notifies the seller.
-  const setTier = useMutation({
+  return useMutation({
     mutationFn: async ({ vendorId, tier }: { vendorId: string; tier: BadgeTier }) => {
       const { error } = await supabase.rpc("admin_set_verification_tier", { p_vendor_id: vendorId, p_tier: tier });
       if (error) {
-        console.error("[useAdminVendors] admin_set_verification_tier failed", { vendorId, tier, error });
+        console.error("[useSetVendorTier] admin_set_verification_tier failed", { vendorId, tier, error });
         throw new Error(error.message);
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });
-      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
       queryClient.invalidateQueries({ queryKey: ["shops"] });
     },
   });
+}
+
+/** One page of sellers with their product count, sales and pending payout, searched and filtered in the database. */
+export function useAdminVendors(params: AdminListParams<AdminVendorFilter> = {}) {
+  const resolved = resolveListParams(params, DEFAULT_VENDOR_FILTER);
+  const setTier = useSetVendorTier();
+
+  const vendorsQuery = useQuery({
+    queryKey: ["admin-vendors", "list", resolved],
+    queryFn: () => fetchVendorsPage(resolved),
+    placeholderData: keepPreviousData,
+    staleTime: ADMIN_LIST_STALE_TIME_MS,
+  });
 
   return {
-    vendors: vendorsQuery.data || [],
+    vendors: vendorsQuery.data?.rows ?? [],
+    total: vendorsQuery.data?.total ?? 0,
     isLoading: vendorsQuery.isLoading,
+    isFetching: vendorsQuery.isFetching,
+    isPlaceholderData: vendorsQuery.isPlaceholderData,
     error: vendorsQuery.error,
+    refetch: vendorsQuery.refetch,
     setTier,
   };
+}
+
+/** Every seller (200 per request), for pickers such as "Sold by" on the product form. */
+export function useAllAdminVendors() {
+  const vendorsQuery = useQuery({
+    queryKey: ["admin-vendors", "all"],
+    queryFn: () =>
+      fetchAllAdminPages((limit, offset) => callListVendors({ p_search: null, p_filter: "all", p_limit: limit, p_offset: offset })),
+    staleTime: ADMIN_LIST_STALE_TIME_MS,
+  });
+
+  return {
+    vendors: vendorsQuery.data ?? [],
+    isLoading: vendorsQuery.isLoading,
+    error: vendorsQuery.error,
+  };
+}
+
+export type AdminVendorFilterCounts = Record<AdminVendorFilter, number>;
+
+/** How many sellers match the search under each filter chip (totals only, no rows). */
+export function useAdminVendorFilterCounts(search: string) {
+  const trimmed = search.trim();
+  return useQuery({
+    queryKey: ["admin-vendors", "counts", trimmed],
+    queryFn: async (): Promise<AdminVendorFilterCounts> => {
+      const totals = await Promise.all(
+        ADMIN_VENDOR_FILTERS.map(async (filter) => {
+          const { total } = await callListVendors({ p_search: trimmed || null, p_filter: filter, p_limit: 0, p_offset: 0 });
+          return [filter, total] as const;
+        }),
+      );
+      return Object.fromEntries(totals) as AdminVendorFilterCounts;
+    },
+    placeholderData: keepPreviousData,
+    staleTime: ADMIN_LIST_STALE_TIME_MS,
+  });
 }

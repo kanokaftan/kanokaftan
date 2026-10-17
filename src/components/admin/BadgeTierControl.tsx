@@ -1,7 +1,7 @@
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { VerifiedBadge } from "@/components/shop/VerifiedBadge";
-import { useAdminVendors, type BadgeTier } from "@/hooks/useAdminVendors";
+import { useSetVendorTier, type BadgeTier } from "@/hooks/useAdminVendors";
 import { cn } from "@/lib/utils";
 
 const TIER_OPTIONS: { value: BadgeTier; label: string }[] = [
@@ -54,7 +54,7 @@ export function BadgeTierControl({
   onChanged?: (tier: BadgeTier) => void;
   className?: string;
 }) {
-  const { setTier } = useAdminVendors();
+  const setTier = useSetVendorTier();
   const pendingTier = setTier.isPending ? setTier.variables?.tier : undefined;
 
   const choose = async (next: BadgeTier) => {

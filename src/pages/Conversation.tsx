@@ -18,7 +18,6 @@ import {
   Send,
   Video,
   ShieldAlert,
-  ShieldCheck,
   ShoppingBag,
   Square,
   Trash2,
@@ -28,6 +27,7 @@ import { useTranslation } from "react-i18next";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -458,10 +458,15 @@ export default function Conversation({ admin = false, seller = false }: { admin?
           {conversation ? (
             <div className="liquid-glass flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-full py-1 pl-1 pr-4">
               <div className="relative shrink-0">
-                <Avatar className="h-10 w-10 ring-2 ring-white/70 shadow-sm dark:ring-white/10">
-                  <AvatarImage src={conversation.other_party_avatar || undefined} alt="" />
-                  <AvatarFallback className="bg-gradient-to-br from-primary/80 to-primary text-primary-foreground">{conversation.other_party_name.charAt(0)}</AvatarFallback>
-                </Avatar>
+                {conversation.role === "support_user" ? (
+                  // Chatting with the Kano Kaftan team: show the brand, not a letter.
+                  <BrandLogo tile className="h-10 w-10 rounded-full ring-2 ring-white/70 dark:ring-white/10" alt="Kano Kaftan" />
+                ) : (
+                  <Avatar className="h-10 w-10 ring-2 ring-white/70 shadow-sm dark:ring-white/10">
+                    <AvatarImage src={conversation.other_party_avatar || undefined} alt="" />
+                    <AvatarFallback className="bg-gradient-to-br from-primary/80 to-primary text-primary-foreground">{conversation.other_party_name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                )}
                 {presence?.online && (
                   <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-green-500" aria-label="Online" />
                 )}
@@ -504,7 +509,7 @@ export default function Conversation({ admin = false, seller = false }: { admin?
               className="h-9 w-10 shrink-0 rounded-full hover:bg-foreground/5"
               aria-label={`Video call ${conversation.other_party_name}`}
               disabled={inCall || chatBlocked}
-              onClick={() => startCall(conversation.id, { name: conversation.other_party_name, avatar: conversation.other_party_avatar }, "video")}
+              onClick={() => startCall(conversation.id, { name: conversation.other_party_name, avatar: conversation.role === "support_user" ? "/logo.svg" : conversation.other_party_avatar }, "video")}
             >
               <Video className="h-[22px] w-[22px]" />
             </Button>
@@ -514,7 +519,7 @@ export default function Conversation({ admin = false, seller = false }: { admin?
               className="h-9 w-10 shrink-0 rounded-full hover:bg-foreground/5"
               aria-label={`Voice call ${conversation.other_party_name}`}
               disabled={inCall || chatBlocked}
-              onClick={() => startCall(conversation.id, { name: conversation.other_party_name, avatar: conversation.other_party_avatar })}
+              onClick={() => startCall(conversation.id, { name: conversation.other_party_name, avatar: conversation.role === "support_user" ? "/logo.svg" : conversation.other_party_avatar })}
             >
               <Phone className="h-[21px] w-[21px]" />
             </Button>
@@ -1195,7 +1200,7 @@ function ChatNotice({ conversation }: { conversation: ConversationSummary | null
   if (conversation.role === "support_user") {
     return (
       <div className="mx-auto mb-3 flex max-w-md gap-2 rounded-lg bg-muted p-3 text-xs text-muted-foreground">
-        <ShieldCheck className="h-4 w-4 flex-shrink-0 text-primary" />
+        <BrandLogo tile className="h-5 w-5 flex-shrink-0 rounded-md" alt="" />
         <p>
           You're chatting with the Kano Kaftan team. Tell us what you'd like to buy: we get it from the seller, arrange
           delivery and send you a secure payment link here. The seller is only fully paid after you receive it.
@@ -1207,7 +1212,7 @@ function ChatNotice({ conversation }: { conversation: ConversationSummary | null
   if (conversation.role === "support_team") {
     return (
       <div className="mx-auto mb-3 flex max-w-md gap-2 rounded-lg bg-muted p-3 text-xs text-muted-foreground">
-        <ShieldCheck className="h-4 w-4 flex-shrink-0 text-primary" />
+        <BrandLogo tile className="h-5 w-5 flex-shrink-0 rounded-md" alt="" />
         <p>
           Support chat with {conversation.other_party_is_vendor ? "a vendor" : "a customer"}. Replies are sent as Kano
           Kaftan and every admin can see this thread.

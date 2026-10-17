@@ -44,7 +44,26 @@ export interface VendorOrder {
     phone: string | null;
   } | null;
   order_items: VendorOrderItem[];
+  /** Set for orders still being prepared: who else sells in this order and who is ready. */
+  fulfilment: OrderFulfilment | null;
 }
+
+export interface FulfilmentSeller {
+  vendor_id: string;
+  store_name: string;
+  ready: boolean;
+  ready_at: string | null;
+  me: boolean;
+}
+
+export interface OrderFulfilment {
+  /** Items from several sellers: Kano Kaftan collects and delivers them as one shipment. */
+  combined: boolean;
+  sellers: FulfilmentSeller[];
+}
+
+/** Statuses in which sellers are still packing (readiness matters). */
+export const PREPARING_STATUSES = ["payment_confirmed", "processing", "ready_for_pickup"];
 
 export type OrderStatus = 
   | "pending_payment"
@@ -106,8 +125,24 @@ export function useVendorOrders(vendorId: string | null) {
       // Email and phone come from get_profile_private (sellers see their own buyers only).
       const profiles = await withProfilePrivate(profileRows ?? []);
 
+      // Readiness of every seller, for orders still being packed.
+      const fulfilments = new Map<string, OrderFulfilment>();
+      await Promise.all(
+        orders
+          .filter((o) => PREPARING_STATUSES.includes(o.status))
+          .map(async (o) => {
+            const { data, error } = await supabase.rpc("order_fulfilment", { p_order_id: o.id });
+            if (error) {
+              console.error("[vendor orders] fulfilment failed", o.id, error);
+              return;
+            }
+            fulfilments.set(o.id, data as unknown as OrderFulfilment);
+          }),
+      );
+
       // Combine orders with their items and customer info
       return orders.map((order) => ({
+        fulfilment: fulfilments.get(order.id) ?? null,
         id: order.id,
         created_at: order.created_at,
         status: order.status,
@@ -206,9 +241,22 @@ export function useVendorOrders(vendorId: string | null) {
     },
   });
 
+  // Combined orders: each seller only says "my items are packed".
+  const setReady = useMutation({
+    mutationFn: async ({ orderId, ready }: { orderId: string; ready: boolean }) => {
+      const { data, error } = await supabase.rpc("vendor_set_ready", { p_order_id: orderId, p_ready: ready });
+      if (error) throw error;
+      return data as unknown as OrderFulfilment;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vendor-orders"] });
+    },
+  });
+
   return {
     orders: ordersQuery.data || [],
     isLoading: ordersQuery.isLoading,
     updateOrderStatus,
+    setReady,
   };
 }

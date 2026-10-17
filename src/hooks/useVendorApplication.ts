@@ -118,7 +118,7 @@ export function useReviewVendorApplication() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-vendor-applications"] });
       queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });
-      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
     },
   });
 }

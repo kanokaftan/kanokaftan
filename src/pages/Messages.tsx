@@ -6,6 +6,7 @@ import { MobileLayout } from "@/components/layout/MobileLayout";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { VendorLayout } from "@/components/vendor/VendorLayout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -114,10 +115,14 @@ export default function Messages({ admin = false, seller = false }: { admin?: bo
                   to={`${basePath}/${c.id}`}
                   className="flex items-center gap-3 pl-4 transition-colors active:bg-muted/70 hover:bg-muted/40"
                 >
-                  <Avatar className="h-12 w-12 shrink-0">
-                    <AvatarImage src={c.other_party_avatar || undefined} alt="" />
-                    <AvatarFallback>{c.other_party_name.charAt(0)}</AvatarFallback>
-                  </Avatar>
+                  {c.role === "support_user" ? (
+                    <BrandLogo tile className="h-12 w-12 shrink-0 rounded-full" alt="Kano Kaftan" />
+                  ) : (
+                    <Avatar className="h-12 w-12 shrink-0">
+                      <AvatarImage src={c.other_party_avatar || undefined} alt="" />
+                      <AvatarFallback>{c.other_party_name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                  )}
                   <div className="min-w-0 flex-1 border-b border-border/60 py-3 pr-4 group-last:border-b-0">
                     <div className="flex items-center justify-between gap-2">
                       <p className={cn("truncate text-[15px]", c.unread ? "font-semibold" : "font-medium")}>

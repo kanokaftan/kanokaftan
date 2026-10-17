@@ -127,6 +127,8 @@ export function DeliveryActions({ orderId, paymentStatus, escrowStatus }: Delive
     queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
     queryClient.invalidateQueries({ queryKey: ["admin-payout-ledger"] });
     queryClient.invalidateQueries({ queryKey: ["logistics-overview"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-combined-shipments"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
     refetch();
   };
 

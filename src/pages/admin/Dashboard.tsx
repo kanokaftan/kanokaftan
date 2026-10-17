@@ -2,23 +2,18 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { TodayTrafficCard } from "@/components/admin/TodayTrafficCard";
-import { useAdminStats } from "@/hooks/useAdminStats";
 import { useAdminAnalytics } from "@/hooks/useAdminAnalytics";
-import { useAdminOrders } from "@/hooks/useAdminOrders";
-import { useAdminVendors } from "@/hooks/useAdminVendors";
-import { usePendingApplicationCount } from "@/hooks/useVendorApplication";
-import { usePendingVerificationCount } from "@/hooks/useAdminVerification";
+import { useAdminOverview, useRecentAdminOrders } from "@/hooks/useAdminOverview";
 import { useAuth } from "@/contexts/AuthContext";
 import { useConversations } from "@/hooks/useChat";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   MessageCircle, Users, Package, ShoppingCart, Store, Wallet, ShieldCheck,
   ArrowRight, Clock, CheckCircle, XCircle, Plus, BadgeCheck, Truck, Megaphone, UserPlus,
-  PartyPopper,
+  PartyPopper, Boxes, Scale, AlertTriangle, Flag, RotateCcw, ChevronRight, type LucideIcon,
 } from "lucide-react";
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
-import { VerifiedBadge } from "@/components/shop/VerifiedBadge";
 import { withoutLeadingEmoji } from "@/lib/text";
 
 const formatTime = (date: string | null) => {
@@ -73,14 +68,11 @@ const statusColor = (status: string) => {
 };
 
 export default function AdminDashboard() {
-  const { data: stats, isLoading: statsLoading } = useAdminStats();
+  const { data: overview, isLoading: statsLoading, error: overviewError } = useAdminOverview();
   const { data: analytics, isLoading: analyticsLoading } = useAdminAnalytics(30);
-  const { orders, isLoading: ordersLoading } = useAdminOrders();
-  const { vendors } = useAdminVendors();
+  const { data: orders = [], isLoading: ordersLoading } = useRecentAdminOrders();
   const { conversations, isLoading: chatsLoading } = useConversations();
   const { user } = useAuth();
-  const pendingApplications = usePendingApplicationCount();
-  const { data: pendingVerifications = 0 } = usePendingVerificationCount();
   const navigate = useNavigate();
   const adminName = (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0];
 
@@ -88,14 +80,22 @@ export default function AdminDashboard() {
   const supportChats = conversations.filter((c) => c.kind === "support");
   const waitingChats = supportChats.filter((c) => c.unread).length;
   const recentChats = supportChats.slice(0, 5);
-  const recentOrders = orders.slice(0, 5);
+  const recentOrders = orders;
+  const o = overview;
 
   // Things waiting on the admin, most urgent first; only the ones with something to do are shown.
-  const attention = [
-    { label: "support chat", count: waitingChats, href: "/admin/messages", icon: MessageCircle },
-    { label: "paid order to fulfil", count: stats?.pendingFulfillment ?? 0, href: "/admin/orders", icon: ShoppingCart },
-    { label: "seller application", count: pendingApplications, href: "/admin/vendors?tab=applications", icon: UserPlus },
-    { label: "verification request", count: pendingVerifications, href: "/admin/vendors?tab=verification", icon: BadgeCheck },
+  const attention: { label: string; plural: string; hint: string; count: number; href: string; icon: LucideIcon; urgent?: boolean }[] = [
+    { label: "refund to make", plural: "refunds to make", hint: "Paid after the buyer cancelled", count: o?.refunds_needed ?? 0, href: "/admin/notifications", icon: RotateCcw, urgent: true },
+    { label: "open dispute", plural: "open disputes", hint: "Buyer reported a problem", count: o?.open_disputes ?? 0, href: "/admin/orders?filter=disputed", icon: Scale, urgent: true },
+    { label: "failed payout", plural: "failed payouts", hint: "Seller wasn't paid; retry in Finance", count: o?.failed_payouts ?? 0, href: "/admin/finance", icon: Wallet, urgent: true },
+    { label: "combined order to collect", plural: "combined orders to collect", hint: "All sellers packed: send one rider", count: o?.combined_ready ?? 0, href: "/admin/shipments", icon: Boxes },
+    { label: "support chat waiting", plural: "support chats waiting", hint: "Unread messages", count: waitingChats, href: "/admin/messages", icon: MessageCircle },
+    { label: "paid order being prepared", plural: "paid orders being prepared", hint: "Sellers are packing", count: o?.orders_to_prepare ?? 0, href: "/admin/orders?filter=to_prepare", icon: ShoppingCart },
+    { label: "seller application", plural: "seller applications", hint: "Approve or decline", count: o?.seller_applications ?? 0, href: "/admin/vendors?tab=applications", icon: UserPlus },
+    { label: "verification request", plural: "verification requests", hint: "Check documents", count: o?.verification_reviews ?? 0, href: "/admin/vendors?tab=verification", icon: BadgeCheck },
+    { label: "ambassador application", plural: "ambassador applications", hint: "Approve or decline", count: o?.ambassador_applications ?? 0, href: "/admin/ambassadors", icon: UserPlus },
+    { label: "report to review", plural: "reports to review", hint: "Reported users or stories", count: o?.open_reports ?? 0, href: "/admin/moderation", icon: Flag },
+    { label: "app error", plural: "app errors", hint: "Crashes people hit", count: o?.app_errors ?? 0, href: "/admin/errors", icon: AlertTriangle },
   ].filter((item) => item.count > 0);
 
   const revenueChartData = (analytics?.dailyRevenue || []).slice(-14).map((d) => ({
@@ -112,37 +112,38 @@ export default function AdminDashboard() {
       urgent: waitingChats > 0,
     },
     {
-      label: "To Fulfil",
-      value: statsLoading ? null : stats?.pendingFulfillment ?? 0,
+      label: "Being prepared",
+      value: statsLoading ? null : o?.orders_to_prepare ?? 0,
       icon: ShoppingCart,
-      href: "/admin/orders",
-      urgent: (stats?.pendingFulfillment ?? 0) > 0,
+      href: "/admin/orders?filter=to_prepare",
+      urgent: (o?.orders_to_prepare ?? 0) > 0,
     },
     {
       label: "In Transit",
-      value: statsLoading ? null : stats?.inTransit ?? 0,
+      value: statsLoading ? null : o?.in_transit ?? 0,
       icon: Truck,
-      href: "/admin/orders",
+      href: "/admin/orders?filter=in_transit",
       urgent: false,
     },
     {
-      label: "Vendors",
-      value: statsLoading ? null : stats?.totalVendors ?? 0,
-      sub: stats ? `${stats.verifiedVendors} verified` : undefined,
+      label: "Sellers",
+      value: statsLoading ? null : o?.sellers ?? 0,
+      sub: o ? `${o.verified_sellers} verified` : undefined,
       icon: Store,
       href: "/admin/vendors",
       urgent: false,
     },
     {
-      label: "Users",
-      value: statsLoading ? null : stats?.totalUsers ?? 0,
+      label: "Customers",
+      value: statsLoading ? null : o?.customers ?? 0,
       icon: Users,
       href: "/admin/users",
       urgent: false,
     },
     {
       label: "Products",
-      value: statsLoading ? null : stats?.totalProducts ?? 0,
+      value: statsLoading ? null : o?.products ?? 0,
+      sub: o ? `${o.live_products} live` : undefined,
       icon: Package,
       href: "/admin/products",
       urgent: false,
@@ -150,47 +151,65 @@ export default function AdminDashboard() {
   ];
 
   const moneyCards = [
-    { label: "Revenue (paid)", value: stats?.totalRevenue ?? 0, icon: Wallet, href: "/admin/finance" },
-    { label: "Held in escrow", value: stats?.escrowHeld ?? 0, icon: ShieldCheck, href: "/admin/finance" },
+    { label: "Revenue (paid)", value: o?.revenue ?? 0, icon: Wallet, href: "/admin/finance" },
+    { label: "Held in escrow", value: o?.escrow_held ?? 0, icon: ShieldCheck, href: "/admin/finance" },
   ];
 
   const quickActions = [
     { label: "Add Product", href: "/admin/products/new", icon: Plus },
     { label: "Messages", href: "/admin/messages", icon: MessageCircle },
-    { label: "View Orders", href: "/admin/orders", icon: ShoppingCart },
-    { label: "Vendors", href: "/admin/vendors", icon: Store },
+    { label: "Shipments", href: "/admin/shipments", icon: Boxes },
+    { label: "Sellers", href: "/admin/vendors", icon: Store },
     { label: "Announcement", href: "/admin/announcements", icon: Megaphone },
   ];
 
   return (
-    <AdminLayout title="Dashboard">
+    <AdminLayout title="Home">
       <div className="space-y-5 pb-20 md:pb-6">
 
         {/* Greeting + what needs attention */}
         <div className="bg-primary rounded-2xl p-4 text-primary-foreground animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
           <p className="text-primary-foreground/60 text-xs">{format(new Date(), "EEEE, d MMMM")}</p>
           <h2 className="font-bold text-lg">{greeting()}{adminName ? `, ${adminName}` : ""}</h2>
-          {attention.length === 0 ? (
-            <p className="mt-1 flex items-center gap-1.5 text-sm text-primary-foreground/70">
-              <PartyPopper className="h-4 w-4" />
-              All caught up. Nothing is waiting for you.
-            </p>
-          ) : (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {attention.map((item) => (
-                <Link
-                  key={item.label}
-                  to={item.href}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-primary-foreground px-3 py-1.5 text-xs font-semibold text-primary transition-opacity hover:opacity-90"
-                >
-                  <item.icon className="h-3.5 w-3.5" />
-                  {item.count} {item.label}{item.count > 1 ? "s" : ""}
-                  <ArrowRight className="h-3 w-3" />
-                </Link>
-              ))}
-            </div>
-          )}
+          <p className="mt-1 text-sm text-primary-foreground/70">
+            {statsLoading
+              ? "Checking what needs you…"
+              : overviewError
+                ? "Couldn't load today's counts. Pull to refresh."
+                : attention.length === 0
+                  ? "All caught up. Nothing is waiting for you."
+                  : `${attention.length} thing${attention.length > 1 ? "s" : ""} need${attention.length > 1 ? "" : "s"} you today.`}
+          </p>
         </div>
+
+        {/* Needs attention: one tap to the exact list */}
+        {statsLoading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => <div key={i} className="h-14 rounded-2xl bg-muted animate-pulse" />)}
+          </div>
+        ) : attention.length === 0 ? (
+          <div className="flex items-center gap-2 rounded-2xl border bg-card p-4 text-sm text-muted-foreground">
+            <PartyPopper className="h-4 w-4 text-primary" />
+            Nothing needs you right now.
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-2xl border bg-card divide-y">
+            {attention.map((item) => (
+              <Link key={item.label} to={item.href} className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50 active:bg-muted">
+                <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${item.urgent ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
+                  <item.icon className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-foreground">
+                    {item.count} {item.count > 1 ? item.plural : item.label}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">{item.hint}</p>
+                </div>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </Link>
+            ))}
+          </div>
+        )}
 
         <TodayTrafficCard />
 
@@ -351,12 +370,12 @@ export default function AdminDashboard() {
                 </div>
               )}
               {recentOrders.map((order) => {
-                const vendorNames = [...new Set(order.order_items.map((i) => i.vendor?.store_name).filter(Boolean))].join(", ");
+                const sellersLabel = order.seller_count > 1 ? `${order.seller_count} sellers` : "";
                 const done = order.status === "completed" || order.status === "delivered";
                 return (
                   <Link
                     key={order.id}
-                    to="/admin/orders"
+                    to={`/admin/orders?q=${order.id.slice(0, 8)}`}
                     className="flex items-center gap-3 bg-card border border-border rounded-xl p-3 hover:border-primary/20 hover:bg-muted/30 transition-colors"
                   >
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
@@ -376,7 +395,7 @@ export default function AdminDashboard() {
                       </p>
                       <p className="text-xs text-muted-foreground truncate">
                         <span className="font-mono">{orderRef(order.id)}</span> · {formatTime(order.created_at)}
-                        {vendorNames ? ` · ${vendorNames}` : ""}
+                        {sellersLabel ? ` · ${sellersLabel}` : ""}
                       </p>
                     </div>
                     <div className="text-right flex-shrink-0">
@@ -409,13 +428,12 @@ export default function AdminDashboard() {
               <p className="text-sm text-muted-foreground text-center py-6">No vendor sales yet</p>
             ) : (
               analytics.topVendors.slice(0, 5).map((vendor, i) => {
-                const fullVendor = vendors.find((v) => v.id === vendor.id);
                 return (
                   <button
                     type="button"
                     key={vendor.id}
                     className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-muted/50 transition-colors text-left"
-                    onClick={() => fullVendor && navigate(`/admin/vendors/${fullVendor.id}`)}
+                    onClick={() => navigate(`/admin/vendors/${vendor.id}`)}
                   >
                     <span className="text-xs font-medium text-muted-foreground w-4">{i + 1}</span>
                     <Avatar className="h-9 w-9 border">
@@ -425,7 +443,6 @@ export default function AdminDashboard() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <p className="font-medium truncate text-sm">{vendor.storeName}</p>
-                        {fullVendor?.is_verified && <VerifiedBadge className="h-3.5 w-3.5" tier={fullVendor.verification_tier} />}
                       </div>
                       <p className="text-xs text-muted-foreground">{vendor.orderCount} items sold</p>
                     </div>

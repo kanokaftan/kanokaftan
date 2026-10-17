@@ -22,24 +22,19 @@ export function useAdminCategories() {
         .select("*")
         .order("name");
 
-      if (error) throw error;
+      if (error) {
+        console.error("[admin categories] load failed", error);
+        throw new Error("Couldn't load categories.");
+      }
 
-      // Get product counts per category
-      const { data: products } = await supabase
-        .from("products")
-        .select("category_id")
-        .is("deleted_at", null);
-
-      const countByCategory = products?.reduce((acc, p) => {
-        if (p.category_id) {
-          acc[p.category_id] = (acc[p.category_id] || 0) + 1;
-        }
-        return acc;
-      }, {} as Record<string, number>) || {};
+      // Product counts per category, counted in the database.
+      const { data: counts, error: countsError } = await supabase.rpc("admin_category_counts");
+      if (countsError) console.error("[admin categories] counts failed", countsError);
+      const countByCategory = (counts ?? {}) as Record<string, number>;
 
       return categories?.map(c => ({
         ...c,
-        product_count: countByCategory[c.id] || 0,
+        product_count: Number(countByCategory[c.id]) || 0,
       })) || [];
     },
   });

@@ -1,16 +1,19 @@
-import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { useAdminVendors, badgeTierOf, type BadgeTier } from "@/hooks/useAdminVendors";
+import {
+  useAdminVendors, useAdminVendorFilterCounts, badgeTierOf, ADMIN_VENDOR_FILTERS, DEFAULT_VENDOR_FILTER, type AdminVendorFilter,
+} from "@/hooks/useAdminVendors";
+import { useAdminListState, useKeepPageInRange } from "@/hooks/useAdminListState";
+import { totalPagesOf } from "@/hooks/adminList";
+import { AdminListToolbar, type ListChip } from "@/components/admin/AdminListToolbar";
 import { BadgeTierControl, TierChip } from "@/components/admin/BadgeTierControl";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Package, Eye } from "lucide-react";
+import { Package, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { VerificationRequests } from "@/components/admin/VerificationRequests";
 import { VendorApplications } from "@/components/admin/VendorApplications";
@@ -19,14 +22,17 @@ import { usePendingVerificationCount } from "@/hooks/useAdminVerification";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VerifiedBadge } from "@/components/shop/VerifiedBadge";
 
-const PAGE_SIZE = 20;
-
-type TierFilter = "all" | BadgeTier;
+const VENDOR_FILTER_LABELS: Record<AdminVendorFilter, string> = {
+  all: "All sellers",
+  verified: "Verified",
+  gold: "Gold",
+  unverified: "Not verified",
+};
 
 export default function AdminVendors() {
-  const { vendors, isLoading } = useAdminVendors();
-  const [search, setSearch] = useState("");
-  const [tierFilter, setTierFilter] = useState<TierFilter>("all");
+  const list = useAdminListState({ filters: ADMIN_VENDOR_FILTERS, defaultFilter: DEFAULT_VENDOR_FILTER });
+  const { vendors, total, isLoading, isFetching, error, refetch } = useAdminVendors(list.params);
+  const { data: filterCounts } = useAdminVendorFilterCounts(list.params.search);
   const navigate = useNavigate();
   /** Full page with the seller's details, chats with customers, products, orders and payouts. */
   const openVendor = (vendorId: string) => navigate(`/admin/vendors/${vendorId}`);
@@ -42,19 +48,11 @@ export default function AdminVendors() {
     setSearchParams(next, { replace: true });
   };
 
-  const query = search.trim().toLowerCase();
-  const filteredVendors = vendors.filter((vendor) =>
-    (tierFilter === "all" || badgeTierOf(vendor) === tierFilter) &&
-    (!query ||
-      vendor.store_name?.toLowerCase().includes(query) ||
-      vendor.full_name?.toLowerCase().includes(query) ||
-      vendor.email.toLowerCase().includes(query))
-  );
-
-  const [page, setPage] = useState(1);
-  const totalPages = Math.ceil(filteredVendors.length / PAGE_SIZE);
-  const paginatedVendors = filteredVendors.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  useEffect(() => { setPage(1); }, [search, tierFilter]);
+  const { page, setPage, pageSize: PAGE_SIZE } = list;
+  const totalPages = totalPagesOf(total, PAGE_SIZE);
+  useKeepPageInRange(page, setPage, isLoading ? undefined : total, PAGE_SIZE);
+  const filteredVendors = vendors;
+  const paginatedVendors = vendors;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-NG", {
@@ -64,20 +62,17 @@ export default function AdminVendors() {
     }).format(amount);
   };
 
-  const countOf = (tier: BadgeTier) => vendors.filter((v) => badgeTierOf(v) === tier).length;
-  const totalSales = vendors.reduce((sum, v) => sum + v.total_sales, 0);
-  const filterTiles: { value: TierFilter; label: string; count: number; dot: string }[] = [
-    { value: "all", label: "All sellers", count: vendors.length, dot: "bg-foreground" },
-    { value: "gold", label: "Gold", count: countOf("gold"), dot: "bg-[#9A7400]" },
-    { value: "blue", label: "Blue", count: countOf("blue"), dot: "bg-[#1D9BF0]" },
-    { value: "none", label: "Not verified", count: countOf("none"), dot: "bg-muted-foreground/50" },
-  ];
+  const chips: ListChip<AdminVendorFilter>[] = ADMIN_VENDOR_FILTERS.map((value) => ({
+    value,
+    label: VENDOR_FILTER_LABELS[value],
+    count: filterCounts?.[value],
+  }));
 
   return (
-    <AdminLayout title="Vendors">
+    <AdminLayout title="Sellers">
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList className="flex h-auto flex-wrap justify-start">
-          <TabsTrigger value="vendors">Vendors</TabsTrigger>
+          <TabsTrigger value="vendors">Sellers</TabsTrigger>
           <TabsTrigger value="applications" className="gap-1.5">
             Applications
             {pendingApplications > 0 && (
@@ -105,49 +100,31 @@ export default function AdminVendors() {
         </TabsContent>
 
         <TabsContent value="vendors">
-          {/* Badge filters (also the counts) */}
-          <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
-            {filterTiles.map((tile) => (
-              <button
-                key={tile.value}
-                type="button"
-                onClick={() => setTierFilter(tile.value)}
-                aria-pressed={tierFilter === tile.value}
-                className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-left transition-colors ${
-                  tierFilter === tile.value ? "border-foreground bg-card shadow-sm" : "bg-card/60 hover:bg-card"
-                }`}
-              >
-                <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span className={`h-2 w-2 rounded-full ${tile.dot}`} />
-                  {tile.label}
-                </span>
-                <span className="text-lg font-bold">{isLoading ? "–" : tile.count}</span>
-              </button>
-            ))}
-          </div>
-          <p className="mb-4 text-xs text-muted-foreground">
-            Total sales across sellers: <span className="font-semibold text-foreground">{formatCurrency(totalSales)}</span>
-          </p>
+          <AdminListToolbar
+            search={list.search}
+            onSearchChange={list.setSearch}
+            placeholder="Shop, owner, email or phone"
+            chips={chips}
+            filter={list.filter}
+            onFilterChange={list.setFilter}
+            total={isLoading ? undefined : total}
+            noun={["seller", "sellers"]}
+            busy={list.isSearchPending || isFetching}
+          />
 
-          {/* Search */}
-          <div className="mb-6">
-            <div className="relative max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search vendors..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
+          {error && (
+            <div className="mb-4 flex items-center justify-between rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm">
+              <span className="text-destructive">{error instanceof Error ? error.message : "Couldn't load sellers."}</span>
+              <Button variant="outline" size="sm" onClick={() => refetch()}>Try again</Button>
             </div>
-          </div>
+          )}
 
           {/* Mobile View */}
           <div className="md:hidden space-y-3 mb-4">
             {isLoading ? (
               [...Array(5)].map((_, i) => <Skeleton key={i} className="h-40 w-full" />)
             ) : filteredVendors.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No vendors found</p>
+              <p className="text-center text-muted-foreground py-8">No sellers found</p>
             ) : (
               paginatedVendors.map((vendor) => (
                 <Card 
@@ -214,7 +191,7 @@ export default function AdminVendors() {
           </div>
 
           <div className="md:hidden mb-20">
-            <AdminPagination page={page} totalPages={totalPages} totalItems={filteredVendors.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+            <AdminPagination page={page} totalPages={totalPages} totalItems={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
           </div>
 
           {/* Desktop Table */}
@@ -243,7 +220,7 @@ export default function AdminVendors() {
                   ) : filteredVendors.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                        No vendors found
+                        No sellers found
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -315,7 +292,7 @@ export default function AdminVendors() {
                 </TableBody>
               </Table>
             </Card>
-            <AdminPagination page={page} totalPages={totalPages} totalItems={filteredVendors.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+            <AdminPagination page={page} totalPages={totalPages} totalItems={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
           </div>
         </TabsContent>
       </Tabs>

@@ -1543,6 +1543,28 @@ export type Database = {
       guest_cart_set_quantity: { Args: { p_session: string; p_item_id: string; p_quantity: number }; Returns: undefined }
       guest_cart_clear: { Args: { p_session: string }; Returns: undefined }
       merge_guest_cart: { Args: { p_session: string }; Returns: number }
+      order_seller_count: { Args: { p_order_id: string }; Returns: number }
+      order_fulfilment: { Args: { p_order_id: string }; Returns: Json }
+      vendor_set_ready: { Args: { p_order_id: string; p_ready?: boolean }; Returns: Json }
+      admin_combined_shipments: { Args: Record<PropertyKey, never>; Returns: Json }
+      admin_overview_counts: { Args: Record<PropertyKey, never>; Returns: Json }
+      admin_category_counts: { Args: Record<PropertyKey, never>; Returns: Json }
+      admin_list_users: {
+        Args: { p_search?: string | null; p_role?: string; p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
+      admin_list_vendors: {
+        Args: { p_search?: string | null; p_filter?: string; p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
+      admin_list_products: {
+        Args: { p_search?: string | null; p_filter?: string; p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
+      admin_list_orders: {
+        Args: { p_search?: string | null; p_filter?: string; p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
       get_profile_private: {
         Args: { p_ids: string[] }
         Returns: {

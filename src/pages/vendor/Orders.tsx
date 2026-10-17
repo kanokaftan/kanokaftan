@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { VendorLayout } from "@/components/vendor/VendorLayout";
 import { useVendorAuth } from "@/hooks/useVendorAuth";
-import { useVendorOrders, VendorOrder, OrderStatus } from "@/hooks/useVendorOrders";
+import { useVendorOrders, VendorOrder, OrderStatus, OrderFulfilment } from "@/hooks/useVendorOrders";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,8 @@ import {
   User,
   ChevronDown,
   ChevronUp,
+  Boxes,
+  Circle,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -67,19 +69,79 @@ function formatCurrency(amount: number) {
   }).format(amount);
 }
 
+/** Supabase errors are plain objects with a message, not Error instances. */
+function errorMessage(error: unknown, fallback: string): string {
+  const message = (error as { message?: unknown } | null)?.message;
+  return typeof message === "string" && message ? message : fallback;
+}
+
 function getNextStatuses(currentStatus: string): OrderStatus[] {
   const currentIndex = statusFlow.indexOf(currentStatus as OrderStatus);
   if (currentIndex === -1 || currentStatus === "pending_payment") return [];
   return statusFlow.slice(currentIndex + 1);
 }
 
+interface CombinedDeliveryPanelProps {
+  orderId: string;
+  status: string;
+  fulfilment: OrderFulfilment;
+  onSetReady: (orderId: string, ready: boolean) => void;
+  isSaving: boolean;
+}
+
+/** Several sellers in one order: each packs their part, Kano Kaftan collects everything as one shipment. */
+function CombinedDeliveryPanel({ orderId, status, fulfilment, onSetReady, isSaving }: CombinedDeliveryPanelProps) {
+  const mine = fulfilment.sellers.find((s) => s.me);
+  const readyCount = fulfilment.sellers.filter((s) => s.ready).length;
+  const total = fulfilment.sellers.length;
+  const canChange = ["payment_confirmed", "processing", "ready_for_pickup"].includes(status);
+
+  return (
+    <div className="space-y-3 rounded-2xl border border-primary/20 bg-primary/5 p-3">
+      <div className="flex items-start gap-2">
+        <Boxes className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+        <div className="text-sm">
+          <p className="font-medium">Combined delivery · {total} sellers</p>
+          <p className="text-muted-foreground">
+            Pack your items and tap ready. Kano Kaftan collects from every seller and delivers them to the buyer together.
+          </p>
+        </div>
+      </div>
+      <ul className="space-y-1.5">
+        {fulfilment.sellers.map((s) => (
+          <li key={s.vendor_id} className="flex items-center justify-between text-sm">
+            <span className="truncate">{s.me ? "You" : s.store_name}</span>
+            <span className={s.ready ? "flex items-center gap-1 text-green-700 dark:text-green-400" : "flex items-center gap-1 text-muted-foreground"}>
+              {s.ready ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Circle className="h-3.5 w-3.5" />}
+              {s.ready ? "Ready" : "Packing"}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="text-xs text-muted-foreground">{readyCount} of {total} ready</p>
+      {canChange && mine && (
+        <Button
+          className="w-full"
+          variant={mine.ready ? "outline" : "default"}
+          disabled={isSaving}
+          onClick={() => onSetReady(orderId, !mine.ready)}
+        >
+          {isSaving ? "Saving..." : mine.ready ? "Not ready yet" : "My items are packed and ready"}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 interface OrderCardProps {
   order: VendorOrder;
   onUpdateStatus: (orderId: string, status: OrderStatus, message: string) => void;
   isUpdating: boolean;
+  onSetReady: (orderId: string, ready: boolean) => void;
+  isSavingReady: boolean;
 }
 
-function OrderCard({ order, onUpdateStatus, isUpdating }: OrderCardProps) {
+function OrderCard({ order, onUpdateStatus, isUpdating, onSetReady, isSavingReady }: OrderCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [showStatusDialog, setShowStatusDialog] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "">("");
@@ -89,6 +151,7 @@ function OrderCard({ order, onUpdateStatus, isUpdating }: OrderCardProps) {
   const StatusIcon = status.icon;
   const nextStatuses = getNextStatuses(order.status);
   const vendorTotal = order.order_items.reduce((sum, item) => sum + item.total_price, 0);
+  const isCombined = order.fulfilment?.combined ?? false;
 
   const handleStatusUpdate = () => {
     if (!selectedStatus) return;
@@ -227,8 +290,18 @@ function OrderCard({ order, onUpdateStatus, isUpdating }: OrderCardProps) {
           </div>
         )}
 
+        {isCombined && order.fulfilment && (
+          <CombinedDeliveryPanel
+            orderId={order.id}
+            status={order.status}
+            fulfilment={order.fulfilment}
+            onSetReady={onSetReady}
+            isSaving={isSavingReady}
+          />
+        )}
+
         {/* Update Status Button */}
-        {nextStatuses.length > 0 && order.payment_status === "paid" && (
+        {!isCombined && nextStatuses.length > 0 && order.payment_status === "paid" && (
           <Button 
             className="w-full" 
             onClick={() => setShowStatusDialog(true)}
@@ -290,15 +363,25 @@ function OrderCard({ order, onUpdateStatus, isUpdating }: OrderCardProps) {
 
 export default function VendorOrders() {
   const { userId } = useVendorAuth();
-  const { orders, isLoading, updateOrderStatus } = useVendorOrders(userId);
+  const { orders, isLoading, updateOrderStatus, setReady } = useVendorOrders(userId);
+
+  const handleSetReady = async (orderId: string, ready: boolean) => {
+    try {
+      const result = await setReady.mutateAsync({ orderId, ready });
+      const allReady = result.sellers.every((s) => s.ready);
+      toast.success(ready ? (allReady ? "Everyone is ready. Kano Kaftan will send a rider." : "Marked ready. Waiting for the other sellers.") : "Marked as not ready");
+    } catch (error: unknown) {
+      console.error("[vendor orders] set ready failed", orderId, error);
+      toast.error(errorMessage(error, "Couldn't save. Please try again."));
+    }
+  };
 
   const handleUpdateStatus = async (orderId: string, status: OrderStatus, message: string) => {
     try {
       await updateOrderStatus.mutateAsync({ orderId, status, message });
       toast.success("Order status updated");
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : "Failed to update status";
-      toast.error(msg);
+      toast.error(errorMessage(error, "Failed to update status"));
     }
   };
 
@@ -372,6 +455,8 @@ export default function VendorOrders() {
                     order={order}
                     onUpdateStatus={handleUpdateStatus}
                     isUpdating={updateOrderStatus.isPending}
+                    onSetReady={handleSetReady}
+                    isSavingReady={setReady.isPending}
                   />
                 ))
               )}
@@ -387,6 +472,8 @@ export default function VendorOrders() {
                     order={order}
                     onUpdateStatus={handleUpdateStatus}
                     isUpdating={updateOrderStatus.isPending}
+                    onSetReady={handleSetReady}
+                    isSavingReady={setReady.isPending}
                   />
                 ))
               )}
@@ -402,6 +489,8 @@ export default function VendorOrders() {
                     order={order}
                     onUpdateStatus={handleUpdateStatus}
                     isUpdating={updateOrderStatus.isPending}
+                    onSetReady={handleSetReady}
+                    isSavingReady={setReady.isPending}
                   />
                 ))
               )}

@@ -1,45 +1,38 @@
-import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPagination } from "@/components/admin/AdminPagination";
+import { AdminListToolbar, type ListChip } from "@/components/admin/AdminListToolbar";
 import { DeliveryActions } from "@/components/admin/DeliveryActions";
-import { useAdminOrders } from "@/hooks/useAdminOrders";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { useAdminOrders, ADMIN_ORDER_FILTERS, DEFAULT_ORDER_FILTER, type AdminOrderFilter } from "@/hooks/useAdminOrders";
+import { useAdminListState, useKeepPageInRange } from "@/hooks/useAdminListState";
+import { totalPagesOf } from "@/hooks/adminList";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search } from "lucide-react";
+import { Boxes } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
-const PAGE_SIZE = 20;
+const ORDER_CHIPS: ListChip<AdminOrderFilter>[] = [
+  { value: "all", label: "All" },
+  { value: "to_prepare", label: "Being prepared" },
+  { value: "combined", label: "Combined (several sellers)" },
+  { value: "in_transit", label: "On the way" },
+  { value: "delivered", label: "Delivered" },
+  { value: "unpaid", label: "Unpaid" },
+  { value: "disputed", label: "Disputed" },
+  { value: "cancelled", label: "Cancelled" },
+];
 
 export default function AdminOrders() {
-  const { orders, isLoading, updateOrderStatus } = useAdminOrders();
-  const [searchParams] = useSearchParams();
-  // Links from chats and seller pages open the list already filtered (?search=<order id>).
-  const [search, setSearch] = useState(() => searchParams.get("search") ?? "");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [paymentFilter, setPaymentFilter] = useState<string>("all");
-  const [page, setPage] = useState(1);
-
-  const filteredOrders = orders.filter(order => {
-    const matchesSearch =
-      order.customer?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-      order.customer?.email.toLowerCase().includes(search.toLowerCase()) ||
-      order.id.toLowerCase().includes(search.toLowerCase()) ||
-      order.order_items.some(item => item.vendor?.store_name?.toLowerCase().includes(search.toLowerCase()));
-    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
-    const matchesPayment = paymentFilter === "all" || order.payment_status === paymentFilter;
-    return matchesSearch && matchesStatus && matchesPayment;
-  });
-
-  const totalPages = Math.ceil(filteredOrders.length / PAGE_SIZE);
-  const paginatedOrders = filteredOrders.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  useEffect(() => { setPage(1); }, [search, statusFilter, paymentFilter]);
+  // Links from chats and seller pages open the list already searched (?q=<order id>, or the older ?search=).
+  const list = useAdminListState({ filters: ADMIN_ORDER_FILTERS, defaultFilter: DEFAULT_ORDER_FILTER, legacySearchParam: "search" });
+  const { orders, total, isLoading, isFetching, error, refetch, updateOrderStatus } = useAdminOrders(list.params);
+  const { page, setPage, pageSize: PAGE_SIZE } = list;
+  const totalPages = totalPagesOf(total, PAGE_SIZE);
+  useKeepPageInRange(page, setPage, isLoading ? undefined : total, PAGE_SIZE);
+  const paginatedOrders = orders;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-NG", {
@@ -77,63 +70,42 @@ export default function AdminOrders() {
     try {
       await updateOrderStatus.mutateAsync({ orderId, status: newStatus });
       toast.success("Order status updated");
-    } catch (error) {
-      toast.error("Failed to update order status");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update order status");
     }
   };
 
   const vendorNames = (order: (typeof orders)[number]) =>
     [...new Set(order.order_items.map(item => item.vendor?.store_name).filter(Boolean))].join(", ");
 
-  const statuses = ["pending_payment", "payment_confirmed", "processing", "shipped", "out_for_delivery", "delivered", "completed", "cancelled"];
+  const statuses = ["pending_payment", "payment_confirmed", "processing", "ready_for_pickup", "shipped", "out_for_delivery", "delivered", "completed", "cancelled"];
 
   return (
     <AdminLayout title="Orders">
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search orders..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            {statuses.map(status => (
-              <SelectItem key={status} value={status} className="capitalize">{status.replace(/_/g, " ")}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by payment" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Payments</SelectItem>
-            <SelectItem value="paid">Paid</SelectItem>
-            <SelectItem value="pending">Unpaid</SelectItem>
-            <SelectItem value="failed">Failed</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <AdminListToolbar
+        search={list.search}
+        onSearchChange={list.setSearch}
+        placeholder="Order number, customer, email or payment ref"
+        chips={ORDER_CHIPS}
+        filter={list.filter}
+        onFilterChange={list.setFilter}
+        total={isLoading ? undefined : total}
+        noun={["order", "orders"]}
+        busy={list.isSearchPending || isFetching}
+      />
 
-      {/* Result count */}
-      {!isLoading && (
-        <p className="text-sm text-muted-foreground mb-2">{filteredOrders.length} order{filteredOrders.length !== 1 ? "s" : ""}</p>
+      {error && (
+        <div className="mb-4 flex items-center justify-between rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm">
+          <span className="text-destructive">{error instanceof Error ? error.message : "Couldn't load orders."}</span>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>Try again</Button>
+        </div>
       )}
 
       {/* Mobile View */}
       <div className="md:hidden space-y-3">
         {isLoading ? (
           [...Array(5)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)
-        ) : filteredOrders.length === 0 ? (
+        ) : orders.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">No orders found</p>
         ) : (
           paginatedOrders.map((order) => (
@@ -142,6 +114,7 @@ export default function AdminOrders() {
                 <div>
                   <p className="font-medium">{order.customer?.full_name || order.customer?.email || "Customer"}</p>
                   <p className="text-xs text-muted-foreground font-mono">#{order.id.slice(0, 8)}</p>
+                  {order.seller_count > 1 && <SellersBadge count={order.seller_count} />}
                 </div>
                 <Badge className={`${getStatusColor(order.status)} capitalize`}>{order.status.replace(/_/g, " ")}</Badge>
               </div>
@@ -181,7 +154,7 @@ export default function AdminOrders() {
 
       {/* Mobile pagination */}
       <div className="md:hidden mb-20">
-        <AdminPagination page={page} totalPages={totalPages} totalItems={filteredOrders.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+        <AdminPagination page={page} totalPages={totalPages} totalItems={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </div>
 
       {/* Desktop Table */}
@@ -208,7 +181,7 @@ export default function AdminOrders() {
                     <TableCell colSpan={9}><Skeleton className="h-10 w-full" /></TableCell>
                   </TableRow>
                 ))
-              ) : filteredOrders.length === 0 ? (
+              ) : orders.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                     No orders found
@@ -217,7 +190,10 @@ export default function AdminOrders() {
               ) : (
                 paginatedOrders.map((order) => (
                   <TableRow key={order.id}>
-                    <TableCell className="font-mono text-sm">#{order.id.slice(0, 8)}</TableCell>
+                    <TableCell className="font-mono text-sm">
+                      #{order.id.slice(0, 8)}
+                      {order.seller_count > 1 && <SellersBadge count={order.seller_count} />}
+                    </TableCell>
                     <TableCell>
                       <div>
                         <p className="font-medium">{order.customer?.full_name || "No name"}</p>
@@ -258,8 +234,18 @@ export default function AdminOrders() {
             </TableBody>
           </Table>
         </div>
-        <AdminPagination page={page} totalPages={totalPages} totalItems={filteredOrders.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+        <AdminPagination page={page} totalPages={totalPages} totalItems={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </div>
     </AdminLayout>
+  );
+}
+
+/** Marks an order whose items come from several sellers (it ships as one combined shipment). */
+function SellersBadge({ count }: { count: number }) {
+  return (
+    <span className="mt-1 flex w-fit items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-sans text-[11px] font-medium text-primary">
+      <Boxes className="h-3 w-3" />
+      {count} sellers
+    </span>
   );
 }

@@ -174,7 +174,7 @@ export function useReviewVerification() {
       queryClient.invalidateQueries({ queryKey: ADMIN_VERIFICATION_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ADMIN_PENDING_COUNT_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["admin-vendors"] });
-      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
     },
   });
 }

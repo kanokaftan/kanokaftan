@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { useAdminProducts } from "@/hooks/useAdminProducts";
+import { useAdminProducts, ADMIN_PRODUCT_FILTERS, DEFAULT_PRODUCT_FILTER, type AdminProductFilter } from "@/hooks/useAdminProducts";
+import { useAdminListState, useKeepPageInRange } from "@/hooks/useAdminListState";
+import { totalPagesOf } from "@/hooks/adminList";
+import { AdminListToolbar, type ListChip } from "@/components/admin/AdminListToolbar";
 import { AdminPagination } from "@/components/admin/AdminPagination";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -10,28 +11,27 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { removeProductMessage } from "@/lib/removeProduct";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Search, Star, Trash2, Plus, Pencil } from "lucide-react";
+import { Star, Trash2, Plus, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Link, useNavigate } from "react-router-dom";
 
-const PAGE_SIZE = 20;
+const PRODUCT_CHIPS: ListChip<AdminProductFilter>[] = [
+  { value: "all", label: "All" },
+  { value: "active", label: "Live" },
+  { value: "inactive", label: "Hidden" },
+  { value: "featured", label: "Featured" },
+  { value: "out_of_stock", label: "Out of stock" },
+];
 
 export default function AdminProducts() {
-  const { products, isLoading, toggleFeatured, toggleActive, deleteProduct } = useAdminProducts();
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  const list = useAdminListState({ filters: ADMIN_PRODUCT_FILTERS, defaultFilter: DEFAULT_PRODUCT_FILTER });
+  const { products, total, isLoading, isFetching, error, refetch, toggleFeatured, toggleActive, deleteProduct } = useAdminProducts(list.params);
   const navigate = useNavigate();
-
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(search.toLowerCase()) ||
-    product.vendor?.store_name?.toLowerCase().includes(search.toLowerCase()) ||
-    product.vendor?.full_name?.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const totalPages = Math.ceil(filteredProducts.length / PAGE_SIZE);
-  const paginatedProducts = filteredProducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  useEffect(() => { setPage(1); }, [search]);
+  const { page, setPage, pageSize: PAGE_SIZE } = list;
+  const totalPages = totalPagesOf(total, PAGE_SIZE);
+  useKeepPageInRange(page, setPage, isLoading ? undefined : total, PAGE_SIZE);
+  const filteredProducts = products;
+  const paginatedProducts = products;
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", minimumFractionDigits: 0 }).format(amount);
@@ -40,8 +40,8 @@ export default function AdminProducts() {
     try {
       await toggleFeatured.mutateAsync({ productId, featured: !currentStatus });
       toast.success(currentStatus ? "Product unfeatured" : "Product featured");
-    } catch {
-      toast.error("Failed to update product");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update product");
     }
   };
 
@@ -49,8 +49,8 @@ export default function AdminProducts() {
     try {
       await toggleActive.mutateAsync({ productId, isActive: !currentStatus });
       toast.success(currentStatus ? "Product deactivated" : "Product activated");
-    } catch {
-      toast.error("Failed to update product");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update product");
     }
   };
 
@@ -66,21 +66,31 @@ export default function AdminProducts() {
 
   return (
     <AdminLayout title="Products">
-      <div className="flex items-center justify-between mb-6 gap-3">
-        <div className="relative max-w-sm flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search products or vendors..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <Button onClick={() => navigate("/admin/products/new")} className="gap-2 flex-shrink-0">
+      <div className="mb-3 flex justify-end">
+        <Button onClick={() => navigate("/admin/products/new")} className="gap-2">
           <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Add Product</span>
+          Add product
         </Button>
       </div>
+
+      <AdminListToolbar
+        search={list.search}
+        onSearchChange={list.setSearch}
+        placeholder="Product or shop name"
+        chips={PRODUCT_CHIPS}
+        filter={list.filter}
+        onFilterChange={list.setFilter}
+        total={isLoading ? undefined : total}
+        noun={["product", "products"]}
+        busy={list.isSearchPending || isFetching}
+      />
+
+      {error && (
+        <div className="mb-4 flex items-center justify-between rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm">
+          <span className="text-destructive">{error instanceof Error ? error.message : "Couldn't load products."}</span>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>Try again</Button>
+        </div>
+      )}
 
       {/* Mobile View */}
       <div className="md:hidden space-y-3 mb-20">
@@ -164,7 +174,7 @@ export default function AdminProducts() {
 
       {/* Mobile pagination */}
       <div className="md:hidden mb-20">
-        <AdminPagination page={page} totalPages={totalPages} totalItems={filteredProducts.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+        <AdminPagination page={page} totalPages={totalPages} totalItems={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </div>
 
       {/* Desktop Table */}
@@ -253,7 +263,7 @@ export default function AdminProducts() {
         </Table>
       </div>
       <div className="hidden md:block">
-        <AdminPagination page={page} totalPages={totalPages} totalItems={filteredProducts.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+        <AdminPagination page={page} totalPages={totalPages} totalItems={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </div>
     </AdminLayout>
   );

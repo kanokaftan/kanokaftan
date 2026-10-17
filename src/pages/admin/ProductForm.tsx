@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCategories } from "@/hooks/useProducts";
-import { useAdminVendors } from "@/hooks/useAdminVendors";
+import { useAllAdminVendors } from "@/hooks/useAdminVendors";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,7 @@ export default function AdminProductForm() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { data: categories, isLoading: categoriesLoading } = useCategories();
-  const { vendors, isLoading: vendorsLoading } = useAdminVendors();
+  const { vendors, isLoading: vendorsLoading } = useAllAdminVendors();
   const isEditing = !!id;
   // products.vendor_id is NOT NULL: admin-posted products belong either to a chosen
   // vendor or to the admin's own profile (a house listing).
