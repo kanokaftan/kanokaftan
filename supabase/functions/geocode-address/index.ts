@@ -178,7 +178,8 @@ serve(async (req) => {
       );
     }
     
-    console.log('Geocoding request:', { street_address, city, state });
+    // Addresses are personal data: log only the town.
+    console.log('Geocoding request:', { city, state });
 
     // Build the search query
     const searchQuery = encodeURIComponent(`${street_address}, ${city}, ${state}, Nigeria`);
@@ -193,11 +194,11 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log('Mapbox response:', JSON.stringify(data, null, 2));
+    console.log('Mapbox results:', data.features?.length ?? 0);
 
     if (data.features && data.features.length > 0) {
       const [longitude, latitude] = data.features[0].center;
-      console.log('Geocoded coordinates:', { latitude, longitude });
+      console.log('Geocoded OK');
       
       return new Response(
         JSON.stringify({ 

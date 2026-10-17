@@ -52,7 +52,11 @@ export default function AuthPage() {
   const modeRef = useRef(mode);
   modeRef.current = mode;
 
-  const redirectTo = searchParams.get("redirect") || "/";
+  // Only same-site paths: "/orders" is fine, "//evil.com" or "https://…" is not.
+  const requestedRedirect = searchParams.get("redirect");
+  const redirectTo = requestedRedirect && requestedRedirect.startsWith("/") && !requestedRedirect.startsWith("//") && !requestedRedirect.startsWith("/\\")
+    ? requestedRedirect
+    : "/";
 
   const {
     register,
