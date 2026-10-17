@@ -9,6 +9,7 @@ import {
   ShieldCheck, MapPin, LocateFixed
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { withProfilePrivate } from "@/lib/profilePrivate";
 import { VendorLayout } from "@/components/vendor/VendorLayout";
 import { PayoutAccountCard } from "@/components/vendor/PayoutAccountCard";
 import { ShopBrandingCard } from "@/components/vendor/ShopBrandingCard";
@@ -115,9 +116,9 @@ export default function VendorSettings() {
 
     const loadProfile = async () => {
       try {
-        const { data: profile, error } = await supabase
+        const { data: row, error } = await supabase
           .from("profiles")
-          .select("*")
+          .select("id, full_name, avatar_url, store_name, store_description, store_slug, store_banner_url, is_verified, verification_tier, verified_until")
           .eq("id", user.id)
           .single();
 
@@ -125,6 +126,8 @@ export default function VendorSettings() {
           console.error("Error loading profile:", error);
           throw error;
         }
+        // Phone, address and bank details are private fields (get_profile_private).
+        const [profile] = await withProfilePrivate([row]);
 
         if (profile) {
           // Parse store_address JSON if it exists

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchProfilePrivate, withProfilePrivate } from "@/lib/profilePrivate";
 import type { Tables } from "@/integrations/supabase/types";
 
 export type VendorApplication = Tables<"vendor_applications">;
@@ -86,9 +87,8 @@ export function useAdminVendorApplications() {
       const ids = rows.map((r) => r.user_id);
       const emails = new Map<string, string>();
       if (ids.length) {
-        const { data: profiles, error: profilesError } = await supabase.from("profiles").select("id, email").in("id", ids);
-        if (profilesError) throw profilesError;
-        (profiles ?? []).forEach((p) => emails.set(p.id, p.email));
+        const privateById = await fetchProfilePrivate(ids);
+        privateById.forEach((p) => p.email && emails.set(p.id, p.email));
       }
       // Pending first (oldest first, so nobody waits too long), then the rest newest first.
       const pending = rows.filter((r) => r.status === "pending").reverse();

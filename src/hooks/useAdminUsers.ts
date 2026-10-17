@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { withProfilePrivate } from "@/lib/profilePrivate";
 
 export interface AdminUser {
   id: string;
@@ -20,12 +21,13 @@ export function useAdminUsers() {
   const usersQuery = useQuery({
     queryKey: ["admin-users"],
     queryFn: async (): Promise<AdminUser[]> => {
-      const { data: profiles, error: profilesError } = await supabase
+      const { data: profileRows, error: profilesError } = await supabase
         .from("profiles")
-        .select("*")
+        .select("id, full_name, avatar_url, created_at, updated_at, store_name, store_description, store_slug, store_banner_url, is_verified, verified_until, verification_tier, last_seen_at")
         .order("created_at", { ascending: false });
 
       if (profilesError) throw profilesError;
+      const profiles = await withProfilePrivate(profileRows ?? []);
 
       const { data: roles, error: rolesError } = await supabase
         .from("user_roles")

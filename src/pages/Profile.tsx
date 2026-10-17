@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { withProfilePrivate } from "@/lib/profilePrivate";
 import { useTranslation } from "react-i18next";
 import { useMyAmbassadorDashboard } from "@/hooks/useAmbassadors";
 import { useMyPartner } from "@/hooks/usePartners";
@@ -38,12 +39,17 @@ export default function Profile() {
     queryKey: ["user-profile", user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
-        .select("full_name, avatar_url, phone")
+        .select("id, full_name, avatar_url")
         .eq("id", user.id)
         .single();
-      return data;
+      if (error || !data) {
+        if (error) console.error("[Profile] load failed", error);
+        return null;
+      }
+      const [withPrivate] = await withProfilePrivate([data]);
+      return withPrivate;
     },
     enabled: !!user?.id,
   });

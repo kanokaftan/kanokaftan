@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchProfilePrivate } from "@/lib/profilePrivate";
 import { invokeFunction } from "@/lib/invokeFunction";
 import { NIGERIAN_BANKS, type Bank } from "@/lib/nigerianBanks";
 
@@ -195,11 +196,8 @@ export function useAdminPayouts() {
       if (error) throw error;
 
       const userIds = [...new Set((data || []).map((o) => o.user_id))];
-      const { data: customers, error: customersError } = userIds.length
-        ? await supabase.from("profiles").select("id, email").in("id", userIds)
-        : { data: [], error: null };
-      if (customersError) throw customersError;
-      const emails = new Map((customers || []).map((c) => [c.id, c.email]));
+      const customers = await fetchProfilePrivate(userIds);
+      const emails = new Map([...customers.values()].map((c) => [c.id, c.email]));
 
       return (data || []).map((o) => ({
         id: o.id,

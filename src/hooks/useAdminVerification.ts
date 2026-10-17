@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { withProfilePrivate } from "@/lib/profilePrivate";
 import type { Database } from "@/integrations/supabase/types";
 
 type VerificationRow = Database["public"]["Tables"]["vendor_verification_requests"]["Row"];
@@ -50,7 +51,7 @@ async function fetchVendorsByIds(ids: string[]): Promise<Map<string, Verificatio
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, store_name, store_slug, email, full_name, avatar_url, is_verified, verification_tier, verified_until")
+    .select("id, store_name, store_slug, full_name, avatar_url, is_verified, verification_tier, verified_until")
     .in("id", ids);
 
   if (error) {
@@ -58,7 +59,7 @@ async function fetchVendorsByIds(ids: string[]): Promise<Map<string, Verificatio
     throw error;
   }
 
-  (data || []).forEach((p) => map.set(p.id, p as VerificationVendor));
+  (await withProfilePrivate(data || [])).forEach((p) => map.set(p.id, p as unknown as VerificationVendor));
   return map;
 }
 

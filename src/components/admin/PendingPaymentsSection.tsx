@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchProfilePrivate, withProfilePrivate } from "@/lib/profilePrivate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,10 +46,11 @@ export function PendingPaymentsSection() {
 
       // Fetch customer profiles
       const userIds = [...new Set(orders?.map(o => o.user_id) || [])];
-      const { data: profiles } = await supabase
+      const { data: profileRows } = await supabase
         .from("profiles")
-        .select("id, email, full_name, avatar_url")
+        .select("id, full_name, avatar_url")
         .in("id", userIds);
+      const profiles = await withProfilePrivate(profileRows ?? []);
 
       const profileMap = new Map(profiles?.map(p => [p.id, p]));
 

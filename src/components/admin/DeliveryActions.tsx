@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchProfilePrivate, withProfilePrivate } from "@/lib/profilePrivate";
 import { useLogisticsCompanies, whatsappNumber } from "@/hooks/useLogistics";
 import { toast } from "sonner";
 import { BrandIcon } from "@/components/brand/BrandIcon";
@@ -62,11 +63,12 @@ function useDeliveryJob(orderId: string, enabled: boolean) {
       ]);
       if (deliveryError || orderError || itemsError) throw deliveryError || orderError || itemsError;
       const vendorIds = [...new Set((items ?? []).map((i) => i.vendor_id))];
-      const { data: vendors, error: vendorsError } = vendorIds.length
-        ? await supabase.from("profiles").select("id, store_name, store_address, phone").in("id", vendorIds)
+      const { data: vendorRows, error: vendorsError } = vendorIds.length
+        ? await supabase.from("profiles").select("id, store_name").in("id", vendorIds)
         : { data: [], error: null };
       if (vendorsError) throw vendorsError;
-      return { delivery, order, items: items ?? [], vendors: vendors ?? [] };
+      const vendors = await withProfilePrivate(vendorRows ?? []);
+      return { delivery, order, items: items ?? [], vendors };
     },
   });
 }

@@ -8,6 +8,7 @@ export function badgeTierOf(vendor: { is_verified: boolean; verification_tier?: 
   return vendor.verification_tier === "gold" ? "gold" : "blue";
 }
 import { supabase } from "@/integrations/supabase/client";
+import { withProfilePrivate } from "@/lib/profilePrivate";
 
 export interface AdminVendor {
   id: string;
@@ -52,13 +53,15 @@ export function useAdminVendors() {
       if (vendorIds.length === 0) return [];
 
       // Get vendor profiles with bank details
-      const { data: profiles, error: profilesError } = await supabase
+      const { data: profileRows, error: profilesError } = await supabase
         .from("profiles")
-        .select("id, email, full_name, phone, avatar_url, is_verified, verification_tier, store_name, store_description, created_at, bank_name, account_number, account_name, payout_preference, store_address")
+        .select("id, full_name, avatar_url, is_verified, verification_tier, store_name, store_description, created_at")
         .in("id", vendorIds)
         .order("created_at", { ascending: false });
 
       if (profilesError) throw profilesError;
+      // Contact, address and bank details come from get_profile_private (admins only).
+      const profiles = await withProfilePrivate(profileRows ?? []);
 
       // Get product counts per vendor
       const { data: productCounts, error: productsError } = await supabase

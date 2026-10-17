@@ -7,6 +7,7 @@ import {
   Mail, Save, Loader2, LogOut, ShieldCheck, Camera, ChevronRight, MapPin, Bell, CheckCircle2, Store
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { withProfilePrivate } from "@/lib/profilePrivate";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,11 +52,17 @@ export default function Account() {
     if (!user) { navigate("/auth"); return; }
 
     const loadProfile = async () => {
-      const { data: profile } = await supabase
+      const { data: row, error } = await supabase
         .from("profiles")
-        .select("*")
+        .select("id, full_name, avatar_url")
         .eq("id", user.id)
         .single();
+      if (error) console.error("[Account] load profile failed", error);
+      // Phone is a private field: it comes from get_profile_private.
+      const profile = row ? (await withProfilePrivate([row]).catch((err) => {
+        console.error("[Account] private fields failed", err);
+        return [{ ...row, phone: null }];
+      }))[0] : null;
 
       if (profile) {
         form.reset({

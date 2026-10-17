@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { withProfilePrivate } from "@/lib/profilePrivate";
 
 export interface AdminOrder {
   id: string;
@@ -59,10 +60,11 @@ export function useAdminOrders() {
       for (let i = 0; i < profileIds.length; i += BATCH_SIZE) {
         const { data, error: profilesError } = await supabase
           .from("profiles")
-          .select("id, full_name, email, store_name")
+          .select("id, full_name, store_name")
           .in("id", profileIds.slice(i, i + BATCH_SIZE));
         if (profilesError) throw profilesError;
-        profiles.push(...(data || []));
+        const withEmail = await withProfilePrivate(data || []);
+        profiles.push(...withEmail.map((p) => ({ ...p, email: p.email ?? "" })));
       }
       
       const profileMap = new Map(profiles.map(p => [p.id, p]));

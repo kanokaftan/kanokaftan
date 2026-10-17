@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { withProfilePrivate } from "@/lib/profilePrivate";
 import type { Database } from "@/integrations/supabase/types";
 
 // Admin read-only views of a seller or customer: summary numbers, their chats
@@ -73,11 +74,13 @@ export function usePersonProfile(userId: string | undefined) {
     queryFn: async (): Promise<PersonProfile | null> => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, email, full_name, phone, avatar_url, created_at, store_name, store_slug, store_description, store_address, is_verified, verification_tier")
+        .select("id, full_name, avatar_url, created_at, store_name, store_slug, store_description, is_verified, verification_tier")
         .eq("id", userId!)
         .maybeSingle();
       if (error) fail("profile", error);
-      return data as PersonProfile | null;
+      if (!data) return null;
+      const [withPrivate] = await withProfilePrivate([data]);
+      return withPrivate as unknown as PersonProfile;
     },
     enabled: !!userId,
   });
@@ -143,11 +146,12 @@ export function useAdminTranscript(conversationId: string | undefined) {
       if (!conversation) return null;
 
       const ids = [conversation.customer_id, conversation.vendor_id].filter(Boolean) as string[];
-      const { data: people, error: peopleError } = await supabase
+      const { data: peopleRows, error: peopleError } = await supabase
         .from("profiles")
-        .select("id, full_name, email, store_name, avatar_url, store_slug")
+        .select("id, full_name, store_name, avatar_url, store_slug")
         .in("id", ids);
       if (peopleError) fail("chat members", peopleError);
+      const people = await withProfilePrivate(peopleRows ?? []);
 
       const byMessage = new Map<string, string[]>();
       for (const r of reactions ?? []) {
@@ -205,9 +209,10 @@ export function useVendorOrders(vendorId: string | undefined, enabled = true) {
       const rows = [...grouped.values()];
       const userIds = [...new Set(rows.map((r) => r.user_id))];
       if (userIds.length) {
-        const { data: customers, error: customersError } = await supabase.from("profiles").select("id, full_name, email").in("id", userIds);
+        const { data: customerRows, error: customersError } = await supabase.from("profiles").select("id, full_name").in("id", userIds);
         if (customersError) fail("customers", customersError);
-        const names = new Map((customers ?? []).map((c) => [c.id, c.full_name || c.email]));
+        const customers = await withProfilePrivate(customerRows ?? []);
+        const names = new Map(customers.map((c) => [c.id, c.full_name || c.email]));
         rows.forEach((r) => (r.customer_name = names.get(r.user_id) ?? "Customer"));
       }
       return rows.sort((a, b) => b.created_at.localeCompare(a.created_at));

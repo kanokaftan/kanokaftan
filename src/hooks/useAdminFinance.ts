@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { withProfilePrivate } from "@/lib/profilePrivate";
 import { usePlatformSettings } from "@/hooks/usePayouts";
 
 export interface VendorPayout {
@@ -52,10 +53,10 @@ async function fetchProfiles(ids: string[]): Promise<Map<string, ProfileLite>> {
   for (let i = 0; i < unique.length; i += BATCH_SIZE) {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, full_name, email, store_name, avatar_url, bank_name, account_number, account_name")
+      .select("id, full_name, store_name, avatar_url")
       .in("id", unique.slice(i, i + BATCH_SIZE));
     if (error) throw error;
-    result.push(...(data || []));
+    result.push(...((await withProfilePrivate(data || [])) as ProfileLite[]));
   }
   return new Map(result.map((p) => [p.id, p]));
 }

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchProfilePrivate, withProfilePrivate } from "@/lib/profilePrivate";
 
 export interface VendorOrderItem {
   id: string;
@@ -97,10 +98,13 @@ export function useVendorOrders(vendorId: string | null) {
 
       // Get customer profiles
       const userIds = [...new Set(orders.map((o) => o.user_id))];
-      const { data: profiles } = await supabase
+      const { data: profileRows, error: profilesError } = await supabase
         .from("profiles")
-        .select("id, full_name, email, phone")
+        .select("id, full_name")
         .in("id", userIds);
+      if (profilesError) console.error("[vendor orders] customer names failed", profilesError);
+      // Email and phone come from get_profile_private (sellers see their own buyers only).
+      const profiles = await withProfilePrivate(profileRows ?? []);
 
       // Combine orders with their items and customer info
       return orders.map((order) => ({

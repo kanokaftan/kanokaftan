@@ -1535,6 +1535,23 @@ export type Database = {
       }
     }
     Functions: {
+      get_profile_private: {
+        Args: { p_ids: string[] }
+        Returns: {
+          id: string
+          email: string | null
+          phone: string | null
+          store_address: Json | null
+          bank_name: string | null
+          account_number: string | null
+          account_name: string | null
+          payout_preference: string | null
+        }[]
+      }
+      shop_pickup_points: {
+        Args: { p_ids: string[] }
+        Returns: { id: string; latitude: number | null; longitude: number | null; city: string | null; state: string | null }[]
+      }
       admin_save_partner: {
         Args: { p_id: string | null; p_data: Json }
         Returns: string

@@ -31,7 +31,7 @@ export function useAdminStats() {
       // Get total users count
       const { count: totalUsers } = await supabase
         .from("profiles")
-        .select("*", { count: "exact", head: true });
+        .select("id", { count: "exact", head: true });
 
       // Get vendors count
       const { count: totalVendors } = await supabase
@@ -42,7 +42,7 @@ export function useAdminStats() {
       // Get verified vendors count
       const { count: verifiedVendors } = await supabase
         .from("profiles")
-        .select("*", { count: "exact", head: true })
+        .select("id", { count: "exact", head: true })
         .eq("is_verified", true);
 
       // Get total products count

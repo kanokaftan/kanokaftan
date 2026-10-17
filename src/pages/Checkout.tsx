@@ -20,6 +20,7 @@ import { AddressForm } from "@/components/checkout/AddressForm";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchShopPickupPoints } from "@/lib/profilePrivate";
 import { 
   calculateShippingFee, 
   calculateDistance, 
@@ -99,25 +100,22 @@ export default function Checkout() {
       if (!products?.length) return;
 
       const vendorIds = [...new Set(products.map(p => p.vendor_id))];
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, store_address")
-        .in("id", vendorIds);
-      
-      if (profiles) {
-        const locations = profiles.map(p => {
-          const storeAddress = p.store_address as { latitude?: number; longitude?: number } | null;
-          return {
-            id: p.id,
-            latitude: storeAddress?.latitude || null,
-            longitude: storeAddress?.longitude || null
-          };
-        });
+      // Only the shops' map position is public (shop_pickup_points), not their street address.
+      const points = await fetchShopPickupPoints(vendorIds);
+      const profiles = [...points.values()];
+
+      if (profiles.length) {
+        const locations = profiles.map(p => ({
+          id: p.id,
+          latitude: p.latitude || null,
+          longitude: p.longitude || null
+        }));
         setVendorLocations(locations);
       }
     };
 
-    fetchVendorLocations();
+    // Without shop positions the delivery fee falls back to the standard rate.
+    fetchVendorLocations().catch((error) => console.error("[Checkout] shop locations failed", error));
   }, [items]);
 
   const selectedAddress = addresses.find((a) => a.id === selectedAddressId);
