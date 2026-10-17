@@ -110,7 +110,7 @@ function SearchButton({ onClick, className }: { onClick: () => void; className?:
 }
 
 export function AdminLayout({ children, title }: AdminLayoutProps) {
-  const { isLoading, isAdmin } = useAdminAuth();
+  const { isLoading, isAdmin, user } = useAdminAuth();
   const { data: overview } = useAdminOverview();
   const location = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
@@ -131,13 +131,36 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
   // End the admin unlock too, so the key is needed again next time.
   const handleLogout = () => signOutThisDevice({ redirectTo: "/", lockAdmin: true });
 
-  if (isLoading || !isAdmin) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background p-4">
+        <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
+          <BrandLogo tile className="h-8 w-8 rounded-lg" />
+          Opening admin…
+        </div>
         <Skeleton className="h-12 w-full mb-4 rounded-xl" />
         <div className="grid grid-cols-2 gap-3">
           {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
         </div>
+      </div>
+    );
+  }
+
+  // Not an admin (or the admin key has expired): say so instead of showing an empty page.
+  // useAdminAuth also sends people to /admin to sign in or unlock.
+  if (!isAdmin) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background p-6 text-center">
+        <BrandLogo tile className="h-14 w-14" />
+        <h1 className="text-lg font-bold">Admin access needed</h1>
+        <p className="max-w-xs text-sm text-muted-foreground">
+          {user?.email
+            ? `You're signed in as ${user.email}, which isn't unlocked for admin. Unlock it with the admin key, or switch to your admin account.`
+            : "Sign in with your admin account to continue."}
+        </p>
+        <Link to="/admin" replace className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground">
+          Go to admin sign-in
+        </Link>
       </div>
     );
   }

@@ -14,6 +14,22 @@ import "./index.css";
 installErrorReporter();
 registerServiceWorker();
 
+// After an update, an app left open may ask for a page file the new version replaced.
+// Reload once to pick up the new version instead of failing.
+const RELOADED_FOR_CHUNK_KEY = "kk_chunk_reloaded_at";
+const MIN_MS_BETWEEN_CHUNK_RELOADS = 60 * 1000;
+window.addEventListener("vite:preloadError", (event) => {
+  try {
+    const last = Number(sessionStorage.getItem(RELOADED_FOR_CHUNK_KEY) ?? 0);
+    if (Date.now() - last < MIN_MS_BETWEEN_CHUNK_RELOADS) return;
+    sessionStorage.setItem(RELOADED_FOR_CHUNK_KEY, String(Date.now()));
+  } catch {
+    // Storage blocked: still reload once; the browser keeps us from looping fast.
+  }
+  event.preventDefault();
+  window.location.reload();
+});
+
 createRoot(document.getElementById("root")!).render(
   <AppErrorBoundary>
     <App />

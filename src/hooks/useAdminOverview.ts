@@ -33,6 +33,13 @@ export interface AdminOverview {
 
 const OVERVIEW_REFRESH_MS = 60_000;
 
+const OVERVIEW_KEYS: (keyof AdminOverview)[] = [
+  "seller_applications", "verification_reviews", "ambassador_applications", "orders_to_prepare", "combined_ready",
+  "open_disputes", "failed_payouts", "refunds_needed", "open_reports", "app_errors",
+  "customers", "sellers", "verified_sellers", "products", "live_products", "paid_orders", "unpaid_orders",
+  "in_transit", "completed_orders", "revenue", "unpaid_value", "escrow_held", "escrow_released",
+];
+
 export function useAdminOverview() {
   const { isAdmin } = useAdminAuth();
   return useQuery({
@@ -47,8 +54,8 @@ export function useAdminOverview() {
         throw new Error("Couldn't load the dashboard counts.");
       }
       const raw = (data ?? {}) as Record<string, unknown>;
-      // Postgres numerics arrive as numbers or strings; make them numbers.
-      return Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, Number(v) || 0])) as unknown as AdminOverview;
+      // Postgres numerics arrive as numbers or strings; anything missing counts as 0.
+      return Object.fromEntries(OVERVIEW_KEYS.map((k) => [k, Number(raw[k]) || 0])) as unknown as AdminOverview;
     },
   });
 }

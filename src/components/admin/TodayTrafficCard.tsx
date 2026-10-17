@@ -30,7 +30,17 @@ export function TodayTrafficCard() {
         console.error("[TodayTrafficCard] overview failed", error);
         throw new Error(error.message || "Could not load today's traffic");
       }
-      return data as unknown as TodayOverview;
+      // Older or partial answers may leave lists out; the card treats them as empty.
+      const raw = (data ?? {}) as Partial<TodayOverview>;
+      return {
+        ...raw,
+        live: Number(raw.live) || 0,
+        visitors: Number(raw.visitors) || 0,
+        page_views: Number(raw.page_views) || 0,
+        signups_today: Number(raw.signups_today) || 0,
+        devices: raw.devices ?? [],
+        recent_signups: raw.recent_signups ?? [],
+      } as TodayOverview;
     },
     refetchInterval: REFRESH_MS,
   });

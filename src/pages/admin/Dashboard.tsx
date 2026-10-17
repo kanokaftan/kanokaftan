@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { TodayTrafficCard } from "@/components/admin/TodayTrafficCard";
+import { SectionBoundary } from "@/components/admin/SectionBoundary";
 import { useAdminAnalytics } from "@/hooks/useAdminAnalytics";
 import { useAdminOverview, useRecentAdminOrders } from "@/hooks/useAdminOverview";
 import { useAuth } from "@/contexts/AuthContext";
@@ -211,7 +212,9 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        <TodayTrafficCard />
+        <SectionBoundary name="Today on the site">
+          <TodayTrafficCard />
+        </SectionBoundary>
 
         {/* Money */}
         <div className="grid grid-cols-2 gap-3">
@@ -262,6 +265,7 @@ export default function AdminDashboard() {
           ))}
         </div>
 
+        <SectionBoundary name="Revenue chart">
         {/* Revenue trend */}
         <div className="bg-card border border-border rounded-2xl p-4">
           <div className="flex items-center justify-between mb-2">
@@ -289,6 +293,8 @@ export default function AdminDashboard() {
           )}
         </div>
 
+        </SectionBoundary>
+
         {/* Quick Actions */}
         <div>
           <h3 className="text-sm font-semibold text-foreground mb-3">Quick Actions</h3>
@@ -306,6 +312,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
+        <SectionBoundary name="Chats and recent orders">
         <div className="grid gap-5 md:grid-cols-2">
           {/* Recent support chats */}
           <div>
@@ -411,6 +418,9 @@ export default function AdminDashboard() {
           </div>
         </div>
 
+        </SectionBoundary>
+
+        <SectionBoundary name="Top sellers">
         {/* Top Vendors */}
         <div>
           <div className="flex items-center justify-between mb-3">
@@ -453,6 +463,7 @@ export default function AdminDashboard() {
             )}
           </div>
         </div>
+        </SectionBoundary>
       </div>
     </AdminLayout>
   );
