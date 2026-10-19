@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
-import { Award, CheckCircle2, Circle, Gem, Loader2, Pencil, Plus, Receipt, Search, Store, Trash2, UserPlus, X } from "lucide-react";
+import { Archive, Award, CheckCircle2, ChevronDown, Circle, Gem, Loader2, Pencil, Plus, Receipt, Search, Store, Trash2, UserPlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,8 +21,9 @@ import { ChoiceManager } from "@/components/partners/ChoiceManager";
 import { PartnerBadge } from "@/components/partners/PartnerMarks";
 import { PartnerStatementView } from "@/components/partners/PartnerStatementView";
 import {
-  useAddPartnerMember, useDeletePartner, usePartnerFindShops, usePartnerOverview, useRemovePartnerMember, useSavePartner,
-  type ChoiceShop, type PartnerInput, type PartnerSummary,
+  useAddPartnerMember, useArchivedPartners, useDeletePartner, usePartnerFindShops, usePartnerOverview, usePayPartner,
+  useRemovePartnerMember, useSavePartner,
+  type ArchivedPartner, type ChoiceShop, type PartnerInput, type PartnerSummary,
 } from "@/hooks/usePartners";
 import { naira } from "@/lib/naira";
 import { cn } from "@/lib/utils";
@@ -134,24 +135,43 @@ function StorePicker({ value, onChange }: { value: FormState["vendor"]; onChange
 /** Remove a partner after confirming. Partners with commission history are archived so the money records stay. */
 function DeletePartnerButton({ partner, onDone, compact = false }: { partner: PartnerSummary; onDone?: () => void; compact?: boolean }) {
   const remove = useDeletePartner();
-  const hasMoney = Number(partner.unpaid) > 0 || Number(partner.paid) > 0;
+  const pay = usePayPartner(partner.id);
+  const [open, setOpen] = useState(false);
+  const [reference, setReference] = useState("");
+  const unpaid = Number(partner.unpaid);
+  const hasMoney = unpaid > 0 || Number(partner.paid) > 0;
+  const busy = remove.isPending || pay.isPending;
 
-  const confirm = () => {
+  const finish = (outcome: "deleted" | "archived", paidNow: boolean) => {
+    setOpen(false);
+    setReference("");
+    toast.success(
+      outcome === "archived"
+        ? `${partner.name} removed${paidNow ? ` and paid ${naira(unpaid)}` : ""}. Their records are under "Removed partners".`
+        : `${partner.name} removed`,
+    );
+    onDone?.();
+  };
+
+  const removeOnly = (paidNow: boolean) => {
     remove.mutate(partner.id, {
-      onSuccess: (outcome) => {
-        toast.success(
-          outcome === "archived"
-            ? `${partner.name} removed. Their commission records are kept for your books.`
-            : `${partner.name} removed`,
-        );
-        onDone?.();
-      },
+      onSuccess: (outcome) => finish(outcome, paidNow),
       onError: (error) => toast.error(error.message),
     });
   };
 
+  const payAndRemove = () => {
+    pay.mutate(
+      { reference: reference.trim(), note: "Final payment when the partnership ended" },
+      {
+        onSuccess: () => removeOnly(true),
+        onError: (error) => toast.error(error.message),
+      },
+    );
+  };
+
   return (
-    <AlertDialog>
+    <AlertDialog open={open} onOpenChange={(next) => !busy && setOpen(next)}>
       <AlertDialogTrigger asChild>
         {compact ? (
           <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 hover:text-destructive" aria-label={`Remove ${partner.name}`}>
@@ -170,19 +190,91 @@ function DeletePartnerButton({ partner, onDone, compact = false }: { partner: Pa
             Their {partner.badge_label} badge, homepage spot and "{partner.choice_label || `${partner.name}'s Choice`}" picks disappear,
             their staff lose access to /partner and they stop earning commission.
             {hasMoney
-              ? " Their commission and payout records are kept so your books stay complete."
+              ? " Their commission and payout records are kept under \"Removed partners\"."
               : " They have no commission history, so everything about them is deleted."}
-            {Number(partner.unpaid) > 0 && ` They still have ${naira(Number(partner.unpaid))} unpaid: pay it from their statement first if you owe it.`}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Keep</AlertDialogCancel>
-          <AlertDialogAction onClick={confirm} disabled={remove.isPending} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-            {remove.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Remove
-          </AlertDialogAction>
+
+        {unpaid > 0 && (
+          <div className="space-y-2 rounded-xl border border-amber-300/60 bg-amber-50 p-3 text-sm dark:border-amber-700/60 dark:bg-amber-950/40">
+            <p className="font-medium">They still have {naira(unpaid)} unpaid commission.</p>
+            <p className="text-muted-foreground">
+              {partner.bank_name
+                ? `Send it to ${partner.account_name ?? ""} · ${partner.bank_name} ${partner.account_number ?? ""}, then record it here.`
+                : "Send it to their bank account, then record it here."}
+            </p>
+            <Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Transfer reference (optional)" disabled={busy} />
+          </div>
+        )}
+
+        <AlertDialogFooter className="gap-2">
+          <AlertDialogCancel disabled={busy}>Keep</AlertDialogCancel>
+          <Button
+            type="button"
+            variant={unpaid > 0 ? "outline" : "default"}
+            onClick={() => removeOnly(false)}
+            disabled={busy}
+            className={unpaid > 0 ? "border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive" : "bg-destructive text-destructive-foreground hover:bg-destructive/90"}
+          >
+            {remove.isPending && !pay.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {unpaid > 0 ? "Remove without paying" : "Remove"}
+          </Button>
+          {unpaid > 0 && (
+            <Button type="button" onClick={payAndRemove} disabled={busy}>
+              {pay.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}I've paid {naira(unpaid)}: record and remove
+            </Button>
+          )}
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+  );
+}
+
+/** Partners removed with money history: look up their statement or settle what's still owed. */
+function RemovedPartners({ onStatement }: { onStatement: (partner: ArchivedPartner) => void }) {
+  const [open, setOpen] = useState(false);
+  const { data: removed, isLoading, isError, refetch } = useArchivedPartners(open);
+
+  return (
+    <section className="mt-6">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between rounded-2xl border bg-card px-4 py-3 text-left text-sm font-medium"
+        aria-expanded={open}
+      >
+        <span className="flex items-center gap-2"><Archive className="h-4 w-4 text-muted-foreground" />Removed partners</span>
+        <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div className="mt-2 space-y-2">
+          {isLoading ? (
+            <Skeleton className="h-16 rounded-2xl" />
+          ) : isError ? (
+            <p className="rounded-2xl border p-4 text-sm text-muted-foreground">
+              Couldn't load removed partners. <button type="button" className="underline" onClick={() => refetch()}>Try again</button>
+            </p>
+          ) : !removed?.length ? (
+            <p className="rounded-2xl border border-dashed p-4 text-center text-sm text-muted-foreground">
+              No removed partners. Partners removed without any commission history are deleted completely.
+            </p>
+          ) : (
+            removed.map((p) => (
+              <div key={p.id} className="flex items-center gap-3 rounded-2xl border bg-card p-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{p.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Removed {format(new Date(p.archived_at), "d MMM yyyy")} · paid {naira(Number(p.paid))}
+                    {Number(p.unpaid) > 0 && <span className="font-medium text-amber-700 dark:text-amber-400"> · {naira(Number(p.unpaid))} unpaid</span>}
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => onStatement(p)}><Receipt className="mr-1.5 h-4 w-4" />Statement</Button>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -437,7 +529,8 @@ export default function AdminPartners() {
   const { data: partners, isLoading, isError, refetch } = usePartnerOverview();
   const [editing, setEditing] = useState<PartnerSummary | null>(null);
   const [formOpen, setFormOpen] = useState(false);
-  const [statementFor, setStatementFor] = useState<PartnerSummary | null>(null);
+  // Current or removed partner whose statement is open.
+  const [statementFor, setStatementFor] = useState<Pick<PartnerSummary, "id" | "name" | "commission_percent" | "bank_name" | "account_name" | "account_number"> | null>(null);
   const [picksFor, setPicksFor] = useState<PartnerSummary | null>(null);
 
   const openForm = (partner: PartnerSummary | null) => {
@@ -474,6 +567,8 @@ export default function AdminPartners() {
           ))}
         </div>
       )}
+
+      <RemovedPartners onStatement={setStatementFor} />
 
       <PartnerForm partner={editing} open={formOpen} onOpenChange={setFormOpen} />
 

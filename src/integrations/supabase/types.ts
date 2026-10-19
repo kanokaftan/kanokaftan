@@ -1545,6 +1545,7 @@ export type Database = {
       merge_guest_cart: { Args: { p_session: string }; Returns: number }
       order_seller_count: { Args: { p_order_id: string }; Returns: number }
       admin_delete_partner: { Args: { p_id: string }; Returns: string }
+      admin_archived_partners: { Args: Record<PropertyKey, never>; Returns: Json }
       order_fulfilment: { Args: { p_order_id: string }; Returns: Json }
       vendor_set_ready: { Args: { p_order_id: string; p_ready?: boolean }; Returns: Json }
       admin_combined_shipments: { Args: Record<PropertyKey, never>; Returns: Json }

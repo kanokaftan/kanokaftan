@@ -29,6 +29,25 @@ type AuthMode = "login" | "register" | "forgot" | "reset";
 
 /** Ambassadors use a normal account, then fill in the ambassador form. */
 const AMBASSADOR_JOIN_PATH = "/ambassadors/join";
+/** The last "I'm here to" choice on this phone, so a returning seller lands on Sell. */
+const ACCOUNT_TYPE_KEY = "kk_account_type";
+
+function rememberedAccountType(): AccountType | null {
+  try {
+    const saved = localStorage.getItem(ACCOUNT_TYPE_KEY);
+    return ACCOUNT_TYPES.includes(saved as AccountType) ? (saved as AccountType) : null;
+  } catch {
+    return null; // storage blocked (private mode)
+  }
+}
+
+function rememberAccountType(value: AccountType) {
+  try {
+    localStorage.setItem(ACCOUNT_TYPE_KEY, value);
+  } catch {
+    // storage blocked: the choice just isn't remembered
+  }
+}
 
 function isRecoveryLink() {
   return typeof window !== "undefined" && window.location.hash.includes("type=recovery");
@@ -63,11 +82,18 @@ export default function AuthPage() {
     : "/";
 
   // Who the account is for (?as=sell|ambassador). Coming from the ambassador page means ambassador.
-  const [accountType, setAccountType] = useState<AccountType>(() => {
+  const [accountType, setAccountTypeState] = useState<AccountType>(() => {
     const as = searchParams.get("as");
     if (ACCOUNT_TYPES.includes(as as AccountType)) return as as AccountType;
-    return safeRedirect.startsWith(AMBASSADOR_JOIN_PATH) ? "ambassador" : "shop";
+    if (safeRedirect.startsWith(AMBASSADOR_JOIN_PATH)) return "ambassador";
+    // Someone sent here to finish something (checkout, a shop) is shopping.
+    if (safeRedirect !== "/") return "shop";
+    return rememberedAccountType() ?? "shop";
   });
+  const setAccountType = (value: AccountType) => {
+    setAccountTypeState(value);
+    rememberAccountType(value);
+  };
   const redirectTo = accountType === "ambassador" ? AMBASSADOR_JOIN_PATH : safeRedirect;
 
   const {

@@ -66,6 +66,23 @@ export interface PartnerSummary {
   paid: number;
 }
 
+/** A removed partner kept for its money records. */
+export interface ArchivedPartner {
+  id: string;
+  name: string;
+  badge_label: string;
+  commission_percent: number;
+  starts_on: string;
+  ends_on: string | null;
+  archived_at: string;
+  store_name: string | null;
+  bank_name: string | null;
+  account_name: string | null;
+  account_number: string | null;
+  unpaid: number;
+  paid: number;
+}
+
 export type PartnerInput = Partial<Omit<PartnerSummary, "id" | "members" | "choices" | "unpaid" | "paid" | "store_name" | "store_slug">> & {
   name: string;
 };
@@ -215,6 +232,14 @@ export function usePartnerOverview() {
   return useQuery({
     queryKey: [...PARTNER_KEY, "overview"],
     queryFn: () => call<PartnerSummary[]>("admin_partner_overview", {}, "Couldn't load partners."),
+  });
+}
+
+export function useArchivedPartners(enabled: boolean) {
+  return useQuery({
+    queryKey: [...PARTNER_KEY, "archived"],
+    enabled,
+    queryFn: () => call<ArchivedPartner[]>("admin_archived_partners", {}, "Couldn't load removed partners."),
   });
 }
 

@@ -24,7 +24,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { withProfilePrivate } from "@/lib/profilePrivate";
 import { useTranslation } from "react-i18next";
-import { useMyAmbassadorDashboard } from "@/hooks/useAmbassadors";
+import { useMyAmbassadorApplication, useMyAmbassadorDashboard } from "@/hooks/useAmbassadors";
 import { useMyPartner } from "@/hooks/usePartners";
 
 export default function Profile() {
@@ -33,6 +33,9 @@ export default function Profile() {
   // Only ambassadors get a dashboard link; this also links them by email the first time.
   const { data: ambassador } = useMyAmbassadorDashboard(!!user);
   const { data: partner } = useMyPartner(!!user);
+  // Customers who aren't ambassadors yet can join (or see how their application is going).
+  const canJoinAmbassadors = !!user && !ambassador && !isVendor && !isAdmin;
+  const { data: ambassadorApplication } = useMyAmbassadorApplication(canJoinAmbassadors);
 
   // Fetch user profile data
   const { data: profile } = useQuery({
@@ -145,7 +148,7 @@ export default function Profile() {
     menuItems.unshift({
       icon: Gem,
       label: t("profile.partnerDashboard"),
-      description: t("profile.partnerDashboardDesc", { label: partner.choice_label }),
+      description: t("profile.partnerDashboardDesc", { label: partner.choice_label || `${partner.name}'s Choice` }),
       href: "/partner",
     });
   }
@@ -156,6 +159,16 @@ export default function Profile() {
       label: t("profile.ambassadorDashboard"),
       description: t("profile.ambassadorDashboardDesc"),
       href: "/ambassador",
+    });
+  }
+
+  if (canJoinAmbassadors) {
+    const status = ambassadorApplication?.status;
+    menuItems.unshift({
+      icon: UserPlus,
+      label: status === "pending" ? t("profile.ambassadorPending") : t("profile.becomeAmbassador"),
+      description: status === "pending" ? t("profile.ambassadorPendingDesc") : t("profile.becomeAmbassadorDesc"),
+      href: "/ambassadors/join",
     });
   }
 
