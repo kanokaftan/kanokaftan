@@ -52,7 +52,7 @@ function AdminQuickSearch({ open, onOpenChange, overview }: { open: boolean; onO
     ? [
         { label: `Orders matching "${q}"`, url: `/admin/orders?q=${encodeURIComponent(q)}` },
         { label: `Sellers matching "${q}"`, url: `/admin/vendors?q=${encodeURIComponent(q)}` },
-        { label: `Customers matching "${q}"`, url: `/admin/users?q=${encodeURIComponent(q)}` },
+        { label: `Users matching "${q}"`, url: `/admin/users?q=${encodeURIComponent(q)}` },
         { label: `Products matching "${q}"`, url: `/admin/products?q=${encodeURIComponent(q)}` },
       ]
     : [];

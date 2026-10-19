@@ -135,7 +135,7 @@ export default function AdminDashboard() {
       urgent: false,
     },
     {
-      label: "Customers",
+      label: "Users",
       value: statsLoading ? null : o?.customers ?? 0,
       icon: Users,
       href: "/admin/users",

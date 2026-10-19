@@ -16,7 +16,8 @@ import {
 
 const RPC = "admin_list_users";
 
-export const ADMIN_USER_ROLE_FILTERS = ["customer", "vendor", "admin", "all"] as const;
+/** Users are buyers only (sellers and admins have their own pages); split by whether they linked a bank account. */
+export const ADMIN_USER_ROLE_FILTERS = ["customer", "bank_linked", "bank_missing"] as const;
 export type AdminUserRoleFilter = (typeof ADMIN_USER_ROLE_FILTERS)[number];
 export const DEFAULT_USER_ROLE_FILTER: AdminUserRoleFilter = "customer";
 
@@ -32,6 +33,8 @@ export interface AdminUser {
   created_at: string;
   last_seen_at: string | null;
   roles: string[];
+  /** Bank account linked to unlock first-buyer prices and invite rewards (masked: last 4 digits only). */
+  bank: { bank_name: string; account_name: string; last4: string; verified_at: string } | null;
 }
 
 function toAdminUser(row: Record<string, unknown>): AdminUser {
@@ -48,6 +51,9 @@ function toAdminUser(row: Record<string, unknown>): AdminUser {
     created_at: str(row.created_at),
     last_seen_at: strOrNull(row.last_seen_at),
     roles: roles.length ? roles : ["customer"],
+    bank: row.bank_verified_at
+      ? { bank_name: str(row.bank_name), account_name: str(row.bank_account_name), last4: str(row.account_last4), verified_at: str(row.bank_verified_at) }
+      : null,
   };
 }
 
@@ -57,7 +63,7 @@ async function fetchUsersPage(params: ResolvedListParams<AdminUserRoleFilter>): 
   return parseAdminListResult(data, RPC, toAdminUser);
 }
 
-/** One page of people (customers by default), searched and filtered by role in the database. */
+/** One page of users (buyers), searched and filtered by bank status in the database. */
 export function useAdminUsers(params: AdminListParams<AdminUserRoleFilter> = {}) {
   const queryClient = useQueryClient();
   const resolved = resolveListParams(params, DEFAULT_USER_ROLE_FILTER);

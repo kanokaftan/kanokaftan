@@ -24,6 +24,7 @@ import { CallProvider } from "@/contexts/CallContext";
 import { PresenceHeartbeat } from "@/components/calls/PresenceHeartbeat";
 import { PullToRefresh } from "./components/layout/PullToRefresh";
 import { ReferralWatcher } from "./components/referral/ReferralWatcher";
+import { UpdateBanner } from "./components/app/UpdateBanner";
 const Privacy = lazyPage(() => import("./pages/Privacy"));
 const Terms = lazyPage(() => import("./pages/Terms"));
 const SupportChatRedirect = lazyPage(() => import("./pages/SupportChatRedirect"));
@@ -141,6 +142,7 @@ const App = () => (
         <BrowserRouter>
           <AnalyticsTracker />
           <ReferralWatcher />
+          <UpdateBanner />
           <Suspense fallback={<RouteFallback />}>
           <Routes>
             {/* Customer Routes */}

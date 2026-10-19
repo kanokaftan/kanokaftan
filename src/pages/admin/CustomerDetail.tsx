@@ -1,6 +1,8 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { format, formatDistanceToNowStrict } from "date-fns";
-import { Calendar, ChevronLeft, Heart, Mail, MessageCircle, Phone, ShoppingBag, Star, Store, Wallet } from "lucide-react";
+import { Calendar, ChevronLeft, Heart, Landmark, Mail, MessageCircle, Phone, ShoppingBag, Star, Store, Wallet } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminChatList } from "@/components/admin/oversight/AdminChatList";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -13,13 +15,41 @@ import { cn } from "@/lib/utils";
 const naira = (n: number) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(n);
 const human = (s: string) => s.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
 
-/** One customer: contact, spending, recent orders and their chats with sellers. */
+interface LinkedBank {
+  bank_name: string;
+  account_name: string;
+  account_last4: string;
+  verified_at: string;
+}
+
+/** The bank account a user linked (admins can read it; only the last 4 digits are stored). */
+function useLinkedBank(userId: string | undefined) {
+  return useQuery({
+    queryKey: ["admin-user-bank", userId],
+    enabled: !!userId,
+    queryFn: async (): Promise<LinkedBank | null> => {
+      const { data, error } = await supabase
+        .from("customer_bank_accounts" as never)
+        .select("bank_name, account_name, account_last4, verified_at")
+        .eq("user_id", userId!)
+        .maybeSingle();
+      if (error) {
+        console.error("[admin user] bank account load failed", { userId, error });
+        throw new Error("Couldn't load the bank account.");
+      }
+      return data as LinkedBank | null;
+    },
+  });
+}
+
+/** One user: contact, linked bank account, spending, recent orders and their chats with sellers. */
 export default function AdminCustomerDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: profile, isLoading } = usePersonProfile(id);
   const { data: o, error } = useCustomerOverview(id);
-  const name = profile?.full_name || profile?.email || "Customer";
+  const name = profile?.full_name || profile?.email || "User";
+  const { data: bank, isLoading: bankLoading, error: bankError } = useLinkedBank(id);
 
   const stats = o
     ? [
@@ -33,16 +63,16 @@ export default function AdminCustomerDetail() {
     : [];
 
   return (
-    <AdminLayout title="Customer">
+    <AdminLayout title="User">
       <div className="mx-auto max-w-3xl space-y-4 pb-20 md:pb-6">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="-ml-2 h-9 w-9 shrink-0 rounded-full" onClick={() => navigate("/admin/users")} aria-label="Back to customers">
+          <Button variant="ghost" size="icon" className="-ml-2 h-9 w-9 shrink-0 rounded-full" onClick={() => navigate("/admin/users")} aria-label="Back to users">
             <ChevronLeft className="h-5 w-5" />
           </Button>
           {isLoading ? (
             <Skeleton className="h-12 flex-1 rounded-xl" />
           ) : !profile ? (
-            <p className="text-sm text-muted-foreground">Customer not found</p>
+            <p className="text-sm text-muted-foreground">User not found</p>
           ) : (
             <>
               <Avatar className="h-12 w-12 border">
@@ -51,13 +81,36 @@ export default function AdminCustomerDetail() {
               </Avatar>
               <div className="min-w-0">
                 <h2 className="truncate text-lg font-bold">{name}</h2>
-                <p className="truncate text-xs text-muted-foreground">Customer since {format(new Date(profile.created_at), "d MMM yyyy")}</p>
+                <p className="truncate text-xs text-muted-foreground">User since {format(new Date(profile.created_at), "d MMM yyyy")}</p>
               </div>
             </>
           )}
         </div>
 
         {error && <p className="text-sm text-destructive">{(error as Error).message}</p>}
+
+        <div className="flex items-center gap-3 rounded-2xl border bg-card p-3">
+          <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", bank ? "bg-green-500/10 text-green-700 dark:text-green-400" : "bg-muted text-muted-foreground")}>
+            <Landmark className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted-foreground">Bank account</p>
+            {bankLoading ? (
+              <Skeleton className="mt-1 h-4 w-40" />
+            ) : bankError ? (
+              <p className="text-sm text-destructive">{(bankError as Error).message}</p>
+            ) : bank ? (
+              <>
+                <p className="truncate text-sm font-semibold">{bank.account_name}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {bank.bank_name} ••••{bank.account_last4} · linked {format(new Date(bank.verified_at), "d MMM yyyy")}
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">Not linked yet (no first-buyer prices or invite rewards)</p>
+            )}
+          </div>
+        </div>
 
         {o ? (
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3">

@@ -1,6 +1,6 @@
 import {
   Activity, AlertTriangle, BarChart, Boxes, DollarSign, Flag, Gem, LayoutDashboard, Megaphone,
-  MessageCircle, Package, Settings, ShoppingCart, Store, Tag, Truck, UserPlus, Users,
+  Landmark, MessageCircle, Package, Settings, ShoppingCart, Store, Tag, Truck, UserPlus, Users,
   type LucideIcon,
 } from "lucide-react";
 import type { AdminOverview } from "@/hooks/useAdminOverview";
@@ -49,7 +49,8 @@ export const ADMIN_NAV: AdminNavGroup[] = [
         count: (o) => o.seller_applications + o.verification_reviews },
       { title: "Products", url: "/admin/products", icon: Package, hint: "All listings", keywords: "items listings stock" },
       { title: "Categories", url: "/admin/categories", icon: Tag, hint: "Product categories" },
-      { title: "Customers", url: "/admin/users", icon: Users, hint: "Everyone who signed up", keywords: "users buyers accounts" },
+      { title: "Users", url: "/admin/users", icon: Users, hint: "Buyers only, and their linked bank accounts", keywords: "customers buyers accounts" },
+      { title: "Bank accounts", url: "/admin/users?filter=bank_linked", icon: Landmark, hint: "Users who linked a bank account", keywords: "verified buyers bank account number k2 referral" },
     ],
   },
   {

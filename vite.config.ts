@@ -18,7 +18,8 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     VitePWA({
-      registerType: "autoUpdate",
+      // A new version waits until the person taps Refresh on the "update ready" bar.
+      registerType: "prompt",
       // Registered in src/lib/registerServiceWorker.ts, which handles browsers that refuse it.
       injectRegister: null,
       includeAssets: ["favicon.ico", "robots.txt", "logo.svg"],

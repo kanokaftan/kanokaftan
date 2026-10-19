@@ -3,7 +3,7 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminListToolbar, type ListChip } from "@/components/admin/AdminListToolbar";
 import {
-  useAdminUsers, useAdminUserRoleCounts, ADMIN_USER_ROLE_FILTERS, DEFAULT_USER_ROLE_FILTER, type AdminUserRoleFilter,
+  useAdminUsers, useAdminUserRoleCounts, ADMIN_USER_ROLE_FILTERS, DEFAULT_USER_ROLE_FILTER, type AdminUser, type AdminUserRoleFilter,
 } from "@/hooks/useAdminUsers";
 import { useAdminListState, useKeepPageInRange } from "@/hooks/useAdminListState";
 import { totalPagesOf } from "@/hooks/adminList";
@@ -11,17 +11,27 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Landmark } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
-const ROLE_LABELS: Record<AdminUserRoleFilter, string> = {
-  customer: "Customers",
-  vendor: "Sellers",
-  admin: "Admins",
-  all: "Everyone",
+const FILTER_LABELS: Record<AdminUserRoleFilter, string> = {
+  customer: "All users",
+  bank_linked: "Bank linked",
+  bank_missing: "No bank yet",
 };
 
-/** People who signed up (customers by default). Tap one for their orders, spending and chats with sellers. */
+/** "GTBank ••4821 · AISHA BELLO": the masked bank account a user linked. */
+function BankLine({ bank, compact = false }: { bank: NonNullable<AdminUser["bank"]>; compact?: boolean }) {
+  return (
+    <span className={cn("inline-flex min-w-0 items-center gap-1.5 text-green-700 dark:text-green-400", compact ? "text-xs" : "text-sm")}>
+      <Landmark className="h-3.5 w-3.5 shrink-0" />
+      <span className="truncate">{bank.bank_name} ••{bank.last4} · {bank.account_name}</span>
+    </span>
+  );
+}
+
+/** Users (buyers only; sellers are on the Sellers page). Tap one for their orders, spending and chats with sellers. */
 export default function AdminUsers() {
   const navigate = useNavigate();
   const list = useAdminListState({ filters: ADMIN_USER_ROLE_FILTERS, defaultFilter: DEFAULT_USER_ROLE_FILTER });
@@ -34,28 +44,33 @@ export default function AdminUsers() {
   const filteredUsers = users;
   const chips: ListChip<AdminUserRoleFilter>[] = ADMIN_USER_ROLE_FILTERS.map((role) => ({
     value: role,
-    label: ROLE_LABELS[role],
+    label: FILTER_LABELS[role],
     count: roleCounts?.[role],
   }));
 
-  // Sellers open their seller page; everyone else their customer page.
-  const open = (user: { id: string; roles: string[] }) =>
-    navigate(user.roles.includes("vendor") ? `/admin/vendors/${user.id}` : `/admin/users/${user.id}`);
+  const open = (user: { id: string }) => navigate(`/admin/users/${user.id}`);
   const initial = (user: { full_name: string | null; email: string }) => (user.full_name?.charAt(0) || user.email.charAt(0)).toUpperCase();
 
   return (
-    <AdminLayout title="Customers">
+    <AdminLayout title={list.filter === "bank_linked" ? "Bank accounts" : "Users"}>
       <AdminListToolbar
         search={list.search}
         onSearchChange={list.setSearch}
-        placeholder="Search name, email, phone or shop"
+        placeholder="Search name, email, phone or bank account name"
         chips={chips}
         filter={list.filter}
         onFilterChange={list.setFilter}
         total={isLoading ? undefined : total}
-        noun={["person", "people"]}
+        noun={["user", "users"]}
         busy={list.isSearchPending || isFetching}
       />
+
+      {list.filter === "bank_linked" && (
+        <p className="mb-3 rounded-xl bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
+          Bank name, account name (checked with Paystack against the user's name) and the last 4 digits. The full account number is
+          never stored, so a leak can't expose it. Each bank account can belong to one user only.
+        </p>
+      )}
 
       {error && (
         <div className="mb-4 flex items-center justify-between rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm">
@@ -85,6 +100,7 @@ export default function AdminUsers() {
                       <span className="shrink-0 text-[11px] text-muted-foreground">{format(new Date(user.created_at), "d MMM yyyy")}</span>
                     </div>
                     <p className="truncate text-sm text-muted-foreground">{user.email}</p>
+                    {user.bank && <BankLine bank={user.bank} compact />}
                   </div>
                   <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                 </button>
@@ -104,9 +120,10 @@ export default function AdminUsers() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Customer</TableHead>
+                <TableHead>User</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
+                <TableHead>Bank account</TableHead>
                 <TableHead>Joined</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
@@ -115,12 +132,12 @@ export default function AdminUsers() {
               {isLoading ? (
                 [...Array(5)].map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell colSpan={5}><Skeleton className="h-10 w-full" /></TableCell>
+                    <TableCell colSpan={6}><Skeleton className="h-10 w-full" /></TableCell>
                   </TableRow>
                 ))
               ) : filteredUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No one found</TableCell>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No one found</TableCell>
                 </TableRow>
               ) : (
                 paginatedUsers.map((user) => (
@@ -136,6 +153,16 @@ export default function AdminUsers() {
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.phone || "–"}</TableCell>
+                    <TableCell className="max-w-[260px]">
+                      {user.bank ? (
+                        <div className="min-w-0">
+                          <BankLine bank={user.bank} />
+                          <p className="text-[11px] text-muted-foreground">Linked {format(new Date(user.bank.verified_at), "d MMM yyyy")}</p>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Not linked</span>
+                      )}
+                    </TableCell>
                     <TableCell>{format(new Date(user.created_at), "MMM dd, yyyy")}</TableCell>
                     <TableCell><ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" /></TableCell>
                   </TableRow>

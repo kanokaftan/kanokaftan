@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 const menuItems = [
   { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
   { title: "Analytics", url: "/admin/analytics", icon: Activity },
-  { title: "Customers", url: "/admin/users", icon: Users },
+  { title: "Users", url: "/admin/users", icon: Users },
   { title: "Products", url: "/admin/products", icon: Package },
   { title: "Sellers", url: "/admin/vendors", icon: Store },
   { title: "Orders", url: "/admin/orders", icon: ShoppingCart },
