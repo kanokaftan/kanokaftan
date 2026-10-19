@@ -1,6 +1,6 @@
 import { Link, Navigate } from "react-router-dom";
 import { format } from "date-fns";
-import { CheckCircle2, Clock, Copy, Gift, Percent, Share2, ShoppingBag, Trophy, UserPlus, Wallet, XCircle } from "lucide-react";
+import { BellRing, CheckCircle2, Clock, Copy, Gift, Loader2, Percent, Share2, ShoppingBag, Trophy, UserPlus, Wallet, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { BrandIcon } from "@/components/brand/BrandIcon";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMyReferral, type CreditLine } from "@/hooks/useReferral";
+import { MAX_FRIEND_REMINDERS, useMyReferral, usePingFriend, type CreditLine, type ReferralFriend } from "@/hooks/useReferral";
 import { inviteLink } from "@/lib/customerInvite";
 import { k2 } from "@/lib/k2";
 
@@ -21,6 +21,38 @@ const CREDIT_LABELS: Record<CreditLine["kind"], string> = {
   order_refund: "Order cancelled: returned",
   admin_adjust: "From Kano Kaftan",
 };
+
+/** "Remind" for a friend who joined but hasn't linked their bank account yet. */
+function RemindButton({ friend }: { friend: ReferralFriend }) {
+  const ping = usePingFriend();
+  if (friend.status !== "joined" || !friend.id) return null;
+  const pings = friend.pings ?? 0;
+
+  if (!friend.can_ping) {
+    return (
+      <span className="shrink-0 text-right text-[11px] leading-tight text-muted-foreground">
+        {pings >= MAX_FRIEND_REMINDERS ? "Reminded 5×" : "Reminded"}
+        {pings < MAX_FRIEND_REMINDERS && <span className="block">again tomorrow</span>}
+      </span>
+    );
+  }
+
+  const remind = () =>
+    ping.mutate(friend.id!, {
+      onSuccess: (result) =>
+        toast.success(`Reminder sent to ${friend.name}`, {
+          description: result.pings_left > 0 ? `You can remind them again tomorrow (${result.pings_left} left).` : "That was the last reminder.",
+        }),
+      onError: (error) => toast.error(error instanceof Error ? error.message : "Couldn't send the reminder."),
+    });
+
+  return (
+    <Button size="sm" variant="outline" className="h-8 shrink-0 rounded-full px-3" onClick={remind} disabled={ping.isPending}>
+      {ping.isPending ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <BellRing className="mr-1 h-3.5 w-3.5" />}
+      Remind
+    </Button>
+  );
+}
 
 /** Friend counts with a milestone badge. */
 const MILESTONES = [5, 10, 20, 50];
@@ -171,7 +203,7 @@ export default function InviteFriends() {
               ) : (
                 <ul className="divide-y rounded-2xl border bg-card">
                   {data.friends.map((f, i) => (
-                    <li key={`${f.name}-${f.joined_at}-${i}`} className="flex items-center gap-3 px-4 py-3 text-sm">
+                    <li key={f.id ?? `${f.name}-${f.joined_at}-${i}`} className="flex items-center gap-3 px-4 py-3 text-sm">
                       {f.status === "rewarded" ? <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
                         : f.status === "cancelled" ? <XCircle className="h-4 w-4 shrink-0 text-muted-foreground" />
                         : <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />}
@@ -184,6 +216,7 @@ export default function InviteFriends() {
                         </p>
                       </div>
                       {Number(f.earned ?? 0) > 0 && <span className="shrink-0 font-semibold text-green-700 dark:text-green-400">+{k2(Number(f.earned))}</span>}
+                      <RemindButton friend={f} />
                     </li>
                   ))}
                 </ul>

@@ -2,12 +2,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface ReferralFriend {
+  id?: string;
   name: string;
   status: "joined" | "rewarded" | "cancelled";
   joined_at: string;
   rewarded_at: string | null;
   /** K² earned from this friend (verification reward + share of their orders). */
   earned?: number;
+  /** Reminders sent to link their bank account, and whether another can go out now. */
+  pings?: number;
+  last_pinged_at?: string | null;
+  can_ping?: boolean;
 }
 
 export interface CreditLine {
@@ -111,6 +116,21 @@ export function useClaimReferral() {
       queryClient.invalidateQueries({ queryKey: REFERRAL_KEY });
       queryClient.invalidateQueries({ queryKey: CREDIT_KEY });
     },
+  });
+}
+
+/** Most reminders one friend can get (same as the server). */
+export const MAX_FRIEND_REMINDERS = 5;
+
+/** Reminds a friend who joined but hasn't linked a bank account (notification on their phone). */
+export function usePingFriend() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (referralId: string) =>
+      call<{ ok: boolean; pings: number; pings_left: number; next_ping_at: string }>(
+        "ping_referred_friend", { p_referral_id: referralId }, "Couldn't send the reminder. Please try again.",
+      ),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: REFERRAL_KEY }),
   });
 }
 
