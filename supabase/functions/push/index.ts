@@ -122,7 +122,7 @@ async function deliverNotification(db: Db, notificationId: string): Promise<{ se
   const result = await sendToSubscriptions(db, subscriptions, payload, keys, isCall);
 
   if (isCall && callId && result.sent > 0) {
-    const repeat = repeatWhileRinging(db, subscriptions, payload, keys, callId)
+    const repeat = repeatWhileRinging(db, subscriptions, payload, keys, callId, notification.user_id)
       .catch((e) => console.error('call re-alert failed', { callId, error: e instanceof Error ? e.message : String(e) }));
     if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(repeat);
   }
@@ -169,14 +169,16 @@ async function sendToSubscriptions(db: Db, subscriptions: Subscription[], payloa
 /**
  * Web apps can't ring like a phone call when they're closed (iPhone allows only
  * notifications), so while the call is still ringing the phone is alerted again
- * every few seconds. Stops as soon as it's answered, declined, cancelled or missed.
+ * every few seconds. Stops as soon as it's answered, declined, cancelled or missed,
+ * or once this person has the ringing screen open in the app (calls.seen_by).
  */
-async function repeatWhileRinging(db: Db, subscriptions: Subscription[], payload: Payload, keys: VapidKeys, callId: string) {
+async function repeatWhileRinging(db: Db, subscriptions: Subscription[], payload: Payload, keys: VapidKeys, callId: string, userId: string) {
   for (let attempt = 1; attempt * CALL_REPEAT_SECONDS < CALL_RING_SECONDS; attempt++) {
     await sleep(CALL_REPEAT_SECONDS * 1000);
-    const { data: call, error } = await db.from('calls').select('status, created_at').eq('id', callId).maybeSingle();
+    const { data: call, error } = await db.from('calls').select('status, created_at, seen_by').eq('id', callId).maybeSingle();
     if (error) throw new Error(`Could not check call: ${error.message}`);
     if (!call || call.status !== 'ringing') return;
+    if ((call.seen_by as string[] | null)?.includes(userId)) return;
     if (Date.now() - new Date(call.created_at).getTime() > CALL_RING_SECONDS * 1000) return;
     // A new tag makes the phone sound again; the service worker clears the earlier alert for this call.
     const { sent } = await sendToSubscriptions(db, subscriptions, { ...payload, tag: `${payload.tag}-${attempt}` }, keys, true);

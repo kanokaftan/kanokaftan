@@ -21,6 +21,7 @@ const STATUS_POLL_MS = 3000;
 /** How long "Call ended" stays on screen. */
 const ENDED_SCREEN_MS = 1800;
 const OVER_STATUSES = new Set(["declined", "missed", "cancelled", "ended", "failed"]);
+const MAX_QUICK_REPLY_LENGTH = 300;
 
 export type CallPhase = "idle" | "outgoing" | "incoming" | "connecting" | "active" | "ended";
 
@@ -230,6 +231,21 @@ export function CallProvider({ children }: { children: ReactNode }) {
     }
   }, [endOnServer, finish, openSession, watchCall]);
 
+  /** Seeing the ringing screen in the app stops the repeat phone alerts for this call. */
+  const markSeenIfVisible = useCallback((callId: string) => {
+    if (document.visibilityState !== "visible") return;
+    supabase.rpc("mark_call_seen" as never, { p_call_id: callId } as never).then(({ error }) => {
+      if (error) console.error("[calls] mark_call_seen failed", { callId, error });
+    });
+  }, []);
+
+  /** Shows the caller's photo on the ringing screen (support calls show the Kano Kaftan logo). */
+  const loadCallerPhoto = useCallback(async (call: CallRow) => {
+    const { data, error } = await supabase.from("profiles").select("avatar_url").eq("id", call.caller_id).maybeSingle();
+    if (error) return console.warn("[calls] caller photo unavailable", error);
+    if (callRef.current?.id === call.id && data?.avatar_url) setView((v) => ({ ...v, peerAvatar: data.avatar_url }));
+  }, []);
+
   const showIncoming = useCallback((call: CallRow) => {
     if (phaseRef.current !== "idle" && phaseRef.current !== "ended") return; // busy: let it ring out
     if (call.caller_id === userId) return;
@@ -241,10 +257,21 @@ export function CallProvider({ children }: { children: ReactNode }) {
     setView({ ...IDLE, phase: "incoming", kind: call.kind === "video" ? "video" : "voice", peerName: call.caller_name, peerAvatar: null });
     stopToneRef.current = startTone("ringtone");
     watchCall(call.id);
+    markSeenIfVisible(call.id);
+    loadCallerPhoto(call);
     timersRef.current.push(window.setTimeout(() => {
       if (callRef.current?.id === call.id && phaseRef.current === "incoming") finish("Missed call");
     }, Math.max(1, RING_SECONDS - age) * 1000));
-  }, [finish, userId, watchCall]);
+  }, [finish, userId, watchCall, markSeenIfVisible, loadCallerPhoto]);
+
+  // Ringing in the background and then opened: the person has now seen it.
+  useEffect(() => {
+    const onVisible = () => {
+      if (phaseRef.current === "incoming" && callRef.current) markSeenIfVisible(callRef.current.id);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [markSeenIfVisible]);
 
   const answeringRef = useRef(false);
 
@@ -324,6 +351,27 @@ export function CallProvider({ children }: { children: ReactNode }) {
     const iAmCaller = roleRef.current === "caller";
     finish(phaseRef.current === "incoming" ? "Call declined" : phaseRef.current === "outgoing" && iAmCaller ? "Call cancelled" : "Call ended");
   }, [endOnServer, finish]);
+
+  /** Decline and send a short chat message, e.g. "Can't talk now, I'll call you back". */
+  const declineWithMessage = useCallback(async (text: string) => {
+    const call = callRef.current;
+    if (!call || phaseRef.current !== "incoming" || !userId) return;
+    const conversationId = call.conversation_id;
+    hangUp();
+    const { error } = await supabase.from("messages").insert({
+      conversation_id: conversationId,
+      sender_id: userId,
+      body: text.trim().slice(0, MAX_QUICK_REPLY_LENGTH),
+      message_type: "text",
+    });
+    if (error) {
+      console.error("[calls] quick reply failed", { callId: call.id, error });
+      toast.error("Call declined, but the message didn't send. Open the chat to reply.");
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
+    toast.success("Message sent");
+  }, [hangUp, userId, queryClient]);
 
   const toggleCamera = useCallback(() => {
     const session = sessionRef.current;
@@ -431,6 +479,7 @@ export function CallProvider({ children }: { children: ReactNode }) {
           localStream={localStream}
           onAccept={accept}
           onHangUp={hangUp}
+          onDeclineWithMessage={declineWithMessage}
           onToggleMute={toggleMute}
           onToggleCamera={toggleCamera}
           onFlipCamera={flipCamera}

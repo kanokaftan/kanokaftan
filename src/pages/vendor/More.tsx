@@ -1,12 +1,13 @@
 import { Link, useNavigate } from "react-router-dom";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import {
-  BadgeCheck, Bell, ChevronRight, CircleFadingPlus, ExternalLink, Headset, Heart, LogOut, Megaphone, Settings, Share2, ShoppingBag, Star, Wallet,
+  BadgeCheck, Bell, ChevronRight, CircleFadingPlus, ExternalLink, Gift, Headset, Heart, LogOut, Megaphone, Settings, Share2, ShoppingBag, Star, UserPlus, Wallet,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMyShop } from "@/hooks/useMyShop";
 import { useMyFanSummary } from "@/hooks/useShopFans";
+import { useMyAmbassadorApplication, useMyAmbassadorDashboard } from "@/hooks/useAmbassadors";
 import { VendorLayout, useVendorAuth } from "@/components/vendor/VendorLayout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -69,6 +70,14 @@ export default function VendorMore() {
 
   const { shop, name, shopUrl, isLoading, share: shareShop } = useMyShop(userId);
   const { data: fans } = useMyFanSummary(!!userId);
+  const { data: ambassador, isLoading: ambassadorLoading } = useMyAmbassadorDashboard(!!userId);
+  const { data: application } = useMyAmbassadorApplication(!!userId && !ambassadorLoading && !ambassador);
+
+  const ambassadorRow: Row = ambassador
+    ? { icon: UserPlus, label: "Ambassador dashboard", hint: "Your seller link and bonuses", to: "/ambassador" }
+    : application?.status === "pending"
+      ? { icon: UserPlus, label: "Ambassador application", hint: "We're reviewing it. Tap to see the status", to: "/ambassadors/join" }
+      : { icon: UserPlus, label: "Become an ambassador", hint: "₦1,000 each time a seller you bring buys a badge", to: "/ambassadors/join" };
 
   const chatWithUs = async () => {
     try {
@@ -135,6 +144,14 @@ export default function VendorMore() {
             { icon: Megaphone, label: "Promote on homepage", hint: "Feature products or your shop", to: "/vendor/promote" },
             { icon: CircleFadingPlus, label: "Stories", hint: "Post photos that last 24 hours", to: "/vendor/stories" },
             { icon: BadgeCheck, label: "Verification", hint: shop?.is_verified ? "Your shop is verified" : "Get the verified badge", to: "/vendor/verification" },
+          ]}
+        />
+
+        <Group
+          title="Earn more"
+          rows={[
+            { icon: Gift, label: "Invite friends", hint: "200 K² per friend who joins and verifies", to: "/invite" },
+            ambassadorRow,
           ]}
         />
 

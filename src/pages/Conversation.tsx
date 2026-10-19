@@ -19,6 +19,8 @@ import {
   Video,
   ShieldAlert,
   ShoppingBag,
+  PhoneMissed,
+  PhoneOff,
   Square,
   Trash2,
   X,
@@ -81,6 +83,8 @@ import { toast } from "sonner";
 import { useCall } from "@/contexts/CallContext";
 import { formatLastSeen, useConversationPresence } from "@/hooks/usePresence";
 import { withoutLeadingEmoji } from "@/lib/text";
+import { callLogLabel as callLabelFor, parseCallLog, type CallLogNote } from "@/lib/callLog";
+import type { CallKind } from "@/lib/voiceCall";
 
 const MAX_RECORDING_SECONDS = 5 * 60;
 /** How long a replied-to message glows after tapping its quote. */
@@ -618,6 +622,7 @@ export default function Conversation({ admin = false, seller = false }: { admin?
                     onJumpToQuote={() => message.reply_to_id && jumpToMessage(message.reply_to_id)}
                     read={mine && !!otherLastReadAt && new Date(otherLastReadAt) >= created}
                     onCreateOrder={isSupportTeam && !mine ? openOrderFor : undefined}
+                    onCallBack={conversation && !chatBlocked && !inCall ? (kind) => startCall(conversation.id, { name: conversation.other_party_name, avatar: conversation.role === "support_user" ? "/logo.svg" : conversation.other_party_avatar }, kind) : undefined}
                   />
                 </div>
               );
@@ -951,6 +956,7 @@ function ReactableMessage({
   onJumpToQuote,
   read,
   onCreateOrder,
+  onCallBack,
 }: {
   message: ChatMessage;
   mine: boolean;
@@ -967,6 +973,7 @@ function ReactableMessage({
   onJumpToQuote: () => void;
   read: boolean;
   onCreateOrder?: (productId: string) => void;
+  onCallBack?: (kind: CallKind) => void;
 }) {
   const longPress = useLongPress(onOpenPicker);
   const swipe = useSwipeToReply(() => onReply?.());
@@ -1040,7 +1047,7 @@ function ReactableMessage({
           className={cn("relative", swipe.offset === 0 && "transition-transform", pickerOpen && "z-50 scale-[1.02]")}
           style={swipe.offset ? { transform: `translateX(${swipe.offset}px)` } : undefined}
         >
-          <MessageBubble message={message} mine={mine} onOpenImage={onOpenImage} quoted={quoted} onJumpToQuote={onJumpToQuote} read={read} onCreateOrder={onCreateOrder} />
+          <MessageBubble message={message} mine={mine} onOpenImage={onOpenImage} quoted={quoted} onJumpToQuote={onJumpToQuote} read={read} onCreateOrder={onCreateOrder} onCallBack={onCallBack} />
         </div>
       </div>
       <ReactionChips
@@ -1089,6 +1096,7 @@ function MessageBubble({
   onJumpToQuote,
   read,
   onCreateOrder,
+  onCallBack,
 }: {
   message: ChatMessage;
   mine: boolean;
@@ -1097,9 +1105,12 @@ function MessageBubble({
   onJumpToQuote: () => void;
   read: boolean;
   onCreateOrder?: (productId: string) => void;
+  onCallBack?: (kind: CallKind) => void;
 }) {
   const { t } = useTranslation();
   const created = new Date(message.created_at);
+  const callLog = message.message_type === "text" ? parseCallLog(message.body) : null;
+  if (callLog) return <CallLogBubble note={callLog} mine={mine} time={format(created, "h:mm a")} onCallBack={onCallBack} />;
   const isImage = message.message_type === "image" && !!message.media_path;
   const isVoice = message.message_type === "voice" && !!message.media_path;
   // Media messages carry a default label body; any other body on an image is its caption.
@@ -1146,6 +1157,32 @@ function MessageBubble({
             <Check className="h-3.5 w-3.5" aria-label={t("chat.sent")} />
           ))}
       </span>
+    </div>
+  );
+}
+
+/** Missed or declined call note, with a one-tap call back. */
+function CallLogBubble({ note, mine, time, onCallBack }: { note: CallLogNote; mine: boolean; time: string; onCallBack?: (kind: CallKind) => void }) {
+  const Icon = note.kind === "video" ? Video : note.status === "missed" && !mine ? PhoneMissed : PhoneOff;
+  return (
+    <div className="flex items-center gap-3 rounded-3xl border border-white/50 bg-background/80 py-2 pl-2.5 pr-2 shadow-[0_4px_16px_-8px_rgba(0,0,0,0.2)] backdrop-blur dark:border-white/10">
+      <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full", !mine ? "bg-red-500/10 text-red-600" : "bg-muted text-muted-foreground")}>
+        <Icon className="h-[18px] w-[18px]" />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm font-medium text-foreground">{callLabelFor(note, mine)}</span>
+        <span className="block text-[11px] text-muted-foreground">{time}</span>
+      </span>
+      {onCallBack && (
+        <button
+          type="button"
+          onClick={() => onCallBack(note.kind)}
+          className="ml-1 flex shrink-0 items-center gap-1.5 rounded-full bg-green-600 px-3 py-1.5 text-xs font-semibold text-white active:scale-95"
+        >
+          {note.kind === "video" ? <Video className="h-3.5 w-3.5" /> : <Phone className="h-3.5 w-3.5" />}
+          {mine ? "Call again" : "Call back"}
+        </button>
+      )}
     </div>
   );
 }

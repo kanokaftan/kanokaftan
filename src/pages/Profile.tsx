@@ -33,8 +33,8 @@ export default function Profile() {
   // Only ambassadors get a dashboard link; this also links them by email the first time.
   const { data: ambassador } = useMyAmbassadorDashboard(!!user);
   const { data: partner } = useMyPartner(!!user);
-  // Customers who aren't ambassadors yet can join (or see how their application is going).
-  const canJoinAmbassadors = !!user && !ambassador && !isVendor && !isAdmin;
+  // Customers and sellers who aren't ambassadors yet can join (or see how their application is going).
+  const canJoinAmbassadors = !!user && !ambassador && !isAdmin;
   const { data: ambassadorApplication } = useMyAmbassadorApplication(canJoinAmbassadors);
 
   // Fetch user profile data
@@ -162,8 +162,8 @@ export default function Profile() {
     });
   }
 
-  // Every customer can invite friends (sellers and admins use their own programmes).
-  if (user && !isVendor && !isAdmin) {
+  // Customers and sellers can invite friends (admins don't earn K²).
+  if (user && !isAdmin) {
     menuItems.unshift({
       icon: Gift,
       label: t("profile.inviteFriends"),
