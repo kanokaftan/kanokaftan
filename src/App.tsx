@@ -22,6 +22,7 @@ import { PushSync } from "@/components/notifications/PushSync";
 import { CallProvider } from "@/contexts/CallContext";
 import { PresenceHeartbeat } from "@/components/calls/PresenceHeartbeat";
 import { PullToRefresh } from "./components/layout/PullToRefresh";
+import { ReferralWatcher } from "./components/referral/ReferralWatcher";
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const SupportChatRedirect = lazy(() => import("./pages/SupportChatRedirect"));
@@ -65,6 +66,8 @@ const SellerApply = lazy(() => import("./pages/SellerApply"));
 const AmbassadorLink = lazy(() => import("./pages/AmbassadorLink"));
 const AmbassadorDashboard = lazy(() => import("./pages/AmbassadorDashboard"));
 const AmbassadorJoin = lazy(() => import("./pages/AmbassadorJoin"));
+const InviteFriends = lazy(() => import("./pages/InviteFriends"));
+const InviteLanding = lazy(() => import("./pages/InviteLanding"));
 const PartnerDashboard = lazy(() => import("./pages/PartnerDashboard"));
 const SellerLogin = lazy(() => import("./pages/SellerLogin"));
 const VendorProfilePage = lazy(() => import("./pages/VendorProfile"));
@@ -136,6 +139,7 @@ const App = () => (
         <PresenceHeartbeat />
         <BrowserRouter>
           <AnalyticsTracker />
+          <ReferralWatcher />
           <Suspense fallback={<RouteFallback />}>
           <Routes>
             {/* Customer Routes */}
@@ -171,6 +175,8 @@ const App = () => (
             <Route path="/r/:code" element={<AmbassadorLink />} />
             <Route path="/ambassador" element={<AmbassadorDashboard />} />
             <Route path="/ambassadors/join" element={<AmbassadorJoin />} />
+            <Route path="/invite" element={<InviteFriends />} />
+            <Route path="/invite/:code" element={<InviteLanding />} />
             <Route path="/partner" element={<PartnerDashboard />} />
             <Route path="/become-vendor" element={<Navigate to="/sell" replace />} />
             <Route path="/vendor/login" element={<SellerLogin />} />

@@ -41,6 +41,8 @@ export interface Order {
   subtotal: number;
   shipping_fee: number;
   total: number;
+  /** Kano Kaftan credit taken off this order. */
+  credit_used?: number;
   shipping_address: ShippingAddress;
   notes: string | null;
   escrow_status: string;
@@ -61,6 +63,8 @@ export interface CreateOrderData {
   address_id: string;
   promo_code?: string;
   notes?: string;
+  /** Spend Kano Kaftan credit on this order (the server decides how much). */
+  use_credit?: boolean;
 }
 
 export function useOrders() {
@@ -102,6 +106,7 @@ export function useOrders() {
         p_address_id: orderData.address_id,
         p_promo_code: orderData.promo_code ?? null,
         p_notes: orderData.notes ?? null,
+        p_use_credit: orderData.use_credit ?? true,
       });
 
       if (error) throw new Error(error.message);
@@ -110,6 +115,8 @@ export function useOrders() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       queryClient.invalidateQueries({ queryKey: ["cart"] });
+      queryClient.invalidateQueries({ queryKey: ["credit"] });
+      queryClient.invalidateQueries({ queryKey: ["referral"] });
     },
   });
 

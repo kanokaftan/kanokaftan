@@ -1,0 +1,51 @@
+import { useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { useClaimReferral } from "@/hooks/useReferral";
+import { clearSavedInviteCode, getSavedInviteCode, saveInviteCode } from "@/lib/customerInvite";
+import { naira } from "@/lib/naira";
+
+/**
+ * Keeps a customer invite code from any link (?invite=CODE; ambassador links use ?ref=) and, once the visitor is signed in
+ * to a customer account, uses it once. The server decides whether it counts.
+ */
+export function ReferralWatcher() {
+  const location = useLocation();
+  const { user, rolesLoading, isVendor, isAdmin } = useAuth();
+  const claim = useClaimReferral();
+  const triedFor = useRef<string | null>(null);
+
+  useEffect(() => {
+    const invite = new URLSearchParams(location.search).get("invite");
+    if (invite) saveInviteCode(invite);
+  }, [location.search]);
+
+  useEffect(() => {
+    if (!user || rolesLoading || triedFor.current === user.id) return;
+    const code = getSavedInviteCode();
+    if (!code) return;
+    triedFor.current = user.id;
+    // Seller and admin accounts can't use customer invites.
+    if (isVendor || isAdmin) {
+      clearSavedInviteCode();
+      return;
+    }
+    claim.mutate(code, {
+      onSuccess: (result) => {
+        clearSavedInviteCode();
+        if (result.claimed) {
+          toast.success(`${naira(Number(result.credit ?? 0))} credit added`, {
+            description: `It comes off your first order of ${naira(Number(result.min_order ?? 0))} or more.`,
+          });
+        } else if (result.reason) {
+          toast.info(result.reason);
+        }
+      },
+      // Keep the code so it can be tried again next time the app opens.
+      onError: (error) => console.error("[ReferralWatcher] claim failed", error),
+    });
+  }, [user, rolesLoading, isVendor, isAdmin, claim]);
+
+  return null;
+}

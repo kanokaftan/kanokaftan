@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { GoogleSignInButton, OrDivider } from "@/components/auth/GoogleSignInButton";
 import { AccountTypeSwitch, ACCOUNT_TYPES, type AccountType } from "@/components/auth/AccountTypeSwitch";
+import { InviteBanner } from "@/components/referral/InviteBanner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -291,6 +292,8 @@ export default function AuthPage() {
               <span className="font-display text-lg ml-1">Kano Kaftan</span>
             </div>
           </Link>
+
+          {showLoginRegister && accountType === "shop" && <InviteBanner />}
 
           {showLoginRegister && (
             <div className="mb-6">

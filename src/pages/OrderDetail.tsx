@@ -394,6 +394,12 @@ export default function OrderDetail() {
                 )}
               </span>
             </div>
+            {Number(order.credit_used ?? 0) > 0 && (
+              <div className="flex justify-between text-sm text-green-600">
+                <span>Kano Kaftan credit</span>
+                <span>−{formatPrice(Number(order.credit_used))}</span>
+              </div>
+            )}
           </div>
 
           <Separator className="my-3" />

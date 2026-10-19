@@ -793,6 +793,7 @@ export type Database = {
           dispute_reason: string | null
           dispute_resolved_at: string | null
           dispute_status: string | null
+          credit_used: number
           disputed_at: string | null
           shipped_at: string | null
           confirmed_at: string | null
@@ -818,6 +819,7 @@ export type Database = {
           dispute_reason?: string | null
           dispute_resolved_at?: string | null
           dispute_status?: string | null
+          credit_used?: number
           disputed_at?: string | null
           shipped_at?: string | null
           confirmed_at?: string | null
@@ -843,6 +845,7 @@ export type Database = {
           dispute_reason?: string | null
           dispute_resolved_at?: string | null
           dispute_status?: string | null
+          credit_used?: number
           disputed_at?: string | null
           shipped_at?: string | null
           confirmed_at?: string | null
@@ -2242,7 +2245,7 @@ export type Database = {
         Returns: undefined
       }
       place_order: {
-        Args: { p_address_id: string; p_notes?: string | null; p_promo_code?: string | null }
+        Args: { p_address_id: string; p_notes?: string | null; p_promo_code?: string | null; p_use_credit?: boolean }
         Returns: Database["public"]["Tables"]["orders"]["Row"]
       }
     }

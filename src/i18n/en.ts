@@ -321,6 +321,8 @@ export const en = {
     orders: "My Orders",
     ambassadorDashboard: "Ambassador dashboard",
     ambassadorDashboardDesc: "Your link, sellers and earnings",
+    inviteFriends: "Invite friends",
+    inviteFriendsDesc: "You both get credit when they shop",
     becomeAmbassador: "Become an ambassador",
     becomeAmbassadorDesc: "Earn by inviting sellers to Kano Kaftan",
     ambassadorPending: "Ambassador application",

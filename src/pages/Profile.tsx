@@ -11,7 +11,7 @@ import {
   Package,
   MapPin,
   Bell,
-  UserPlus, Gem
+  UserPlus, Gem, Gift
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -159,6 +159,16 @@ export default function Profile() {
       label: t("profile.ambassadorDashboard"),
       description: t("profile.ambassadorDashboardDesc"),
       href: "/ambassador",
+    });
+  }
+
+  // Every customer can invite friends (sellers and admins use their own programmes).
+  if (user && !isVendor && !isAdmin) {
+    menuItems.unshift({
+      icon: Gift,
+      label: t("profile.inviteFriends"),
+      description: t("profile.inviteFriendsDesc"),
+      href: "/invite",
     });
   }
 

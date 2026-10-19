@@ -321,6 +321,8 @@ export const ha = {
     orders: "Oda-odana",
     ambassadorDashboard: "Allon jakada",
     ambassadorDashboardDesc: "Hanyar gayyatarka, masu sayarwa da kuɗinka",
+    inviteFriends: "Gayyaci abokai",
+    inviteFriendsDesc: "Ku duka ku samu kuɗi idan sun yi siyayya",
     becomeAmbassador: "Zama jakada",
     becomeAmbassadorDesc: "Samu kuɗi ta gayyato masu sayarwa zuwa Kano Kaftan",
     ambassadorPending: "Neman zama jakada",

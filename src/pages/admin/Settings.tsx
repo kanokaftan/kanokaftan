@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { PayoutSettingsCard } from "@/components/admin/PayoutSettingsCard";
 import { ActivePromotionsCard, MonetisationSettingsCard } from "@/components/admin/MonetisationSettingsCard";
+import { ReferralSettingsCard } from "@/components/admin/ReferralSettingsCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -231,6 +232,7 @@ export default function AdminSettings() {
         </div>
 
         <PayoutSettingsCard />
+        <ReferralSettingsCard />
 
         <MonetisationSettingsCard />
 

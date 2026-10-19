@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { track } from "@/lib/analytics";
 import { useNavigate, Link } from "react-router-dom";
-import { MapPin, Plus, ChevronRight, CreditCard, ShieldCheck, Truck, Percent, Tag, X, Check } from "lucide-react";
+import { MapPin, Plus, ChevronRight, CreditCard, ShieldCheck, Truck, Percent, Tag, X, Check, Gift } from "lucide-react";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -29,6 +29,8 @@ import {
   type PromoCodeResult
 } from "@/lib/shipping";
 import { useTranslation } from "react-i18next";
+import { useMyCredit } from "@/hooks/useReferral";
+import { Switch } from "@/components/ui/switch";
 
 function formatPrice(amount: number): string {
   return new Intl.NumberFormat("en-NG", {
@@ -37,6 +39,9 @@ function formatPrice(amount: number): string {
     minimumFractionDigits: 0,
   }).format(amount);
 }
+
+/** Credit never brings an order below this (Paystack needs something to charge). */
+const MIN_AMOUNT_TO_PAY = 100;
 
 interface VendorLocation {
   id: string;
@@ -52,6 +57,8 @@ export default function Checkout() {
   const { addresses, isLoading: addressesLoading, defaultAddress } = useAddresses();
   const { createOrder } = useOrders();
   const { initiatePayment, isProcessing } = usePayment();
+  const { data: credit } = useMyCredit(!!user);
+  const [useCredit, setUseCredit] = useState(true);
 
   const [selectedAddressId, setSelectedAddressId] = useState<string>("");
   const [notes, setNotes] = useState("");
@@ -145,7 +152,14 @@ export default function Checkout() {
     return calculateShippingFee(distanceKm, total, appliedPromo);
   }, [selectedAddress, total, vendorLocations, appliedPromo]);
 
-  const grandTotal = total + shippingInfo.finalFee;
+  // Same rule as the server (place_order): items only, at least ₦100 left to pay, orders over the minimum.
+  const creditBalance = Number(credit?.balance ?? 0);
+  const creditMinOrder = Number(credit?.min_order ?? 0);
+  const creditEligible = creditBalance > 0 && total >= creditMinOrder;
+  const creditToUse = useCredit && creditEligible
+    ? Math.max(0, Math.min(creditBalance, total, total + shippingInfo.finalFee - MIN_AMOUNT_TO_PAY))
+    : 0;
+  const grandTotal = total + shippingInfo.finalFee - creditToUse;
   const discountDescription = getDiscountTierDescription(total);
 
   const handleApplyPromoCode = async () => {
@@ -194,6 +208,7 @@ export default function Checkout() {
         address_id: selectedAddress.id,
         promo_code: appliedPromo?.code,
         notes: notes || undefined,
+        use_credit: useCredit,
       });
 
       const paymentResult = await initiatePayment(order.id, user.email);
@@ -496,6 +511,30 @@ export default function Checkout() {
               </div>
             )}
           </div>
+
+          {creditBalance > 0 && (
+            <div className="mt-3 rounded-xl border border-dashed p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="flex items-center gap-1.5 text-sm font-medium"><Gift className="h-4 w-4 text-primary" />Kano Kaftan credit</p>
+                  <p className="text-xs text-muted-foreground">
+                    {creditEligible
+                      ? `${formatPrice(creditBalance)} available`
+                      : `${formatPrice(creditBalance)} available on orders of ${formatPrice(creditMinOrder)} or more`}
+                  </p>
+                </div>
+                {creditEligible ? (
+                  <Switch checked={useCredit} onCheckedChange={setUseCredit} aria-label="Use my credit" />
+                ) : null}
+              </div>
+              {creditToUse > 0 && (
+                <div className="mt-2 flex justify-between text-sm font-medium text-green-600">
+                  <span>Credit used</span>
+                  <span>−{formatPrice(creditToUse)}</span>
+                </div>
+              )}
+            </div>
+          )}
 
           <Separator className="my-3" />
 
