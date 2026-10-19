@@ -2,51 +2,88 @@
 // browsers refuse it (search-engine robots, in-app browsers, private mode);
 // the site works fine without it, so a refusal is noted, not reported as a bug.
 //
-// Updates: we check for a new version whenever the app is opened or brought
-// back. A new version takes over as soon as it has downloaded (it never waits,
-// so an older copy of the app can't get stuck). If the app is in the
-// background at that moment it reloads quietly; if someone is using it, an
-// "update ready" bar (UpdateBanner) offers Refresh instead, so nobody is
-// reloaded in the middle of checkout. Pages the old copy can no longer find
-// reload once by themselves (lazyPage).
+// Updates: we check for a new version when the app opens, when it's brought
+// back, and every few minutes. A new version takes over as soon as it has
+// downloaded and the app reloads into it by itself, with nothing to tap.
+// It waits only while a reload would hurt: paying (checkout, or a payment
+// being confirmed), filling in a product form, or during a call. Then it
+// reloads as soon as the person moves on. Pages an old copy can no longer
+// find reload once by themselves (lazyPage).
 
 const SERVICE_WORKER_URL = "/sw.js";
 /** Also check while the app stays open. */
-const UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1000;
+const UPDATE_CHECK_INTERVAL_MS = 5 * 60 * 1000;
+/** While an update waits for a good moment, look again this often. */
+const PENDING_RETRY_MS = 15 * 1000;
+/** Pages where a reload would lose a payment or typed-in work. */
+const NO_RELOAD_PATHS = [/^\/checkout/, /^\/vendor\/(promote|verification)/, /^\/vendor\/products\/[^/]+/, /^\/admin\/products\/.+/];
+/** Query parameters present while a returning Paystack payment is being confirmed. */
+const PAYMENT_RETURN_PARAMS = ["reference", "trxref", "verify"];
 /** Guards against a reload loop if something goes wrong. */
 const RELOADED_FOR_UPDATE_KEY = "kk_sw_reloaded_at";
 const MIN_MS_BETWEEN_UPDATE_RELOADS = 60 * 1000;
 
-function reloadOnceForUpdate() {
+/** How long until another automatic reload is allowed (0 = now). */
+function msUntilReloadAllowed(): number {
   try {
     const last = Number(sessionStorage.getItem(RELOADED_FOR_UPDATE_KEY) ?? 0);
-    if (Date.now() - last < MIN_MS_BETWEEN_UPDATE_RELOADS) return;
+    return Math.max(0, last + MIN_MS_BETWEEN_UPDATE_RELOADS - Date.now());
+  } catch {
+    return 0; // Storage blocked (private mode): the guard is only a safety net.
+  }
+}
+
+function reloadForUpdate() {
+  try {
     sessionStorage.setItem(RELOADED_FOR_UPDATE_KEY, String(Date.now()));
   } catch {
-    // Storage blocked (private mode): reload anyway, the guard is only a safety net.
+    // See msUntilReloadAllowed.
   }
   window.location.reload();
 }
 
-type UpdateListener = (ready: boolean) => void;
-const listeners = new Set<UpdateListener>();
-let updateReady = false;
+/** Things that must not be cut off by a reload (e.g. a call in progress). */
+const blockers = new Set<string>();
+let pendingReload = false;
+let retryTimer: number | null = null;
 
-function markUpdateReady() {
-  updateReady = true;
-  listeners.forEach((listener) => listener(true));
+/** Mark something that a reload would interrupt (true) or that has finished (false). */
+export function setUpdateBlocker(key: string, active: boolean) {
+  if (active) blockers.add(key);
+  else blockers.delete(key);
+  if (!active) retryPendingUpdate();
 }
 
-/** Subscribe to "a new version has taken over; refresh to use it". Returns an unsubscribe function. */
-export function onUpdateReady(listener: UpdateListener): () => void {
-  listeners.add(listener);
-  listener(updateReady);
-  return () => listeners.delete(listener);
+function onProtectedPage(): boolean {
+  const { pathname, search } = window.location;
+  const params = new URLSearchParams(search);
+  return NO_RELOAD_PATHS.some((pattern) => pattern.test(pathname)) || PAYMENT_RETURN_PARAMS.some((key) => params.has(key));
 }
 
-/** Load the new version. */
-export function applyUpdate() {
-  window.location.reload();
+function canReloadNow(): boolean {
+  if (blockers.size > 0) return false;
+  return !onProtectedPage();
+}
+
+/** Reload into the new version if this is a good moment; otherwise try again soon. */
+export function retryPendingUpdate() {
+  if (!pendingReload) return;
+  const wait = msUntilReloadAllowed();
+  if (wait === 0 && canReloadNow()) {
+    reloadForUpdate();
+    return;
+  }
+  if (retryTimer === null) {
+    retryTimer = window.setTimeout(() => {
+      retryTimer = null;
+      retryPendingUpdate();
+    }, Math.max(wait, PENDING_RETRY_MS));
+  }
+}
+
+function newVersionTookOver() {
+  pendingReload = true;
+  retryPendingUpdate();
 }
 
 export function registerServiceWorker() {
@@ -55,14 +92,11 @@ export function registerServiceWorker() {
   // A page that already had a service worker gets a new one only on an update.
   const hadController = !!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (!hadController) return;
-    // Not on screen: nobody is interrupted, so just load the new version.
-    if (document.visibilityState === "hidden") reloadOnceForUpdate();
-    else markUpdateReady();
+    if (hadController) newVersionTookOver();
   });
-  // Updated while someone was using it, then they left and came back: refresh quietly before they start again.
+  // Going to the background is a good moment too (unless a call is still on).
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden" && updateReady) reloadOnceForUpdate();
+    if (document.visibilityState === "hidden") retryPendingUpdate();
   });
 
   window.addEventListener("load", () => {

@@ -10,6 +10,7 @@ import {
 } from "@/lib/voiceCall";
 import { installAudioUnlock, playSound, primeAudio, setAudioSession, startTone } from "@/lib/callTones";
 import { CallScreen } from "@/components/calls/CallScreen";
+import { setUpdateBlocker } from "@/lib/registerServiceWorker";
 import type { Tables } from "@/integrations/supabase/types";
 
 type CallRow = Tables<"calls">;
@@ -468,6 +469,11 @@ export function CallProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const inCall = view.phase !== "idle" && view.phase !== "ended";
+
+  // Never reload into a new version in the middle of a call.
+  useEffect(() => {
+    setUpdateBlocker("call", inCall);
+  }, [inCall]);
 
   return (
     <CallContext.Provider value={{ view, startCall, inCall }}>
