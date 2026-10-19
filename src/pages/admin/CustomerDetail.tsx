@@ -1,6 +1,8 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { format, formatDistanceToNowStrict } from "date-fns";
-import { Calendar, ChevronLeft, Heart, Landmark, Mail, MessageCircle, Phone, ShoppingBag, Star, Store, Wallet } from "lucide-react";
+import { Calendar, CheckCircle2, ChevronLeft, Clock, Heart, Landmark, Mail, MessageCircle, Phone, ShieldAlert, ShoppingBag, Star, Store, UserPlus, Wallet } from "lucide-react";
+import { useAdminUserTrust, type AdminUserTrust } from "@/hooks/useAdminUsers";
+import { k2 } from "@/lib/k2";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -42,6 +44,70 @@ function useLinkedBank(userId: string | undefined) {
   });
 }
 
+/** Duplicate-account hints, each linking to the other account involved. */
+function TrustWarnings({ flags }: { flags: AdminUserTrust["flags"] }) {
+  if (!flags.length) return null;
+  return (
+    <div className="rounded-2xl border border-red-500/30 bg-red-500/5 p-3">
+      <p className="flex items-center gap-1.5 text-sm font-semibold text-red-600 dark:text-red-400">
+        <ShieldAlert className="h-4 w-4" aria-hidden="true" />
+        Possible duplicate account
+      </p>
+      <ul className="mt-2 space-y-1.5 text-sm">
+        {flags.map((flag, i) => (
+          <li key={`${flag.code}-${flag.other_id ?? i}`} className="flex flex-wrap items-baseline gap-x-1.5">
+            <span>{flag.label}</span>
+            {flag.other_id && (
+              <Link
+                to={flag.other_is_seller ? `/admin/vendors/${flag.other_id}` : `/admin/users/${flag.other_id}`}
+                className="font-medium text-primary underline-offset-2 hover:underline"
+              >
+                {flag.other_name || flag.other_email || "Open account"}{flag.other_is_seller ? " (seller)" : ""}
+              </Link>
+            )}
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-[11px] text-muted-foreground">A hint to check, not proof: relatives can share a name or a phone.</p>
+    </div>
+  );
+}
+
+/** Who invited them, who they invited, and their K². */
+function InvitesCard({ trust }: { trust: AdminUserTrust }) {
+  const verified = trust.friends.filter((f) => f.status === "rewarded").length;
+  return (
+    <div className="rounded-2xl border bg-card p-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="flex items-center gap-1.5 text-sm font-semibold"><UserPlus className="h-4 w-4" aria-hidden="true" />Invites</p>
+        <p className="text-xs text-muted-foreground">{k2(Number(trust.k2_earned))} earned · {k2(Number(trust.k2_balance))} to spend</p>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {trust.invited_by ? (
+          <>Joined via <Link to={`/admin/users/${trust.invited_by.id}`} className="font-medium text-primary hover:underline">{trust.invited_by.name}</Link></>
+        ) : "Not invited by anyone"}
+        {" · "}
+        {trust.friends.length} invited, {verified} verified
+      </p>
+      {trust.friends.length > 0 && (
+        <ul className="mt-2 divide-y rounded-xl border">
+          {trust.friends.map((f) => (
+            <li key={f.id}>
+              <Link to={`/admin/users/${f.id}`} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/50">
+                {f.status === "rewarded" ? <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" /> : <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />}
+                <span className="min-w-0 flex-1 truncate">{f.name}</span>
+                <span className="shrink-0 text-[11px] text-muted-foreground">
+                  {f.status === "rewarded" ? "Verified" : f.status === "cancelled" ? "Blocked" : f.bank_linked ? "Bank linked" : `Waiting${f.pings ? ` · reminded ${f.pings}×` : ""}`}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 /** One user: contact, linked bank account, spending, recent orders and their chats with sellers. */
 export default function AdminCustomerDetail() {
   const { id } = useParams<{ id: string }>();
@@ -50,6 +116,7 @@ export default function AdminCustomerDetail() {
   const { data: o, error } = useCustomerOverview(id);
   const name = profile?.full_name || profile?.email || "User";
   const { data: bank, isLoading: bankLoading, error: bankError } = useLinkedBank(id);
+  const { data: trust } = useAdminUserTrust(id);
 
   const stats = o
     ? [
@@ -89,6 +156,8 @@ export default function AdminCustomerDetail() {
 
         {error && <p className="text-sm text-destructive">{(error as Error).message}</p>}
 
+        {trust && <TrustWarnings flags={trust.flags} />}
+
         <div className="flex items-center gap-3 rounded-2xl border bg-card p-3">
           <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", bank ? "bg-green-500/10 text-green-700 dark:text-green-400" : "bg-muted text-muted-foreground")}>
             <Landmark className="h-5 w-5" aria-hidden="true" />
@@ -111,6 +180,8 @@ export default function AdminCustomerDetail() {
             )}
           </div>
         </div>
+
+        {trust && <InvitesCard trust={trust} />}
 
         {o ? (
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3">

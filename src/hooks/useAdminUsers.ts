@@ -17,7 +17,7 @@ import {
 const RPC = "admin_list_users";
 
 /** Users are buyers only (sellers and admins have their own pages); split by whether they linked a bank account. */
-export const ADMIN_USER_ROLE_FILTERS = ["customer", "bank_linked", "bank_missing"] as const;
+export const ADMIN_USER_ROLE_FILTERS = ["customer", "bank_linked", "bank_missing", "suspicious"] as const;
 export type AdminUserRoleFilter = (typeof ADMIN_USER_ROLE_FILTERS)[number];
 export const DEFAULT_USER_ROLE_FILTER: AdminUserRoleFilter = "customer";
 
@@ -35,6 +35,27 @@ export interface AdminUser {
   roles: string[];
   /** Bank account linked to unlock first-buyer prices and invite rewards (masked: last 4 digits only). */
   bank: { bank_name: string; account_name: string; last4: string; verified_at: string } | null;
+  invitedBy: { id: string; name: string } | null;
+  friendsInvited: number;
+  friendsVerified: number;
+  k2Earned: number;
+  /** Reasons the account may be a duplicate (see user_trust_flags). Hints to check, not proof. */
+  flags: TrustFlag[];
+}
+
+export interface TrustFlag {
+  code: "same_bank_name" | "same_phone" | "blocked_invite" | "invite_burst";
+  label: string;
+  other_id: string | null;
+}
+
+const num = (value: unknown) => (Number.isFinite(Number(value)) ? Number(value) : 0);
+
+function toFlags(value: unknown): TrustFlag[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((f): f is Record<string, unknown> => !!f && typeof f === "object")
+    .map((f) => ({ code: str(f.code) as TrustFlag["code"], label: str(f.label), other_id: strOrNull(f.other_id) }));
 }
 
 function toAdminUser(row: Record<string, unknown>): AdminUser {
@@ -54,6 +75,11 @@ function toAdminUser(row: Record<string, unknown>): AdminUser {
     bank: row.bank_verified_at
       ? { bank_name: str(row.bank_name), account_name: str(row.bank_account_name), last4: str(row.account_last4), verified_at: str(row.bank_verified_at) }
       : null,
+    invitedBy: row.invited_by_id ? { id: str(row.invited_by_id), name: str(row.invited_by_name) || "Someone" } : null,
+    friendsInvited: num(row.friends_invited),
+    friendsVerified: num(row.friends_verified),
+    k2Earned: num(row.k2_earned),
+    flags: toFlags(row.flags),
   };
 }
 
@@ -121,5 +147,46 @@ export function useAdminUserRoleCounts(search: string) {
     },
     placeholderData: keepPreviousData,
     staleTime: ADMIN_LIST_STALE_TIME_MS,
+  });
+}
+
+/** Most rows the server returns per request; the export walks through pages of this size. */
+const EXPORT_PAGE_SIZE = 200;
+/** Safety stop for very large exports. */
+const EXPORT_MAX_ROWS = 20_000;
+
+/** Every user matching the search and filter (for "Download CSV"). */
+export async function fetchAllAdminUsers(search: string, filter: AdminUserRoleFilter): Promise<AdminUser[]> {
+  const all: AdminUser[] = [];
+  for (let offset = 0; offset < EXPORT_MAX_ROWS; offset += EXPORT_PAGE_SIZE) {
+    const { data, error } = await supabase.rpc(RPC, {
+      p_search: search.trim() || null, p_role: filter, p_limit: EXPORT_PAGE_SIZE, p_offset: offset,
+    });
+    if (error) throw adminRpcError(RPC, error, { search, filter, offset });
+    const page = parseAdminListResult(data, RPC, toAdminUser);
+    all.push(...page.rows);
+    if (page.rows.length < EXPORT_PAGE_SIZE || all.length >= page.total) break;
+  }
+  return all;
+}
+
+export interface AdminUserTrust {
+  flags: (TrustFlag & { other_name: string | null; other_email: string | null; other_is_seller: boolean })[];
+  invited_by: { id: string; name: string; status: string; joined_at: string } | null;
+  k2_balance: number;
+  k2_earned: number;
+  friends: { id: string; name: string; email: string; status: string; joined_at: string; pings: number; bank_linked: boolean }[];
+}
+
+/** One user's invites, K² and duplicate-account hints (admin user page). */
+export function useAdminUserTrust(userId: string | undefined) {
+  return useQuery({
+    queryKey: ["admin-users", "trust", userId],
+    enabled: !!userId,
+    queryFn: async (): Promise<AdminUserTrust> => {
+      const { data, error } = await supabase.rpc("admin_user_trust" as never, { p_user_id: userId } as never);
+      if (error) throw adminRpcError("admin_user_trust", error, { userId });
+      return data as unknown as AdminUserTrust;
+    },
   });
 }

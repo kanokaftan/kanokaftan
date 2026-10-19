@@ -3,7 +3,7 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminListToolbar, type ListChip } from "@/components/admin/AdminListToolbar";
 import {
-  useAdminUsers, useAdminUserRoleCounts, ADMIN_USER_ROLE_FILTERS, DEFAULT_USER_ROLE_FILTER, type AdminUser, type AdminUserRoleFilter,
+  useAdminUsers, useAdminUserRoleCounts, fetchAllAdminUsers, ADMIN_USER_ROLE_FILTERS, DEFAULT_USER_ROLE_FILTER, type AdminUser, type AdminUserRoleFilter,
 } from "@/hooks/useAdminUsers";
 import { useAdminListState, useKeepPageInRange } from "@/hooks/useAdminListState";
 import { totalPagesOf } from "@/hooks/adminList";
@@ -11,7 +11,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ChevronRight, Landmark } from "lucide-react";
+import { useState } from "react";
+import { ChevronRight, Download, Landmark, Loader2, ShieldAlert, UserPlus } from "lucide-react";
+import { toast } from "sonner";
+import { downloadCsv } from "@/lib/csv";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
@@ -19,7 +22,53 @@ const FILTER_LABELS: Record<AdminUserRoleFilter, string> = {
   customer: "All users",
   bank_linked: "Bank linked",
   bank_missing: "No bank yet",
+  suspicious: "Suspicious",
 };
+
+const CSV_HEADERS = [
+  "Name", "Email", "Phone", "Joined", "Bank", "Account name", "Account (last 4)", "Bank linked on",
+  "Invited by", "Friends invited", "Friends verified", "K² earned", "Warnings",
+];
+
+const dateOrBlank = (value: string | null | undefined) => (value ? format(new Date(value), "yyyy-MM-dd") : "");
+
+function toCsvRow(user: AdminUser): unknown[] {
+  return [
+    user.full_name ?? "", user.email, user.phone ?? "", dateOrBlank(user.created_at),
+    user.bank?.bank_name ?? "", user.bank?.account_name ?? "", user.bank ? `••${user.bank.last4}` : "", dateOrBlank(user.bank?.verified_at),
+    user.invitedBy?.name ?? "", user.friendsInvited, user.friendsVerified, user.k2Earned,
+    user.flags.map((f) => f.label).join("; "),
+  ];
+}
+
+/** "Invited 4 · 3 verified · by Aisha": invite stats under a user's name. */
+function InviteLine({ user }: { user: AdminUser }) {
+  const parts = [
+    user.friendsInvited > 0 && `Invited ${user.friendsInvited} · ${user.friendsVerified} verified`,
+    user.invitedBy && `Joined via ${user.invitedBy.name}`,
+  ].filter(Boolean);
+  if (!parts.length) return null;
+  return (
+    <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+      <UserPlus className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+      <span className="truncate">{parts.join(" · ")}</span>
+    </span>
+  );
+}
+
+/** Red "2 warnings" pill with the reasons on hover / long-press title. */
+function FlagBadge({ user }: { user: AdminUser }) {
+  if (!user.flags.length) return null;
+  return (
+    <span
+      title={user.flags.map((f) => f.label).join("\n")}
+      className="inline-flex shrink-0 items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-[11px] font-semibold text-red-600 dark:text-red-400"
+    >
+      <ShieldAlert className="h-3 w-3" aria-hidden="true" />
+      {user.flags.length === 1 ? "1 warning" : `${user.flags.length} warnings`}
+    </span>
+  );
+}
 
 /** "GTBank ••4821 · AISHA BELLO": the masked bank account a user linked. */
 function BankLine({ bank, compact = false }: { bank: NonNullable<AdminUser["bank"]>; compact?: boolean }) {
@@ -49,6 +98,25 @@ export default function AdminUsers() {
   }));
 
   const open = (user: { id: string }) => navigate(`/admin/users/${user.id}`);
+  const [exporting, setExporting] = useState(false);
+
+  const exportCsv = async () => {
+    setExporting(true);
+    try {
+      const rows = await fetchAllAdminUsers(list.params.search ?? "", list.filter);
+      if (!rows.length) {
+        toast.info("No users to download.");
+        return;
+      }
+      downloadCsv(`kano-kaftan-${list.filter === "customer" ? "users" : list.filter.replace("_", "-")}-${format(new Date(), "yyyy-MM-dd")}.csv`, CSV_HEADERS, rows.map(toCsvRow));
+      toast.success(`Downloaded ${rows.length} ${rows.length === 1 ? "user" : "users"}`);
+    } catch (e) {
+      console.error("[AdminUsers] CSV export failed", e);
+      toast.error("Couldn't download the list. Please try again.");
+    } finally {
+      setExporting(false);
+    }
+  };
   const initial = (user: { full_name: string | null; email: string }) => (user.full_name?.charAt(0) || user.email.charAt(0)).toUpperCase();
 
   return (
@@ -63,7 +131,21 @@ export default function AdminUsers() {
         total={isLoading ? undefined : total}
         noun={["user", "users"]}
         busy={list.isSearchPending || isFetching}
+        actions={
+          <Button variant="outline" size="sm" className="h-8 rounded-full" onClick={exportCsv} disabled={exporting || total === 0}>
+            {exporting ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-1.5 h-3.5 w-3.5" />}
+            Download CSV
+          </Button>
+        }
       />
+
+      {list.filter === "suspicious" && (
+        <p className="mb-3 rounded-xl bg-red-500/5 px-3 py-2 text-xs text-muted-foreground">
+          Accounts that may belong to someone who already has one: a bank account in the same name as another user, the same phone
+          number, an invite blocked as the same person, or many friends joining at once. These are hints to check, not proof.
+          Open a user to see which other account matches.
+        </p>
+      )}
 
       {list.filter === "bank_linked" && (
         <p className="mb-3 rounded-xl bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
@@ -96,11 +178,15 @@ export default function AdminUsers() {
                   </Avatar>
                   <div className="min-w-0 flex-1 border-b border-border/60 pb-2.5">
                     <div className="flex items-baseline justify-between gap-2">
-                      <p className="truncate font-medium">{user.full_name || "No name"}</p>
+                      <span className="flex min-w-0 items-center gap-1.5">
+                        <span className="truncate font-medium">{user.full_name || "No name"}</span>
+                        <FlagBadge user={user} />
+                      </span>
                       <span className="shrink-0 text-[11px] text-muted-foreground">{format(new Date(user.created_at), "d MMM yyyy")}</span>
                     </div>
                     <p className="truncate text-sm text-muted-foreground">{user.email}</p>
                     {user.bank && <BankLine bank={user.bank} compact />}
+                    <InviteLine user={user} />
                   </div>
                   <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                 </button>
@@ -124,6 +210,7 @@ export default function AdminUsers() {
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead>Bank account</TableHead>
+                <TableHead>Invites</TableHead>
                 <TableHead>Joined</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
@@ -132,12 +219,12 @@ export default function AdminUsers() {
               {isLoading ? (
                 [...Array(5)].map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell colSpan={6}><Skeleton className="h-10 w-full" /></TableCell>
+                    <TableCell colSpan={7}><Skeleton className="h-10 w-full" /></TableCell>
                   </TableRow>
                 ))
               ) : filteredUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No one found</TableCell>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No one found</TableCell>
                 </TableRow>
               ) : (
                 paginatedUsers.map((user) => (
@@ -149,6 +236,7 @@ export default function AdminUsers() {
                           <AvatarFallback>{initial(user)}</AvatarFallback>
                         </Avatar>
                         <span className="font-medium">{user.full_name || "No name"}</span>
+                        <FlagBadge user={user} />
                       </div>
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
@@ -162,6 +250,10 @@ export default function AdminUsers() {
                       ) : (
                         <span className="text-xs text-muted-foreground">Not linked</span>
                       )}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {user.friendsInvited > 0 ? `${user.friendsInvited} invited · ${user.friendsVerified} verified` : <span className="text-muted-foreground">–</span>}
+                      {user.invitedBy && <p className="text-[11px] text-muted-foreground">via {user.invitedBy.name}</p>}
                     </TableCell>
                     <TableCell>{format(new Date(user.created_at), "MMM dd, yyyy")}</TableCell>
                     <TableCell><ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" /></TableCell>

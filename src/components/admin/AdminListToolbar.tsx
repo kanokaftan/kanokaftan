@@ -20,11 +20,13 @@ interface AdminListToolbarProps<F extends string> {
   total?: number;
   noun: [singular: string, plural: string];
   busy?: boolean;
+  /** Buttons shown next to the result count (e.g. "Download CSV"). */
+  actions?: React.ReactNode;
 }
 
 /** Search box, filter chips and result count shared by the admin lists (filtering happens in the database). */
 export function AdminListToolbar<F extends string>({
-  search, onSearchChange, placeholder, chips, filter, onFilterChange, total, noun, busy,
+  search, onSearchChange, placeholder, chips, filter, onFilterChange, total, noun, busy, actions,
 }: AdminListToolbarProps<F>) {
   return (
     <div className="mb-4 space-y-3">
@@ -62,10 +64,13 @@ export function AdminListToolbar<F extends string>({
           </button>
         ))}
       </div>
-      {total !== undefined && (
-        <p className="text-sm text-muted-foreground">
-          {total.toLocaleString()} {total === 1 ? noun[0] : noun[1]}
-        </p>
+      {(total !== undefined || actions) && (
+        <div className="flex min-h-8 items-center justify-between gap-2">
+          <p className="text-sm text-muted-foreground">
+            {total !== undefined && `${total.toLocaleString()} ${total === 1 ? noun[0] : noun[1]}`}
+          </p>
+          {actions}
+        </div>
       )}
     </div>
   );
