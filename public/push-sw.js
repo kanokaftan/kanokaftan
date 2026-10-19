@@ -1,6 +1,16 @@
 /* Phone notifications: loaded into the generated service worker (workbox importScripts). */
 const CALL_VIBRATION = [500, 250, 500, 250, 500, 250, 500];
 
+/** Closes the alerts already showing for one call (it re-alerts every few seconds while ringing). */
+function closeCallAlerts(callId) {
+  if (!callId) return Promise.resolve();
+  return self.registration.getNotifications().then((list) => {
+    list.forEach((n) => {
+      if (n.data && n.data.callId === callId) n.close();
+    });
+  }).catch(() => undefined);
+}
+
 self.addEventListener("push", (event) => {
   let data = {};
   try {
@@ -15,7 +25,7 @@ self.addEventListener("push", (event) => {
   const canShowButtons = typeof Notification !== "undefined" && Notification.maxActions > 0;
   const callBody = canShowButtons ? "Answer or decline below" : "Tap to open the call — then Answer or Decline";
   event.waitUntil(
-    self.registration.showNotification(title, {
+    (isCall ? closeCallAlerts(data.callId) : Promise.resolve()).then(() => self.registration.showNotification(title, {
       body: isCall ? callBody : data.body || "",
       icon: "/pwa-192x192.png",
       badge: "/notification-badge.png",
@@ -32,13 +42,14 @@ self.addEventListener("push", (event) => {
             { action: "decline", title: "Decline" },
           ]
         : [],
-    })
+    }))
   );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const info = event.notification.data || {};
+  if (info.callId) event.waitUntil(closeCallAlerts(info.callId));
   // Decline: just stop the alert; the call rings out on the caller's side and is logged as missed.
   if (event.action === "decline") return;
 

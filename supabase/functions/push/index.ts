@@ -14,6 +14,10 @@ const PUSH_TTL_SECONDS = 24 * 60 * 60;
 /** An incoming call is useless once it stops ringing. */
 const CALL_PUSH_TTL_SECONDS = 60;
 const CALL_CATEGORY = 'call';
+/** iPhones can't ring a closed web app, so a ringing call re-alerts every few seconds instead. */
+const CALL_REPEAT_SECONDS = 6;
+/** Same as RING_SECONDS in the app: after this the call is logged as missed. */
+const CALL_RING_SECONDS = 45;
 const GONE_STATUSES = new Set([404, 410]);
 const ORDER_CATEGORIES = new Set(['order', 'payment']);
 const PROMO_CATEGORIES = new Set(['promotion']);
@@ -21,6 +25,11 @@ const MAX_TITLE_LENGTH = 80;
 const MAX_BODY_LENGTH = 200;
 
 type Db = ReturnType<typeof serviceClient>;
+
+// Supabase keeps a function alive for work handed to waitUntil after the response is sent.
+declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void } | undefined;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 interface PushConfig {
   vapid_public_key: string | null;
@@ -99,6 +108,7 @@ async function deliverNotification(db: Db, notificationId: string): Promise<{ se
   if (!subscriptions?.length) return { sent: 0, removed: 0, skipped: 'no devices' };
 
   const keys = await ensureKeys(db);
+  const callId = (notification.metadata as { call_id?: string } | null)?.call_id ?? null;
   const payload = {
     title: String(notification.title).slice(0, MAX_TITLE_LENGTH),
     body: String(notification.message).slice(0, MAX_BODY_LENGTH),
@@ -106,10 +116,24 @@ async function deliverNotification(db: Db, notificationId: string): Promise<{ se
     tag: notification.id,
     category: notification.category,
     // Lets the phone show Answer / Decline buttons for an incoming call.
-    callId: (notification.metadata as { call_id?: string } | null)?.call_id ?? null,
+    callId,
   };
   const isCall = notification.category === CALL_CATEGORY;
-  const urgency = isCall || ORDER_CATEGORIES.has(notification.category) ? 'high' : 'normal';
+  const result = await sendToSubscriptions(db, subscriptions, payload, keys, isCall);
+
+  if (isCall && callId && result.sent > 0) {
+    const repeat = repeatWhileRinging(db, subscriptions, payload, keys, callId)
+      .catch((e) => console.error('call re-alert failed', { callId, error: e instanceof Error ? e.message : String(e) }));
+    if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(repeat);
+  }
+  return result;
+}
+
+type Subscription = { id: string; endpoint: string; p256dh: string; auth: string };
+type Payload = Record<string, unknown>;
+
+async function sendToSubscriptions(db: Db, subscriptions: Subscription[], payload: Payload, keys: VapidKeys, isCall: boolean) {
+  const urgency = isCall || ORDER_CATEGORIES.has(String(payload.category)) ? 'high' : 'normal';
   const ttlSeconds = isCall ? CALL_PUSH_TTL_SECONDS : PUSH_TTL_SECONDS;
 
   let sent = 0;
@@ -140,6 +164,24 @@ async function deliverNotification(db: Db, notificationId: string): Promise<{ se
     if (updError) console.error('could not update last_used_at', updError.message);
   }
   return { sent, removed: gone.length };
+}
+
+/**
+ * Web apps can't ring like a phone call when they're closed (iPhone allows only
+ * notifications), so while the call is still ringing the phone is alerted again
+ * every few seconds. Stops as soon as it's answered, declined, cancelled or missed.
+ */
+async function repeatWhileRinging(db: Db, subscriptions: Subscription[], payload: Payload, keys: VapidKeys, callId: string) {
+  for (let attempt = 1; attempt * CALL_REPEAT_SECONDS < CALL_RING_SECONDS; attempt++) {
+    await sleep(CALL_REPEAT_SECONDS * 1000);
+    const { data: call, error } = await db.from('calls').select('status, created_at').eq('id', callId).maybeSingle();
+    if (error) throw new Error(`Could not check call: ${error.message}`);
+    if (!call || call.status !== 'ringing') return;
+    if (Date.now() - new Date(call.created_at).getTime() > CALL_RING_SECONDS * 1000) return;
+    // A new tag makes the phone sound again; the service worker clears the earlier alert for this call.
+    const { sent } = await sendToSubscriptions(db, subscriptions, { ...payload, tag: `${payload.tag}-${attempt}` }, keys, true);
+    if (!sent) return;
+  }
 }
 
 serve(async (req) => {
