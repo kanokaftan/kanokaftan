@@ -3,10 +3,12 @@
 // the site works fine without it, so a refusal is noted, not reported as a bug.
 //
 // Updates: we check for a new version whenever the app is opened or brought
-// back. A new version downloads in the background and then waits; the app
-// shows an "update ready" bar (UpdateBanner) and switches over when the person
-// taps Refresh, so nobody is reloaded in the middle of checkout. Until then the
-// old version keeps all its files, so pages never go missing.
+// back. A new version takes over as soon as it has downloaded (it never waits,
+// so an older copy of the app can't get stuck). If the app is in the
+// background at that moment it reloads quietly; if someone is using it, an
+// "update ready" bar (UpdateBanner) offers Refresh instead, so nobody is
+// reloaded in the middle of checkout. Pages the old copy can no longer find
+// reload once by themselves (lazyPage).
 
 const SERVICE_WORKER_URL = "/sw.js";
 /** Also check while the app stays open. */
@@ -28,40 +30,23 @@ function reloadOnceForUpdate() {
 
 type UpdateListener = (ready: boolean) => void;
 const listeners = new Set<UpdateListener>();
-let waitingWorker: ServiceWorker | null = null;
+let updateReady = false;
 
-function setWaiting(worker: ServiceWorker | null) {
-  waitingWorker = worker;
-  listeners.forEach((listener) => listener(!!worker));
+function markUpdateReady() {
+  updateReady = true;
+  listeners.forEach((listener) => listener(true));
 }
 
-/** Subscribe to "a new version is downloaded and waiting". Returns an unsubscribe function. */
+/** Subscribe to "a new version has taken over; refresh to use it". Returns an unsubscribe function. */
 export function onUpdateReady(listener: UpdateListener): () => void {
   listeners.add(listener);
-  listener(!!waitingWorker);
+  listener(updateReady);
   return () => listeners.delete(listener);
 }
 
-/** Switch to the waiting version; the page reloads once it takes over. */
+/** Load the new version. */
 export function applyUpdate() {
-  if (!waitingWorker) {
-    window.location.reload();
-    return;
-  }
-  waitingWorker.postMessage({ type: "SKIP_WAITING" });
-}
-
-/** Watches a registration for a new version that finished installing. */
-function watchForWaitingWorker(registration: ServiceWorkerRegistration) {
-  // Only an update counts: the very first install has nothing to replace.
-  if (registration.waiting && navigator.serviceWorker.controller) setWaiting(registration.waiting);
-  registration.addEventListener("updatefound", () => {
-    const installing = registration.installing;
-    if (!installing) return;
-    installing.addEventListener("statechange", () => {
-      if (installing.state === "installed" && navigator.serviceWorker.controller) setWaiting(installing);
-    });
-  });
+  window.location.reload();
 }
 
 export function registerServiceWorker() {
@@ -70,7 +55,14 @@ export function registerServiceWorker() {
   // A page that already had a service worker gets a new one only on an update.
   const hadController = !!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (hadController) reloadOnceForUpdate();
+    if (!hadController) return;
+    // Not on screen: nobody is interrupted, so just load the new version.
+    if (document.visibilityState === "hidden") reloadOnceForUpdate();
+    else markUpdateReady();
+  });
+  // Updated while someone was using it, then they left and came back: refresh quietly before they start again.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden" && updateReady) reloadOnceForUpdate();
   });
 
   window.addEventListener("load", () => {
@@ -78,7 +70,6 @@ export function registerServiceWorker() {
       navigator.serviceWorker
         .register(SERVICE_WORKER_URL, { scope: "/" })
         .then((registration) => {
-          watchForWaitingWorker(registration);
           const checkForUpdate = () =>
             registration.update().catch((error: unknown) => console.warn("[sw] update check failed", error));
           document.addEventListener("visibilitychange", () => {
