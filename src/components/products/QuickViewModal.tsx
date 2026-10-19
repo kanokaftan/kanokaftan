@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import type { Product } from "@/hooks/useProducts";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { VerifiedBadge } from "@/components/shop/VerifiedBadge";
+import { FirstBuyerPrice } from "@/components/products/FirstBuyerPrice";
 
 interface QuickViewModalProps {
   product: Product | null;
@@ -182,6 +183,7 @@ export function QuickViewModal({ product, open, onOpenChange }: QuickViewModalPr
                 </span>
               )}
             </div>
+            <FirstBuyerPrice price={product.price} percent={product.first_buyer_discount_percent} className="mt-1" />
 
             {/* Description */}
             {product.description && (

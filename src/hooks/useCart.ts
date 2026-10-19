@@ -16,6 +16,7 @@ export interface CartItem {
     name: string;
     slug: string;
     price: number;
+    first_buyer_discount_percent?: number | null;
     stock_quantity: number;
     product_images: { url: string; is_primary: boolean }[];
   };
@@ -63,6 +64,7 @@ export function useCart() {
             name,
             slug,
             price,
+            first_buyer_discount_percent,
             stock_quantity,
             product_images(url, is_primary)
           )

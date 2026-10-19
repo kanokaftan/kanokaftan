@@ -8,6 +8,7 @@ export interface Product {
   description: string | null;
   price: number;
   compare_at_price: number | null;
+  first_buyer_discount_percent?: number | null;
   category_id: string | null;
   vendor_id: string;
   is_active: boolean;

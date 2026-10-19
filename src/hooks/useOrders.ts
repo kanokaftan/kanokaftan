@@ -43,6 +43,8 @@ export interface Order {
   total: number;
   /** Kano Kaftan credit taken off this order. */
   credit_used?: number;
+  /** First-buyer savings, already taken off the subtotal. */
+  first_buyer_discount?: number;
   shipping_address: ShippingAddress;
   notes: string | null;
   escrow_status: string;

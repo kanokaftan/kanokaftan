@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/hooks/useProducts";
 import { ProductImageCarousel } from "@/components/products/ProductImageCarousel";
+import { FirstBuyerPrice } from "@/components/products/FirstBuyerPrice";
 
 interface ProductCardProps {
   product: Product;
@@ -200,6 +201,12 @@ export function ProductCard({ product, onQuickView, hideFloatingCart = false, co
               </p>
             )}
           </div>
+          <FirstBuyerPrice
+            price={product.price}
+            percent={product.first_buyer_discount_percent}
+            size={compact ? "xs" : "sm"}
+            className="mt-0.5"
+          />
         </CardContent>
       </Link>
     </Card>

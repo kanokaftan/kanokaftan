@@ -384,6 +384,12 @@ export default function OrderDetail() {
               <span className="text-muted-foreground">{t("orders.subtotal")}</span>
               <span>{formatPrice(order.subtotal)}</span>
             </div>
+            {Number(order.first_buyer_discount ?? 0) > 0 && (
+              <div className="flex justify-between text-xs text-green-600">
+                <span>First-buyer discount (included above)</span>
+                <span>−{formatPrice(Number(order.first_buyer_discount))}</span>
+              </div>
+            )}
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">{t("orders.shipping")}</span>
               <span>
@@ -396,7 +402,7 @@ export default function OrderDetail() {
             </div>
             {Number(order.credit_used ?? 0) > 0 && (
               <div className="flex justify-between text-sm text-green-600">
-                <span>Kano Kaftan credit</span>
+                <span>Paid with K²</span>
                 <span>−{formatPrice(Number(order.credit_used))}</span>
               </div>
             )}

@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useReferralInvite } from "@/hooks/useReferral";
 import { normaliseInviteCode, saveInviteCode } from "@/lib/customerInvite";
-import { naira } from "@/lib/naira";
 
 /** kanokaftan.shop/invite/CODE: what a friend sees when they open your link. */
 export default function InviteLanding() {
@@ -33,8 +32,8 @@ export default function InviteLanding() {
           <>
             <h1 className="mt-5 font-display text-2xl font-bold">{invite.inviter} invited you to Kano Kaftan</h1>
             <p className="mt-2 text-muted-foreground">
-              Create your account and get <span className="font-semibold text-foreground">{naira(Number(invite.friend_credit))}</span> off
-              your first order of {naira(Number(invite.min_order))} or more.
+              Create your account and get <span className="font-semibold text-foreground">first-buyer prices</span>:
+              every seller gives a special discount on your very first order. Link your bank account at checkout to unlock it.
             </p>
           </>
         ) : (

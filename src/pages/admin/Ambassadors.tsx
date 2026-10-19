@@ -24,7 +24,7 @@ import { ambassadorLink } from "@/lib/referral";
 import { cn } from "@/lib/utils";
 
 /** Used until the settings row loads; the database applies the real amount. */
-const DEFAULT_SELLER_REWARD = 3000;
+const DEFAULT_SELLER_REWARD = 1000;
 const COPIED_RESET_MS = 2000;
 
 const EMPTY: AmbassadorInput = {
@@ -50,9 +50,9 @@ function useSellerReward() {
   return useQuery({
     queryKey: ["platform-settings", "ambassador-reward"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("platform_settings").select("ambassador_seller_reward").eq("id", 1).maybeSingle();
+      const { data, error } = await supabase.from("platform_settings").select("ambassador_badge_reward").eq("id", 1).maybeSingle();
       if (error) throw error;
-      return Number(data?.ambassador_seller_reward ?? DEFAULT_SELLER_REWARD);
+      return Number(data?.ambassador_badge_reward ?? DEFAULT_SELLER_REWARD);
     },
   });
 }
@@ -66,7 +66,7 @@ function welcomeMessage(ambassador: Pick<AmbassadorSummary, "full_name" | "code"
     `Your personal seller link: ${ambassadorLink(ambassador.code)}`,
     `Your code: ${ambassador.code}`,
     ``,
-    `Share it with tailors and fashion sellers. When someone opens a shop through your link and makes their first sale, you earn ${naira(reward)}.`,
+    `Share it with tailors and fashion sellers. You earn ${naira(reward)} every time a shop that opened through your link pays for a verification badge, renewals included.`,
     ``,
     `See your sellers and earnings any time: ${window.location.origin}/ambassador (sign in with the email you gave us).`,
   ].join("\n");
@@ -450,7 +450,7 @@ export default function AdminAmbassadors() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <p className="max-w-lg text-sm text-muted-foreground">
             Each ambassador gets a personal link. Sellers who apply through it are credited to them, and they earn{" "}
-            <strong className="text-foreground">{naira(reward)}</strong> when that shop makes its first sale. Customers who sign up through the link don't count.
+            <strong className="text-foreground">{naira(reward)}</strong> each time that shop pays for a verification badge, renewals included. Customers who sign up through the link don't count.
           </p>
           <Button onClick={openNew}><Plus className="mr-1.5 h-4 w-4" />Add ambassador</Button>
         </div>

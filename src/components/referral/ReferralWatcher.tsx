@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useClaimReferral } from "@/hooks/useReferral";
 import { clearSavedInviteCode, getSavedInviteCode, saveInviteCode } from "@/lib/customerInvite";
-import { naira } from "@/lib/naira";
+import { k2 } from "@/lib/k2";
 
 /**
  * Keeps a customer invite code from any link (?invite=CODE; ambassador links use ?ref=) and, once the visitor is signed in
@@ -35,9 +35,14 @@ export function ReferralWatcher() {
       onSuccess: (result) => {
         clearSavedInviteCode();
         if (result.claimed) {
-          toast.success(`${naira(Number(result.credit ?? 0))} credit added`, {
-            description: `It comes off your first order of ${naira(Number(result.min_order ?? 0))} or more.`,
-          });
+          const credit = Number(result.credit ?? 0);
+          if (credit > 0) {
+            toast.success(`${k2(credit)} added`, { description: "Use it to pay for items in the app." });
+          } else {
+            toast.success("Invite accepted", {
+              description: "You get first-buyer prices on your first order. Link your bank account at checkout to unlock them.",
+            });
+          }
         } else if (result.reason) {
           toast.info(result.reason);
         }

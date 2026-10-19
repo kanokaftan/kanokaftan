@@ -30,6 +30,9 @@ import {
 } from "@/lib/shipping";
 import { useTranslation } from "react-i18next";
 import { useMyCredit } from "@/hooks/useReferral";
+import { firstBuyerPrice, useFirstBuyerStatus } from "@/hooks/useBuyerTrust";
+import { BuyerBankCard } from "@/components/referral/BuyerBankCard";
+import { k2 } from "@/lib/k2";
 import { Switch } from "@/components/ui/switch";
 
 function formatPrice(amount: number): string {
@@ -40,7 +43,7 @@ function formatPrice(amount: number): string {
   }).format(amount);
 }
 
-/** Credit never brings an order below this (Paystack needs something to charge). */
+/** K² never brings an order below this (Paystack needs something to charge). */
 const MIN_AMOUNT_TO_PAY = 100;
 
 interface VendorLocation {
@@ -59,6 +62,7 @@ export default function Checkout() {
   const { initiatePayment, isProcessing } = usePayment();
   const { data: credit } = useMyCredit(!!user);
   const [useCredit, setUseCredit] = useState(true);
+  const { data: buyerStatus } = useFirstBuyerStatus();
 
   const [selectedAddressId, setSelectedAddressId] = useState<string>("");
   const [notes, setNotes] = useState("");
@@ -125,12 +129,20 @@ export default function Checkout() {
     fetchVendorLocations().catch((error) => console.error("[Checkout] shop locations failed", error));
   }, [items]);
 
+  // First-buyer prices, same rule as the server: never paid for an order and a verified bank account.
+  const firstBuyerOffer = items.some((item) => Number(item.product.first_buyer_discount_percent) > 0) && !!buyerStatus?.first_buyer;
+  const firstBuyerApplies = firstBuyerOffer && !!buyerStatus?.bank_verified;
+  const linePrice = (item: (typeof items)[number]) =>
+    firstBuyerApplies ? firstBuyerPrice(item.product.price, item.product.first_buyer_discount_percent) : item.product.price;
+  const itemsTotal = items.reduce((sum, item) => sum + linePrice(item) * item.quantity, 0);
+  const firstBuyerSavings = total - itemsTotal;
+
   const selectedAddress = addresses.find((a) => a.id === selectedAddressId);
 
   // Calculate shipping based on distance to vendor
   const shippingInfo = useMemo(() => {
     if (!selectedAddress) {
-      return calculateShippingFee(null, total, appliedPromo);
+      return calculateShippingFee(null, itemsTotal, appliedPromo);
     }
 
     let distanceKm: number | null = null;
@@ -149,18 +161,18 @@ export default function Checkout() {
       distanceKm = Math.max(...distances);
     }
 
-    return calculateShippingFee(distanceKm, total, appliedPromo);
-  }, [selectedAddress, total, vendorLocations, appliedPromo]);
+    return calculateShippingFee(distanceKm, itemsTotal, appliedPromo);
+  }, [selectedAddress, itemsTotal, vendorLocations, appliedPromo]);
 
-  // Same rule as the server (place_order): items only, at least ₦100 left to pay, orders over the minimum.
+  // Same rule as the server (place_order): K² pays for items only and leaves at least ₦100 to pay.
   const creditBalance = Number(credit?.balance ?? 0);
   const creditMinOrder = Number(credit?.min_order ?? 0);
-  const creditEligible = creditBalance > 0 && total >= creditMinOrder;
+  const creditEligible = creditBalance > 0 && itemsTotal >= creditMinOrder;
   const creditToUse = useCredit && creditEligible
-    ? Math.max(0, Math.min(creditBalance, total, total + shippingInfo.finalFee - MIN_AMOUNT_TO_PAY))
+    ? Math.max(0, Math.min(creditBalance, itemsTotal, itemsTotal + shippingInfo.finalFee - MIN_AMOUNT_TO_PAY))
     : 0;
-  const grandTotal = total + shippingInfo.finalFee - creditToUse;
-  const discountDescription = getDiscountTierDescription(total);
+  const grandTotal = itemsTotal + shippingInfo.finalFee - creditToUse;
+  const discountDescription = getDiscountTierDescription(itemsTotal);
 
   const handleApplyPromoCode = async () => {
     if (!promoCode.trim()) {
@@ -459,7 +471,7 @@ export default function Checkout() {
                   {(item.size || item.color) && ` (${[item.size, item.color].filter(Boolean).join(" · ")})`}
                   {" "}× {item.quantity}
                 </span>
-                <span>{formatPrice(item.product.price * item.quantity)}</span>
+                <span>{formatPrice(linePrice(item) * item.quantity)}</span>
               </div>
             ))}
           </div>
@@ -471,6 +483,13 @@ export default function Checkout() {
               <span className="text-muted-foreground">{t("cart.subtotal")}</span>
               <span>{formatPrice(total)}</span>
             </div>
+
+            {firstBuyerSavings > 0 && (
+              <div className="flex justify-between text-sm font-medium text-green-600">
+                <span>First-buyer discount</span>
+                <span>−{formatPrice(firstBuyerSavings)}</span>
+              </div>
+            )}
             
             {/* Shipping with distance info */}
             <div className="flex justify-between text-sm">
@@ -512,24 +531,33 @@ export default function Checkout() {
             )}
           </div>
 
+          {firstBuyerOffer && !firstBuyerApplies && (
+            <div className="mt-3 space-y-2">
+              <p className="text-xs text-muted-foreground">
+                This is your first order. Link your bank account to get the first-buyer price on items in your cart.
+              </p>
+              <BuyerBankCard compact />
+            </div>
+          )}
+
           {creditBalance > 0 && (
             <div className="mt-3 rounded-xl border border-dashed p-3">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="flex items-center gap-1.5 text-sm font-medium"><Gift className="h-4 w-4 text-primary" />Kano Kaftan credit</p>
+                  <p className="flex items-center gap-1.5 text-sm font-medium"><Gift className="h-4 w-4 text-primary" />Pay with K²</p>
                   <p className="text-xs text-muted-foreground">
                     {creditEligible
-                      ? `${formatPrice(creditBalance)} available`
-                      : `${formatPrice(creditBalance)} available on orders of ${formatPrice(creditMinOrder)} or more`}
+                      ? `${k2(creditBalance)} available · 1 K² = ₦1, items only`
+                      : `${k2(creditBalance)} available on orders of ${formatPrice(creditMinOrder)} or more`}
                   </p>
                 </div>
                 {creditEligible ? (
-                  <Switch checked={useCredit} onCheckedChange={setUseCredit} aria-label="Use my credit" />
+                  <Switch checked={useCredit} onCheckedChange={setUseCredit} aria-label="Pay with my K²" />
                 ) : null}
               </div>
               {creditToUse > 0 && (
                 <div className="mt-2 flex justify-between text-sm font-medium text-green-600">
-                  <span>Credit used</span>
+                  <span>K² used</span>
                   <span>−{formatPrice(creditToUse)}</span>
                 </div>
               )}

@@ -19,7 +19,7 @@ const SIGN_IN_HREF = "/auth?redirect=/ambassadors/join";
 const STEPS = [
   { icon: Link2, title: "Get your own link", body: "Once approved, you get a personal link and a dashboard." },
   { icon: Store, title: "Invite tailors and sellers", body: "Share it on WhatsApp or in person. They open a free shop through it." },
-  { icon: Wallet, title: "Earn a bonus", body: "You're paid for every seller you bring once they make their first sale." },
+  { icon: Wallet, title: "Earn a bonus", body: "₦1,000 each time a seller you bring pays for a verification badge, renewals included." },
 ];
 
 function Intro() {

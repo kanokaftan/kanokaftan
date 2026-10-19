@@ -794,6 +794,7 @@ export type Database = {
           dispute_resolved_at: string | null
           dispute_status: string | null
           credit_used: number
+          first_buyer_discount: number
           disputed_at: string | null
           shipped_at: string | null
           confirmed_at: string | null
@@ -820,6 +821,7 @@ export type Database = {
           dispute_resolved_at?: string | null
           dispute_status?: string | null
           credit_used?: number
+          first_buyer_discount?: number
           disputed_at?: string | null
           shipped_at?: string | null
           confirmed_at?: string | null
@@ -846,6 +848,7 @@ export type Database = {
           dispute_resolved_at?: string | null
           dispute_status?: string | null
           credit_used?: number
+          first_buyer_discount?: number
           disputed_at?: string | null
           shipped_at?: string | null
           confirmed_at?: string | null
@@ -936,6 +939,9 @@ export type Database = {
           auto_release_days: number
           checkout_commission_percent: number
           ambassador_seller_reward: number
+          ambassador_badge_reward: number
+          first_buyer_min_percent: number
+          referral_order_percent: number
           commission_percent: number
           id: number
           updated_at: string
@@ -950,6 +956,9 @@ export type Database = {
           auto_release_days?: number
           checkout_commission_percent?: number
           ambassador_seller_reward?: number
+          ambassador_badge_reward?: number
+          first_buyer_min_percent?: number
+          referral_order_percent?: number
           commission_percent?: number
           id?: number
           updated_at?: string
@@ -964,6 +973,9 @@ export type Database = {
           auto_release_days?: number
           checkout_commission_percent?: number
           ambassador_seller_reward?: number
+          ambassador_badge_reward?: number
+          first_buyer_min_percent?: number
+          referral_order_percent?: number
           commission_percent?: number
           id?: number
           updated_at?: string
@@ -1057,6 +1069,7 @@ export type Database = {
           sizes: string[]
           category_id: string | null
           compare_at_price: number | null
+          first_buyer_discount_percent: number | null
           created_at: string
           deleted_at: string | null
           description: string | null
@@ -1077,6 +1090,7 @@ export type Database = {
           sizes?: string[]
           category_id?: string | null
           compare_at_price?: number | null
+          first_buyer_discount_percent?: number | null
           created_at?: string
           deleted_at?: string | null
           description?: string | null
@@ -1097,6 +1111,7 @@ export type Database = {
           sizes?: string[]
           category_id?: string | null
           compare_at_price?: number | null
+          first_buyer_discount_percent?: number | null
           created_at?: string
           deleted_at?: string | null
           description?: string | null

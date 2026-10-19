@@ -8,6 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { FirstBuyerDiscountField } from "@/components/products/FirstBuyerDiscountField";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -43,6 +44,7 @@ export default function AdminProductForm() {
     description: "",
     price: "",
     compare_at_price: "",
+    first_buyer_discount: "",
     stock_quantity: "",
     category_id: "",
     is_active: true,
@@ -71,6 +73,7 @@ export default function AdminProductForm() {
           description: data.description || "",
           price: data.price.toString(),
           compare_at_price: data.compare_at_price?.toString() || "",
+          first_buyer_discount: data.first_buyer_discount_percent?.toString() ?? "",
           stock_quantity: data.stock_quantity.toString(),
           category_id: data.category_id || "",
           is_active: data.is_active,
@@ -147,6 +150,7 @@ export default function AdminProductForm() {
       description: formData.description,
       price: parseFloat(formData.price),
       compare_at_price: formData.compare_at_price ? parseFloat(formData.compare_at_price) : null,
+      first_buyer_discount_percent: Number(formData.first_buyer_discount),
       stock_quantity: parseInt(formData.stock_quantity),
       category_id: formData.category_id || null,
       is_active: formData.is_active,
@@ -358,6 +362,11 @@ export default function AdminProductForm() {
                   </div>
                 </div>
               </div>
+              <FirstBuyerDiscountField
+                value={formData.first_buyer_discount}
+                price={formData.price}
+                onChange={(v) => setFormData((p) => ({ ...p, first_buyer_discount: v }))}
+              />
               <div className="space-y-2">
                 <Label>Stock Quantity *</Label>
                 <Input

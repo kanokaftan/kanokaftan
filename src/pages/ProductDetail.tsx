@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { VerifiedBadge } from "@/components/shop/VerifiedBadge";
+import { FirstBuyerPrice } from "@/components/products/FirstBuyerPrice";
 
 function formatPrice(amount: number): string {
   return new Intl.NumberFormat("en-NG", {
@@ -360,6 +361,12 @@ export default function ProductDetail() {
               </>
             )}
           </div>
+          <FirstBuyerPrice
+            price={finalPrice}
+            percent={product.first_buyer_discount_percent}
+            size="md"
+            className="mx-4 mt-2"
+          />
         </div>
 
         {/* Seller Card */}

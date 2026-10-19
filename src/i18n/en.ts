@@ -259,7 +259,7 @@ export const en = {
     sellApply: "Apply to open a shop",
     sellSignIn: "I already have a shop: sign in",
     ambassadorTitle: "Become an ambassador",
-    ambassadorRegisterSubtitle: "Create your account, then fill in a 1-minute form. You earn when sellers you invite join and grow.",
+    ambassadorRegisterSubtitle: "Create your account, then fill in a 1-minute form. You earn ₦1,000 each time a seller you bring pays for a verification badge, renewals included.",
     ambassadorLoginSubtitle: "Sign in, then fill in a 1-minute form to become an ambassador.",
   },
   chat: {
@@ -322,7 +322,7 @@ export const en = {
     ambassadorDashboard: "Ambassador dashboard",
     ambassadorDashboardDesc: "Your link, sellers and earnings",
     inviteFriends: "Invite friends",
-    inviteFriendsDesc: "You both get credit when they shop",
+    inviteFriendsDesc: "200 K² per friend, plus 5% of what they buy",
     becomeAmbassador: "Become an ambassador",
     becomeAmbassadorDesc: "Earn by inviting sellers to Kano Kaftan",
     ambassadorPending: "Ambassador application",

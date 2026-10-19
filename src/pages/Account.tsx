@@ -21,6 +21,7 @@ import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
 import { AVATAR_MAX_DIMENSION, compressImage } from "@/lib/compressImage";
+import { BuyerBankCard } from "@/components/referral/BuyerBankCard";
 
 const accountSchema = z.object({
   full_name: z.string().min(2, "Name must be at least 2 characters"),
@@ -257,6 +258,9 @@ export default function Account() {
             </form>
           </CardContent>
         </Card>
+
+        {/* Customers link a bank account in their own name to unlock first-buyer prices and invite rewards. */}
+        {!isVendor && <BuyerBankCard />}
 
         {/* Quick Links */}
         <Card className="divide-y overflow-hidden">

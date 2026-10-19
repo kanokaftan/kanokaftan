@@ -259,7 +259,7 @@ export const ha = {
     sellApply: "Nemi bude shago",
     sellSignIn: "Ina da shago: shiga",
     ambassadorTitle: "Zama jakada",
-    ambassadorRegisterSubtitle: "Ƙirƙiri asusunka, sannan ka cike gajeren fom. Kana samun kuɗi idan masu sayarwa da ka gayyata suka shiga.",
+    ambassadorRegisterSubtitle: "Ƙirƙiri asusunka, sannan ka cike gajeren fom. Kana samun ₦1,000 duk lokacin da mai sayarwa da ka kawo ya biya alamar tantancewa, har da sabuntawa.",
     ambassadorLoginSubtitle: "Shiga, sannan ka cike gajeren fom don zama jakada.",
   },
   chat: {
@@ -322,7 +322,7 @@ export const ha = {
     ambassadorDashboard: "Allon jakada",
     ambassadorDashboardDesc: "Hanyar gayyatarka, masu sayarwa da kuɗinka",
     inviteFriends: "Gayyaci abokai",
-    inviteFriendsDesc: "Ku duka ku samu kuɗi idan sun yi siyayya",
+    inviteFriendsDesc: "200 K² ga kowane aboki, da 5% na abin da suka saya",
     becomeAmbassador: "Zama jakada",
     becomeAmbassadorDesc: "Samu kuɗi ta gayyato masu sayarwa zuwa Kano Kaftan",
     ambassadorPending: "Neman zama jakada",

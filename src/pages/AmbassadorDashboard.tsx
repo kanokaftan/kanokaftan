@@ -17,7 +17,7 @@ const COPIED_RESET_MS = 2000;
 
 const STATUS: Record<ReferralStatus, { label: string; hint: string; className: string }> = {
   signed_up: { label: "Applied", hint: "Waiting for Kano Kaftan to approve the shop", className: "bg-muted text-muted-foreground" },
-  approved: { label: "Shop open", hint: "Bonus comes after their first sale is delivered", className: "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200" },
+  approved: { label: "Shop open", hint: "Bonus comes when they pay for a verification badge", className: "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200" },
   earned: { label: "Bonus earned", hint: "Kano Kaftan will pay this to you", className: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200" },
   paid: { label: "Bonus paid", hint: "Paid to you", className: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" },
   rejected: { label: "Not approved", hint: "The shop wasn't approved, so no bonus", className: "bg-destructive/10 text-destructive" },
@@ -170,7 +170,7 @@ export default function AmbassadorDashboard() {
             <Button size="sm" onClick={share}><Share2 className="mr-1.5 h-3.5 w-3.5" />Share</Button>
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            Send it to tailors and fashion sellers. You earn {naira(data.reward_per_seller)} for each shop that opens through your link and makes its first sale.
+            Send it to tailors and fashion sellers. You earn {naira(data.reward_per_seller)} every time a shop that opened through your link pays for a verification badge, renewals included.
           </p>
         </section>
 

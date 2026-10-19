@@ -1,25 +1,31 @@
 import { Link, Navigate } from "react-router-dom";
 import { format } from "date-fns";
-import { CheckCircle2, Clock, Copy, Gift, Share2, ShoppingBag, UserPlus, Wallet } from "lucide-react";
+import { CheckCircle2, Clock, Copy, Gift, Percent, Share2, ShoppingBag, Trophy, UserPlus, Wallet, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { BrandIcon } from "@/components/brand/BrandIcon";
+import { BuyerBankCard } from "@/components/referral/BuyerBankCard";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMyReferral, type CreditLine } from "@/hooks/useReferral";
 import { inviteLink } from "@/lib/customerInvite";
-import { naira } from "@/lib/naira";
+import { k2 } from "@/lib/k2";
 
 const CREDIT_LABELS: Record<CreditLine["kind"], string> = {
   referral_welcome: "Welcome credit",
-  referral_reward: "Friend's first order",
-  order_spend: "Used on an order",
+  referral_reward: "Friend verified their account",
+  referral_commission: "Share of a friend's order",
+  order_spend: "Spent on an order",
   order_refund: "Order cancelled: returned",
   admin_adjust: "From Kano Kaftan",
 };
 
-/** /invite: your link, how it works, who joined and your credit. */
+/** Friend counts with a milestone badge. */
+const MILESTONES = [5, 10, 20, 50];
+
+/** /invite: your link, how K² credit works, who joined and your credit. */
 export default function InviteFriends() {
   const { user, isLoading: authLoading } = useAuth();
   const { data, isLoading, isError, refetch } = useMyReferral(!!user);
@@ -27,9 +33,11 @@ export default function InviteFriends() {
   if (!authLoading && !user) return <Navigate to="/auth?redirect=/invite" replace />;
 
   const link = data?.code ? inviteLink(data.code) : "";
-  const message = data
-    ? `Shop kaftans, shoes and caps from Kano's best sellers on Kano Kaftan. Sign up with my link and get ${naira(Number(data.friend_credit))} off your first order: ${link}`
-    : "";
+  const message = `Shop kaftans, shoes and caps from Kano's best sellers on Kano Kaftan. New buyers get first-buyer prices from every shop. Join with my link: ${link}`;
+  const perFriend = Number(data?.referrer_credit ?? 0);
+  const verified = Number(data?.verified ?? 0);
+  const nextMilestone = MILESTONES.find((m) => m > verified) ?? null;
+  const previousMilestone = [...MILESTONES].reverse().find((m) => m <= verified) ?? 0;
 
   const copy = async () => {
     try {
@@ -58,7 +66,7 @@ export default function InviteFriends() {
       <div className="mx-auto max-w-lg space-y-5 px-4 py-6">
         <div>
           <h1 className="font-display text-2xl font-bold">Invite friends</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Share Kano Kaftan and you both get credit.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Earn K² credit to shop in the app. 1 K² = ₦1.</p>
         </div>
 
         {isLoading || authLoading ? (
@@ -73,18 +81,16 @@ export default function InviteFriends() {
           </div>
         ) : !data.enabled ? (
           <div className="rounded-2xl border p-6 text-center text-sm text-muted-foreground">
-            Invites are paused right now. Your credit of {naira(Number(data.balance))} still works at checkout.
+            Invites are paused right now. Your {k2(Number(data.balance))} still works at checkout.
           </div>
         ) : (
           <>
             {/* Offer + link */}
             <section className="rounded-3xl bg-primary p-5 text-primary-foreground">
               <Gift className="h-7 w-7" />
-              <p className="mt-3 text-xl font-bold leading-snug">
-                Give {naira(Number(data.friend_credit))}, get {naira(Number(data.referrer_credit))}
-              </p>
+              <p className="mt-3 text-xl font-bold leading-snug">{k2(perFriend)} for every friend</p>
               <p className="mt-1 text-sm text-primary-foreground/75">
-                Friends get {naira(Number(data.friend_credit))} off their first order. You get {naira(Number(data.referrer_credit))} when it's delivered.
+                Plus {Number(data.order_percent)}% of everything they buy, for as long as they shop. Credit can't be withdrawn: spend it on anything in the app.
               </p>
               <div className="mt-4 flex items-center gap-2 rounded-xl bg-primary-foreground/10 p-2 pl-3">
                 <span className="min-w-0 flex-1 truncate font-mono text-sm">{link.replace(/^https?:\/\//, "")}</span>
@@ -105,33 +111,57 @@ export default function InviteFriends() {
             <section className="grid grid-cols-3 gap-2 text-center">
               <div className="rounded-2xl border bg-card p-3">
                 <Wallet className="mx-auto h-4 w-4 text-primary" />
-                <p className="mt-1 text-lg font-bold">{naira(Number(data.balance))}</p>
-                <p className="text-[11px] text-muted-foreground">Your credit</p>
+                <p className="mt-1 text-lg font-bold">{k2(Number(data.balance))}</p>
+                <p className="text-[11px] text-muted-foreground">To spend</p>
               </div>
               <div className="rounded-2xl border bg-card p-3">
                 <UserPlus className="mx-auto h-4 w-4 text-primary" />
-                <p className="mt-1 text-lg font-bold">{data.joined}</p>
-                <p className="text-[11px] text-muted-foreground">Friends joined</p>
+                <p className="mt-1 text-lg font-bold">{verified}<span className="text-sm font-normal text-muted-foreground">/{data.joined}</span></p>
+                <p className="text-[11px] text-muted-foreground">Verified / joined</p>
               </div>
               <div className="rounded-2xl border bg-card p-3">
                 <Gift className="mx-auto h-4 w-4 text-primary" />
-                <p className="mt-1 text-lg font-bold">{naira(Number(data.earned))}</p>
+                <p className="mt-1 text-lg font-bold">{k2(Number(data.earned))}</p>
                 <p className="text-[11px] text-muted-foreground">Earned</p>
               </div>
             </section>
+
+            {/* Milestones */}
+            {perFriend > 0 && (
+              <section className="rounded-2xl border bg-card p-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="flex items-center gap-2 font-semibold"><Trophy className="h-4 w-4 text-[#9A7400]" />Milestones</h2>
+                  {nextMilestone && <span className="text-xs text-muted-foreground">{nextMilestone - verified} more to {nextMilestone}</span>}
+                </div>
+                {nextMilestone && (
+                  <Progress className="mt-3 h-2" value={((verified - previousMilestone) / (nextMilestone - previousMilestone)) * 100} />
+                )}
+                <div className="mt-3 grid grid-cols-4 gap-2 text-center">
+                  {MILESTONES.map((m) => (
+                    <div key={m} className={`rounded-xl p-2 ${verified >= m ? "bg-primary text-primary-foreground" : "bg-muted/60"}`}>
+                      <p className="text-sm font-bold">{m}</p>
+                      <p className={`text-[10px] ${verified >= m ? "text-primary-foreground/75" : "text-muted-foreground"}`}>{k2(m * perFriend)}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* How it works */}
             <section className="rounded-2xl border bg-card p-4">
               <h2 className="font-semibold">How it works</h2>
               <ol className="mt-3 space-y-3 text-sm">
-                <li className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">1</span>Send your link to a friend who hasn't shopped on Kano Kaftan.</li>
-                <li className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">2</span>They sign up and get {naira(Number(data.friend_credit))} off their first order of {naira(Number(data.min_order))} or more.</li>
-                <li className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">3</span>When that order is delivered and complete, {naira(Number(data.referrer_credit))} is added to your credit.</li>
+                <li className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">1</span>Send your link to a friend who hasn't shopped on Kano Kaftan. They get first-buyer prices from every shop.</li>
+                <li className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">2</span>When they verify their account with a bank account in their own name, you get {k2(perFriend)}.</li>
+                <li className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold"><Percent className="h-3 w-3" /></span>Every time one of their orders is delivered, you get {Number(data.order_percent)}% of it as K².</li>
               </ol>
               <p className="mt-3 text-xs text-muted-foreground">
-                Credit comes off orders of {naira(Number(data.min_order))} or more (not delivery). If an order is cancelled, the credit comes back.
+                K² pays for items at checkout (not delivery) and can't be withdrawn. One bank account = one person, so extra accounts don't count.
               </p>
             </section>
+
+            {/* Your own verification */}
+            <BuyerBankCard />
 
             {/* Friends */}
             <section>
@@ -142,15 +172,18 @@ export default function InviteFriends() {
                 <ul className="divide-y rounded-2xl border bg-card">
                   {data.friends.map((f, i) => (
                     <li key={`${f.name}-${f.joined_at}-${i}`} className="flex items-center gap-3 px-4 py-3 text-sm">
-                      {f.status === "rewarded" ? <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" /> : <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />}
+                      {f.status === "rewarded" ? <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
+                        : f.status === "cancelled" ? <XCircle className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        : <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />}
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-medium">{f.name}</p>
                         <p className="text-xs text-muted-foreground">
                           {f.status === "rewarded"
-                            ? `First order delivered · you earned ${naira(Number(data.referrer_credit))}`
-                            : f.status === "cancelled" ? "Didn't qualify" : `Joined ${format(new Date(f.joined_at), "d MMM")} · waiting for their first order`}
+                            ? "Verified"
+                            : f.status === "cancelled" ? "Didn't count (same person)" : `Joined ${format(new Date(f.joined_at), "d MMM")} · waiting for them to verify`}
                         </p>
                       </div>
+                      {Number(f.earned ?? 0) > 0 && <span className="shrink-0 font-semibold text-green-700 dark:text-green-400">+{k2(Number(f.earned))}</span>}
                     </li>
                   ))}
                 </ul>
@@ -160,7 +193,7 @@ export default function InviteFriends() {
             {/* Credit history */}
             {data.history.length > 0 && (
               <section>
-                <h2 className="mb-2 font-semibold">Credit history</h2>
+                <h2 className="mb-2 font-semibold">K² history</h2>
                 <ul className="divide-y rounded-2xl border bg-card">
                   {data.history.map((h, i) => (
                     <li key={`${h.created_at}-${i}`} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
@@ -168,11 +201,11 @@ export default function InviteFriends() {
                         <p className="truncate">{CREDIT_LABELS[h.kind] ?? "Credit"}</p>
                         <p className="text-xs text-muted-foreground">
                           {format(new Date(h.created_at), "d MMM yyyy")}
-                          {h.order_id && <> · <Link to={`/orders/${h.order_id}`} className="underline">order #{h.order_id.slice(0, 8)}</Link></>}
+                          {h.order_id && h.kind !== "referral_commission" && <> · <Link to={`/orders/${h.order_id}`} className="underline">order #{h.order_id.slice(0, 8)}</Link></>}
                         </p>
                       </div>
                       <span className={Number(h.amount) > 0 ? "font-semibold text-green-700 dark:text-green-400" : "font-semibold"}>
-                        {Number(h.amount) > 0 ? "+" : "−"}{naira(Math.abs(Number(h.amount)))}
+                        {Number(h.amount) > 0 ? "+" : "−"}{k2(Math.abs(Number(h.amount)))}
                       </span>
                     </li>
                   ))}
@@ -181,7 +214,7 @@ export default function InviteFriends() {
             )}
 
             {Number(data.balance) > 0 && (
-              <Button asChild className="h-12 w-full rounded-xl"><Link to="/products"><ShoppingBag className="mr-2 h-4 w-4" />Use my {naira(Number(data.balance))} credit</Link></Button>
+              <Button asChild className="h-12 w-full rounded-xl"><Link to="/products"><ShoppingBag className="mr-2 h-4 w-4" />Shop with my {k2(Number(data.balance))}</Link></Button>
             )}
           </>
         )}

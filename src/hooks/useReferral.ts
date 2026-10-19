@@ -6,11 +6,13 @@ export interface ReferralFriend {
   status: "joined" | "rewarded" | "cancelled";
   joined_at: string;
   rewarded_at: string | null;
+  /** K² earned from this friend (verification reward + share of their orders). */
+  earned?: number;
 }
 
 export interface CreditLine {
   amount: number;
-  kind: "referral_welcome" | "referral_reward" | "order_spend" | "order_refund" | "admin_adjust";
+  kind: "referral_welcome" | "referral_reward" | "referral_commission" | "order_spend" | "order_refund" | "admin_adjust";
   order_id: string | null;
   created_at: string;
 }
@@ -20,9 +22,13 @@ export interface MyReferral {
   code: string | null;
   friend_credit: number;
   referrer_credit: number;
+  /** Share of each completed order of a verified friend, in %. */
+  order_percent: number;
   min_order: number;
   balance: number;
+  bank_verified: boolean;
   joined: number;
+  verified: number;
   rewarded: number;
   earned: number;
   friends: ReferralFriend[];
@@ -42,6 +48,7 @@ export interface MyCredit {
 }
 
 export interface ReferralOverview {
+  verified_buyers?: number;
   joined: number;
   rewarded: number;
   credit_given: number;

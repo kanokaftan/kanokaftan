@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FirstBuyerDiscountField } from "@/components/products/FirstBuyerDiscountField";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Upload, X, Loader2, Star, Megaphone, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -42,6 +43,7 @@ export default function ProductForm() {
     description: "",
     price: "",
     compare_at_price: "",
+    first_buyer_discount: "",
     stock_quantity: "",
     category_id: "",
     is_active: true,
@@ -62,6 +64,7 @@ export default function ProductForm() {
         description: existingProduct.description || "",
         price: existingProduct.price.toString(),
         compare_at_price: existingProduct.compare_at_price?.toString() || "",
+        first_buyer_discount: existingProduct.first_buyer_discount_percent?.toString() ?? "",
         stock_quantity: existingProduct.stock_quantity.toString(),
         category_id: existingProduct.category_id || "",
         is_active: existingProduct.is_active,
@@ -123,6 +126,7 @@ export default function ProductForm() {
       compare_at_price: formData.compare_at_price
         ? parseFloat(formData.compare_at_price)
         : null,
+      first_buyer_discount_percent: Number(formData.first_buyer_discount),
       stock_quantity: parseInt(formData.stock_quantity),
       category_id: formData.category_id,
       is_active: formData.is_active,
@@ -318,6 +322,12 @@ export default function ProductForm() {
                   <p className="text-[10px] text-muted-foreground">Original price for showing discount</p>
                 </div>
               </div>
+
+              <FirstBuyerDiscountField
+                value={formData.first_buyer_discount}
+                price={formData.price}
+                onChange={(v) => setFormData((prev) => ({ ...prev, first_buyer_discount: v }))}
+              />
 
               <div className="space-y-2">
                 <Label htmlFor="stock" className="text-sm">Stock Quantity *</Label>

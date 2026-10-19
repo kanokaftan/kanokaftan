@@ -8,6 +8,7 @@ export interface VendorProduct {
   description: string | null;
   price: number;
   compare_at_price: number | null;
+  first_buyer_discount_percent?: number | null;
   stock_quantity: number;
   is_active: boolean;
   featured: boolean;
@@ -41,6 +42,7 @@ export function useVendorProducts(vendorId: string | null) {
           description,
           price,
           compare_at_price,
+          first_buyer_discount_percent,
           stock_quantity,
           is_active,
           featured,
@@ -75,6 +77,7 @@ export function useVendorProduct(productId: string | null) {
           description,
           price,
           compare_at_price,
+          first_buyer_discount_percent,
           stock_quantity,
           is_active,
           featured,

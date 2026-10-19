@@ -10,6 +10,7 @@ interface ProductData {
   description: string;
   price: number;
   compare_at_price?: number | null;
+  first_buyer_discount_percent?: number | null;
   stock_quantity: number;
   category_id: string;
   is_active: boolean;
