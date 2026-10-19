@@ -120,7 +120,7 @@ export default function AdminVendors() {
           )}
 
           {/* Mobile View */}
-          <div className="md:hidden space-y-3 mb-4">
+          <div className="2xl:hidden space-y-3 mb-4 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
             {isLoading ? (
               [...Array(5)].map((_, i) => <Skeleton key={i} className="h-40 w-full" />)
             ) : filteredVendors.length === 0 ? (
@@ -142,11 +142,11 @@ export default function AdminVendors() {
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="font-semibold truncate">{vendor.store_name || "No store name"}</p>
+                          <p className="font-semibold break-words">{vendor.store_name || "No store name"}</p>
                           {vendor.is_verified && <VerifiedBadge tier={vendor.verification_tier} />}
                         </div>
-                        <p className="text-sm text-muted-foreground truncate">{vendor.full_name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{vendor.email}</p>
+                        <p className="text-sm text-muted-foreground break-words">{vendor.full_name}</p>
+                        <p className="text-xs text-muted-foreground break-words">{vendor.email}</p>
                       </div>
                     </div>
                 
@@ -190,12 +190,12 @@ export default function AdminVendors() {
             )}
           </div>
 
-          <div className="md:hidden mb-20">
+          <div className="2xl:hidden mb-20">
             <AdminPagination page={page} totalPages={totalPages} totalItems={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
           </div>
 
           {/* Desktop Table */}
-          <div className="hidden md:block">
+          <div className="hidden 2xl:block">
             <Card>
               <Table>
                 <TableHeader>
@@ -259,10 +259,10 @@ export default function AdminVendors() {
                             <span className="font-medium">{vendor.product_count}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right whitespace-nowrap [overflow-wrap:normal]">
                           <span className="font-medium text-green-600">{formatCurrency(vendor.total_sales)}</span>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right whitespace-nowrap [overflow-wrap:normal]">
                           <span className="font-medium text-amber-600">{formatCurrency(vendor.pending_payout)}</span>
                         </TableCell>
                         <TableCell className="text-center">

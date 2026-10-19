@@ -166,7 +166,7 @@ export default function AdminCategories() {
       </div>
 
       {/* Mobile View */}
-      <div className="md:hidden space-y-3 mb-4">
+      <div className="2xl:hidden space-y-3 mb-4 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
         {isLoading ? (
           [...Array(4)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)
         ) : paginatedCategories.length === 0 ? (
@@ -220,12 +220,12 @@ export default function AdminCategories() {
       </div>
 
       {/* Mobile pagination */}
-      <div className="md:hidden mb-20">
+      <div className="2xl:hidden mb-20">
         <AdminPagination page={page} totalPages={totalPages} totalItems={filteredCategories.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </div>
 
       {/* Desktop Table */}
-      <div className="hidden md:block">
+      <div className="hidden 2xl:block">
         <div className="rounded-lg border bg-card">
           <Table>
             <TableHeader>
@@ -268,7 +268,7 @@ export default function AdminCategories() {
                       </div>
                     </TableCell>
                     <TableCell className="font-mono text-sm">{category.slug}</TableCell>
-                    <TableCell className="max-w-xs truncate">{category.description || "-"}</TableCell>
+                    <TableCell className="max-w-xs break-words">{category.description || "-"}</TableCell>
                     <TableCell>{category.product_count}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">

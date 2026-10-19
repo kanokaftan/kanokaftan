@@ -78,6 +78,16 @@ export function useAdminFinance() {
       if (vendorIds.length === 0) return [];
 
       const profileMap = await fetchProfiles(vendorIds);
+      // The bank account Paystack checked (vendor_payout_accounts) wins over the old profile fields.
+      const { data: payoutAccounts, error: accountsError } = await supabase
+        .from("vendor_payout_accounts" as never)
+        .select("vendor_id, bank_name, account_number, account_name")
+        .in("vendor_id", vendorIds);
+      if (accountsError) console.error("[useAdminFinance] payout accounts load failed", accountsError);
+      const accountMap = new Map(
+        ((payoutAccounts ?? []) as { vendor_id: string; bank_name: string; account_number: string; account_name: string }[])
+          .map((a) => [a.vendor_id, a]),
+      );
 
       const { data: orderItems, error: itemsError } = await supabase
         .from("order_items")
@@ -109,9 +119,9 @@ export function useAdminFinance() {
           netPayout: totalSales - platformFee,
           pendingOrders: pendingItems.length,
           completedOrders: completedItems.length,
-          bankName: profile?.bank_name ?? null,
-          accountNumber: profile?.account_number ?? null,
-          accountName: profile?.account_name ?? null,
+          bankName: accountMap.get(vendorId)?.bank_name ?? profile?.bank_name ?? null,
+          accountNumber: accountMap.get(vendorId)?.account_number ?? profile?.account_number ?? null,
+          accountName: accountMap.get(vendorId)?.account_name ?? profile?.account_name ?? null,
           lastPayoutDate: null, // see the Payouts ledger tab for real payout records
         };
       });

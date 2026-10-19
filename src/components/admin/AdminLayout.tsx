@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { LogOut, MoreHorizontal, Search, ShoppingBag } from "lucide-react";
+import { LogOut, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Search, ShoppingBag } from "lucide-react";
 import { signOutThisDevice } from "@/lib/signOut";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useAdminOverview, type AdminOverview } from "@/hooks/useAdminOverview";
@@ -95,18 +95,52 @@ function AdminQuickSearch({ open, onOpenChange, overview }: { open: boolean; onO
   );
 }
 
-function SearchButton({ onClick, className }: { onClick: () => void; className?: string }) {
+function SearchButton({ onClick, className, iconOnly = false }: { onClick: () => void; className?: string; iconOnly?: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={cn("flex items-center gap-2 rounded-xl bg-muted/70 px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted", className)}
+      title={iconOnly ? "Search (⌘K)" : undefined}
+      aria-label="Search"
+      className={cn(
+        "flex items-center gap-2 rounded-xl bg-muted/70 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted",
+        iconOnly ? "justify-center px-2" : "px-3",
+        className,
+      )}
     >
       <Search className="h-4 w-4" />
-      <span className="flex-1 text-left">Search</span>
-      <kbd className="hidden rounded border bg-background px-1.5 text-[10px] font-medium md:inline">⌘K</kbd>
+      {!iconOnly && (
+        <>
+          <span className="flex-1 text-left">Search</span>
+          <kbd className="hidden rounded border bg-background px-1.5 text-[10px] font-medium md:inline">⌘K</kbd>
+        </>
+      )}
     </button>
   );
+}
+
+const SIDEBAR_COLLAPSED_KEY = "kk_admin_sidebar_collapsed";
+
+/** Desktop sidebar: full (names) or narrow (icons only, more room for lists). Remembered on this device. */
+function useSidebarCollapsed() {
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const toggle = () =>
+    setCollapsed((current) => {
+      const next = !current;
+      try {
+        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, next ? "1" : "0");
+      } catch {
+        // Storage blocked: the choice just won't be remembered.
+      }
+      return next;
+    });
+  return [collapsed, toggle] as const;
 }
 
 export function AdminLayout({ children, title }: AdminLayoutProps) {
@@ -115,6 +149,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
   const location = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [collapsed, toggleSidebar] = useSidebarCollapsed();
 
   // ⌘K / Ctrl+K opens quick search anywhere in the admin.
   useEffect(() => {
@@ -182,40 +217,61 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
         </div>
       </header>
 
-      {/* Desktop sidebar */}
-      <aside className="fixed left-0 top-0 z-40 hidden h-full w-64 flex-col border-r bg-card md:flex">
-        <div className="flex items-center gap-2.5 px-4 pb-3 pt-4">
-          <BrandLogo tile className="h-9 w-9" />
-          <div className="min-w-0">
-            <p className="truncate text-sm font-bold leading-tight text-foreground">Kano Kaftan</p>
-            <p className="text-xs text-muted-foreground">Admin</p>
-          </div>
-          <div className="ml-auto">
+      {/* Desktop sidebar (full or narrow) */}
+      <aside
+        className={cn(
+          "fixed left-0 top-0 z-40 hidden h-full flex-col border-r bg-card transition-[width] duration-200 md:flex",
+          collapsed ? "w-[72px]" : "w-64",
+        )}
+      >
+        <div className={cn("flex items-center gap-2.5 pb-3 pt-4", collapsed ? "flex-col px-2" : "px-4")}>
+          <BrandLogo tile className="h-9 w-9 shrink-0" />
+          {!collapsed && (
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold leading-tight text-foreground">Kano Kaftan</p>
+              <p className="text-xs text-muted-foreground">Admin</p>
+            </div>
+          )}
+          <div className={cn(!collapsed && "ml-auto")}>
             <NotificationBell href="/admin/notifications" />
           </div>
         </div>
-        <div className="px-3 pb-2">
-          <SearchButton onClick={() => setSearchOpen(true)} className="w-full" />
+        <div className={cn("pb-2", collapsed ? "px-2" : "px-3")}>
+          <SearchButton onClick={() => setSearchOpen(true)} className="w-full" iconOnly={collapsed} />
         </div>
-        <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-2">
+        <nav className={cn("flex-1 space-y-4 overflow-y-auto py-2", collapsed ? "px-2" : "px-3")}>
           {ADMIN_NAV.map((group) => (
             <div key={group.title}>
-              <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">{group.title}</p>
+              {collapsed ? (
+                <div className="mx-2 mb-2 border-t" aria-hidden="true" />
+              ) : (
+                <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70">{group.title}</p>
+              )}
               <div className="space-y-0.5">
                 {group.items.map((item) => {
                   const active = isActivePath(location.pathname, item.url);
+                  const count = itemCount(item, overview);
                   return (
                     <Link
                       key={item.url}
                       to={item.url}
+                      title={collapsed ? `${item.title}${count ? ` (${count})` : ""}` : undefined}
+                      aria-label={collapsed ? item.title : undefined}
                       className={cn(
-                        "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
+                        "relative flex items-center gap-3 rounded-xl py-2 text-sm font-medium transition-colors",
+                        collapsed ? "justify-center px-2" : "px-3",
                         active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
                       )}
                     >
-                      <item.icon className="h-4 w-4 shrink-0" />
-                      <span className="flex-1 truncate">{item.title}</span>
-                      <CountBadge count={itemCount(item, overview)} className={active ? "bg-primary-foreground text-primary" : undefined} />
+                      <item.icon className="h-[18px] w-[18px] shrink-0" />
+                      {collapsed ? (
+                        count > 0 && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-destructive" aria-hidden="true" />
+                      ) : (
+                        <>
+                          <span className="flex-1 truncate">{item.title}</span>
+                          <CountBadge count={count} className={active ? "bg-primary-foreground text-primary" : undefined} />
+                        </>
+                      )}
                     </Link>
                   );
                 })}
@@ -223,24 +279,48 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
             </div>
           ))}
         </nav>
-        <div className="space-y-0.5 border-t p-3">
-          <Link to="/" className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+        <div className={cn("space-y-0.5 border-t", collapsed ? "p-2" : "p-3")}>
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            title={collapsed ? "Expand menu" : undefined}
+            aria-label={collapsed ? "Expand menu" : "Collapse menu"}
+            className={cn(
+              "flex w-full items-center gap-3 rounded-xl py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+              collapsed ? "justify-center px-2" : "px-3",
+            )}
+          >
+            {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+            {!collapsed && "Collapse menu"}
+          </button>
+          <Link
+            to="/"
+            title={collapsed ? "Go to store" : undefined}
+            className={cn(
+              "flex items-center gap-3 rounded-xl py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+              collapsed ? "justify-center px-2" : "px-3",
+            )}
+          >
             <ShoppingBag className="h-4 w-4" />
-            Go to store
+            {!collapsed && "Go to store"}
           </Link>
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
+            title={collapsed ? "Log out" : undefined}
+            className={cn(
+              "flex w-full items-center gap-3 rounded-xl py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10",
+              collapsed ? "justify-center px-2" : "px-3",
+            )}
           >
             <LogOut className="h-4 w-4" />
-            Log out
+            {!collapsed && "Log out"}
           </button>
         </div>
       </aside>
 
       {/* Main content */}
-      <div className="md:ml-64">
+      <div className={cn("min-w-0 transition-[margin] duration-200", collapsed ? "md:ml-[72px]" : "md:ml-64")}>
         <main className="min-h-screen pb-[calc(env(safe-area-inset-bottom)+5rem)] pt-[calc(env(safe-area-inset-top)+3.5rem)] md:pb-6 md:pt-0">
           <div className="p-4 md:p-6">
             <h1 className="mb-4 text-2xl font-bold tracking-tight text-foreground md:mb-6">{title}</h1>

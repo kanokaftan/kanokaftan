@@ -54,7 +54,7 @@ async function resolveAccount(bankCode: string, accountNumber: string): Promise<
   throw new Error("We couldn't find that account number at this bank. Please check both and try again.");
 }
 
-/** Only a keyed hash of bank + number is stored, so the full number never sits in the database. */
+/** Keyed hash of bank + number: how "one bank account = one Kano Kaftan account" is checked. */
 async function accountHash(bankCode: string, accountNumber: string): Promise<string> {
   const secret = Deno.env.get('BANK_HASH_SECRET') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
@@ -106,6 +106,8 @@ serve(async (req) => {
         p_last4: account_number.slice(-4),
         p_hash: await accountHash(bank_code, account_number),
         p_account_name: accountName,
+        // Admins can see it (e.g. to pay someone by hand); only the owner and admins can read it.
+        p_account_number: account_number,
       });
       if (error) {
         console.error('[buyer-bank-account] save failed', error.message);

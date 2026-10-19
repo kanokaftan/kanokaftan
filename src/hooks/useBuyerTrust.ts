@@ -8,6 +8,8 @@ export interface BuyerBankAccount {
   last4: string;
   account_name: string;
   verified_at: string;
+  /** False for accounts linked before the full number was kept: they confirm it once. */
+  number_saved?: boolean;
 }
 
 export interface FirstBuyerStatus {

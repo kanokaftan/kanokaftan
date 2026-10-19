@@ -89,9 +89,9 @@ export function PayoutLedger() {
               {payouts.map((payout) => (
                 <TableRow key={payout.id}>
                   <TableCell>{payout.store_name || payout.vendor_id.slice(0, 8)}</TableCell>
-                  <TableCell className="font-mono text-xs">#{payout.order_id.slice(0, 8)}</TableCell>
-                  <TableCell>{payout.tranche}/2</TableCell>
-                  <TableCell className="text-right">{formatPrice(Number(payout.amount))}</TableCell>
+                  <TableCell className="font-mono text-xs whitespace-nowrap [overflow-wrap:normal]">#{payout.order_id.slice(0, 8)}</TableCell>
+                  <TableCell className="whitespace-nowrap [overflow-wrap:normal]">{payout.tranche}/2</TableCell>
+                  <TableCell className="text-right whitespace-nowrap [overflow-wrap:normal]">{formatPrice(Number(payout.amount))}</TableCell>
                   <TableCell>
                     <Badge variant={payout.status === "failed" || payout.status === "on_hold" ? "destructive" : "secondary"}>
                       {payoutStatusLabels[payout.status]}

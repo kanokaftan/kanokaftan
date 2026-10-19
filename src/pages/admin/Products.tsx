@@ -93,7 +93,7 @@ export default function AdminProducts() {
       )}
 
       {/* Mobile View */}
-      <div className="md:hidden space-y-3 mb-20">
+      <div className="2xl:hidden space-y-3 mb-20 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
         {isLoading ? (
           [...Array(5)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)
         ) : filteredProducts.length === 0 ? (
@@ -173,12 +173,12 @@ export default function AdminProducts() {
       </div>
 
       {/* Mobile pagination */}
-      <div className="md:hidden mb-20">
+      <div className="2xl:hidden mb-20">
         <AdminPagination page={page} totalPages={totalPages} totalItems={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </div>
 
       {/* Desktop Table */}
-      <div className="hidden md:block rounded-lg border bg-card">
+      <div className="hidden 2xl:block rounded-lg border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
@@ -222,9 +222,9 @@ export default function AdminProducts() {
                       </Link>
                     </div>
                   </TableCell>
-                  <TableCell>{product.vendor?.store_name || product.vendor?.full_name || "Unknown"}</TableCell>
-                  <TableCell>{product.category?.name || "—"}</TableCell>
-                  <TableCell>{formatCurrency(Number(product.price))}</TableCell>
+                  <TableCell className="whitespace-nowrap [overflow-wrap:normal]">{product.vendor?.store_name || product.vendor?.full_name || "Unknown"}</TableCell>
+                  <TableCell className="whitespace-nowrap [overflow-wrap:normal]">{product.category?.name || "—"}</TableCell>
+                  <TableCell className="whitespace-nowrap [overflow-wrap:normal]">{formatCurrency(Number(product.price))}</TableCell>
                   <TableCell>{product.stock_quantity}</TableCell>
                   <TableCell>
                     <Switch checked={product.featured} onCheckedChange={() => handleToggleFeatured(product.id, product.featured)} />
@@ -262,7 +262,7 @@ export default function AdminProducts() {
           </TableBody>
         </Table>
       </div>
-      <div className="hidden md:block">
+      <div className="hidden 2xl:block">
         <AdminPagination page={page} totalPages={totalPages} totalItems={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </div>
     </AdminLayout>

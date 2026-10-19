@@ -103,10 +103,10 @@ export default function AdminReports() {
                 ) : (
                   reports?.salesReport.map((row, i) => (
                     <TableRow key={i}>
-                      <TableCell className="font-medium">{row.period}</TableCell>
-                      <TableCell>{formatCurrency(row.totalRevenue)}</TableCell>
-                      <TableCell>{row.totalOrders}</TableCell>
-                      <TableCell>{formatCurrency(row.averageOrderValue)}</TableCell>
+                      <TableCell className="font-medium whitespace-nowrap [overflow-wrap:normal]">{row.period}</TableCell>
+                      <TableCell className="whitespace-nowrap [overflow-wrap:normal]">{formatCurrency(row.totalRevenue)}</TableCell>
+                      <TableCell className="whitespace-nowrap [overflow-wrap:normal]">{row.totalOrders}</TableCell>
+                      <TableCell className="whitespace-nowrap [overflow-wrap:normal]">{formatCurrency(row.averageOrderValue)}</TableCell>
                     </TableRow>
                   ))
                 )}
@@ -126,7 +126,7 @@ export default function AdminReports() {
           </div>
 
           {/* Mobile View */}
-          <div className="md:hidden space-y-3 mb-20">
+          <div className="2xl:hidden space-y-3 mb-20 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
             {isLoading ? (
               [...Array(5)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)
             ) : (
@@ -153,7 +153,7 @@ export default function AdminReports() {
           </div>
 
           {/* Desktop Table */}
-          <div className="hidden md:block">
+          <div className="hidden 2xl:block">
             <Card>
               <Table>
                 <TableHeader>
@@ -176,11 +176,11 @@ export default function AdminReports() {
                     reports?.productReport.slice(0, 50).map((product, i) => (
                       <TableRow key={product.id}>
                         <TableCell className="text-muted-foreground">{i + 1}</TableCell>
-                        <TableCell className="font-medium max-w-[200px] truncate">{product.name}</TableCell>
+                        <TableCell className="font-medium max-w-[200px] break-words">{product.name}</TableCell>
                         <TableCell><Badge variant="outline">{product.category}</Badge></TableCell>
-                        <TableCell>{product.vendor}</TableCell>
-                        <TableCell>{product.totalSold}</TableCell>
-                        <TableCell className="font-semibold">{formatCurrency(product.revenue)}</TableCell>
+                        <TableCell className="whitespace-nowrap [overflow-wrap:normal]">{product.vendor}</TableCell>
+                        <TableCell className="whitespace-nowrap [overflow-wrap:normal]">{product.totalSold}</TableCell>
+                        <TableCell className="font-semibold whitespace-nowrap [overflow-wrap:normal]">{formatCurrency(product.revenue)}</TableCell>
                         <TableCell>
                           <span className={product.stockRemaining < 10 ? "text-red-600 font-medium" : ""}>{product.stockRemaining}</span>
                         </TableCell>
@@ -223,7 +223,7 @@ export default function AdminReports() {
           </Card>
 
           {/* Mobile */}
-          <div className="md:hidden space-y-3 mb-20">
+          <div className="2xl:hidden space-y-3 mb-20 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
             {isLoading ? (
               [...Array(5)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)
             ) : (
@@ -246,7 +246,7 @@ export default function AdminReports() {
           </div>
 
           {/* Desktop */}
-          <div className="hidden md:block">
+          <div className="hidden 2xl:block">
             <Card>
               <Table>
                 <TableHeader>
@@ -268,9 +268,9 @@ export default function AdminReports() {
                       <TableRow key={cat.id}>
                         <TableCell className="text-muted-foreground">{i + 1}</TableCell>
                         <TableCell className="font-medium">{cat.name}</TableCell>
-                        <TableCell>{cat.totalProducts}</TableCell>
-                        <TableCell>{cat.totalSold}</TableCell>
-                        <TableCell className="font-semibold">{formatCurrency(cat.revenue)}</TableCell>
+                        <TableCell className="whitespace-nowrap [overflow-wrap:normal]">{cat.totalProducts}</TableCell>
+                        <TableCell className="whitespace-nowrap [overflow-wrap:normal]">{cat.totalSold}</TableCell>
+                        <TableCell className="font-semibold whitespace-nowrap [overflow-wrap:normal]">{formatCurrency(cat.revenue)}</TableCell>
                       </TableRow>
                     ))
                   )}
@@ -295,7 +295,7 @@ export default function AdminReports() {
           </div>
 
           {/* Mobile View */}
-          <div className="md:hidden space-y-3 mb-20">
+          <div className="2xl:hidden space-y-3 mb-20 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
             {isLoading ? (
               [...Array(5)].map((_, i) => <Skeleton key={i} className="h-28 w-full" />)
             ) : (
@@ -335,7 +335,7 @@ export default function AdminReports() {
           </div>
 
           {/* Desktop Table */}
-          <div className="hidden md:block">
+          <div className="hidden 2xl:block">
             <Card>
               <Table>
                 <TableHeader>
@@ -363,9 +363,9 @@ export default function AdminReports() {
                         <TableCell className="text-muted-foreground">{i + 1}</TableCell>
                         <TableCell className="font-medium">{vendor.storeName}</TableCell>
                         <TableCell>{vendor.name}</TableCell>
-                        <TableCell>{vendor.totalProducts}</TableCell>
-                        <TableCell>{vendor.totalOrders}</TableCell>
-                        <TableCell className="font-semibold">{formatCurrency(vendor.totalRevenue)}</TableCell>
+                        <TableCell className="whitespace-nowrap [overflow-wrap:normal]">{vendor.totalProducts}</TableCell>
+                        <TableCell className="whitespace-nowrap [overflow-wrap:normal]">{vendor.totalOrders}</TableCell>
+                        <TableCell className="font-semibold whitespace-nowrap [overflow-wrap:normal]">{formatCurrency(vendor.totalRevenue)}</TableCell>
                         <TableCell>
                           {vendor.isVerified ? (
                             <Badge className="bg-green-100 text-green-800">Verified</Badge>

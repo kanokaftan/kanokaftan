@@ -4,6 +4,7 @@ import { Calendar, CheckCircle2, ChevronLeft, Clock, Heart, Landmark, Mail, Mess
 import { useAdminUserTrust, useDismissTrustFlag, useReviewHeldReferral, type AdminUserTrust } from "@/hooks/useAdminUsers";
 import { toast } from "sonner";
 import { k2 } from "@/lib/k2";
+import { CopyNumber } from "@/components/admin/CopyNumber";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -22,6 +23,7 @@ interface LinkedBank {
   bank_name: string;
   account_name: string;
   account_last4: string;
+  account_number: string | null;
   verified_at: string;
 }
 
@@ -33,7 +35,7 @@ function useLinkedBank(userId: string | undefined) {
     queryFn: async (): Promise<LinkedBank | null> => {
       const { data, error } = await supabase
         .from("customer_bank_accounts" as never)
-        .select("bank_name, account_name, account_last4, verified_at")
+        .select("bank_name, account_name, account_last4, account_number, verified_at")
         .eq("user_id", userId!)
         .maybeSingle();
       if (error) {
@@ -208,10 +210,13 @@ export default function AdminCustomerDetail() {
               <p className="text-sm text-destructive">{(bankError as Error).message}</p>
             ) : bank ? (
               <>
-                <p className="truncate text-sm font-semibold">{bank.account_name}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {bank.bank_name} ••••{bank.account_last4} · linked {format(new Date(bank.verified_at), "d MMM yyyy")}
-                </p>
+                <p className="break-words text-sm font-semibold">{bank.account_name}</p>
+                <p className="break-words text-xs text-muted-foreground">{bank.bank_name} · linked {format(new Date(bank.verified_at), "d MMM yyyy")}</p>
+                {bank.account_number ? (
+                  <CopyNumber value={bank.account_number} className="mt-0.5 text-base" />
+                ) : (
+                  <p className="text-xs text-muted-foreground">••••{bank.account_last4} · full number not saved yet (linked before it was kept; they'll be asked to confirm it)</p>
+                )}
               </>
             ) : (
               <p className="text-sm text-muted-foreground">Not linked yet (no first-buyer prices or invite rewards)</p>

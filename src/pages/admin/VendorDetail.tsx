@@ -1,5 +1,7 @@
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { CopyNumber } from "@/components/admin/CopyNumber";
 import { format, formatDistanceToNowStrict } from "date-fns";
 import {
   BadgeCheck, Building2, Calendar, ChevronLeft, ExternalLink, Mail, MapPin, MessageCircle, Package, Phone, Scissors, ShoppingBag,
@@ -103,7 +105,27 @@ function AdminShopTypeCard({ vendorId }: { vendorId: string }) {
   );
 }
 
+/** The seller's full payout account (admins can read it), for paying them by hand. */
+function useFullPayoutAccount(vendorId: string) {
+  return useQuery({
+    queryKey: ["admin-vendor-payout-account", vendorId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendor_payout_accounts" as never)
+        .select("bank_name, account_name, account_number")
+        .eq("vendor_id", vendorId)
+        .maybeSingle();
+      if (error) {
+        console.error("[VendorDetail] payout account load failed", { vendorId, error });
+        throw new Error("Couldn't load the bank account.");
+      }
+      return data as { bank_name: string; account_name: string; account_number: string } | null;
+    },
+  });
+}
+
 function OverviewTab({ vendorId }: { vendorId: string }) {
+  const { data: fullAccount } = useFullPayoutAccount(vendorId);
   const queryClient = useQueryClient();
   const { data: profile } = usePersonProfile(vendorId);
   const { data: o, isLoading, error } = useVendorOverview(vendorId);
@@ -154,8 +176,13 @@ function OverviewTab({ vendorId }: { vendorId: string }) {
           <p className="mb-1 text-sm font-semibold">Payout bank account</p>
           {o.payout_account ? (
             <InfoRow icon={Building2}>
-              <span className="font-medium">{o.payout_account.account_name}</span>
-              <span className="block text-muted-foreground">{o.payout_account.bank_name} · ****{o.payout_account.account_number_last4}</span>
+              <span className="break-words font-medium">{o.payout_account.account_name}</span>
+              <span className="block break-words text-muted-foreground">{o.payout_account.bank_name}</span>
+              {fullAccount?.account_number ? (
+                <CopyNumber value={fullAccount.account_number} className="text-base" />
+              ) : (
+                <span className="block text-muted-foreground">****{o.payout_account.account_number_last4}</span>
+              )}
             </InfoRow>
           ) : (
             <p className="text-sm text-amber-700 dark:text-amber-400">No bank account added yet, so payouts are waiting.</p>

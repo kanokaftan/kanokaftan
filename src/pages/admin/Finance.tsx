@@ -15,6 +15,7 @@ import { useAdminFinance } from "@/hooks/useAdminFinance";
 import { usePlatformFeeIncome } from "@/hooks/useAdminVerification";
 import { DollarSign, TrendingUp, Wallet, CreditCard, Building, Search, BadgeCheck, Megaphone } from "lucide-react";
 import { format } from "date-fns";
+import { CopyNumber } from "@/components/admin/CopyNumber";
 
 const PAGE_SIZE = 20;
 
@@ -166,7 +167,7 @@ export default function AdminFinance() {
 
         <TabsContent value="payouts">
           {/* Mobile View */}
-          <div className="md:hidden space-y-3 mb-4">
+          <div className="2xl:hidden space-y-3 mb-4 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
             {isLoading ? (
               [...Array(5)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)
             ) : payouts.length === 0 ? (
@@ -181,7 +182,7 @@ export default function AdminFinance() {
                         <AvatarFallback>{payout.storeName?.charAt(0) || "V"}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold truncate">{payout.storeName || payout.vendorName}</p>
+                        <p className="font-semibold break-words">{payout.storeName || payout.vendorName}</p>
                         <p className="text-sm text-muted-foreground">{payout.vendorName}</p>
                       </div>
                     </div>
@@ -204,9 +205,12 @@ export default function AdminFinance() {
                       </div>
                     </div>
                     {payout.bankName && (
-                      <div className="mt-3 pt-3 border-t flex items-center gap-2 text-sm text-muted-foreground">
-                        <Building className="h-4 w-4" />
-                        <span>{payout.bankName} - {payout.accountNumber?.slice(-4).padStart(10, "•")}</span>
+                      <div className="mt-3 flex items-start gap-2 border-t pt-3 text-sm">
+                        <Building className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                        <div className="min-w-0">
+                          <p className="break-words text-muted-foreground">{payout.bankName}{payout.accountName ? ` · ${payout.accountName}` : ""}</p>
+                          {payout.accountNumber && <CopyNumber value={payout.accountNumber} />}
+                        </div>
                       </div>
                     )}
                   </CardContent>
@@ -214,10 +218,10 @@ export default function AdminFinance() {
               ))
             )}
           </div>
-          <div className="md:hidden mb-20"><AdminPagination page={vendorPage} totalPages={vendorTotalPages} totalItems={payouts.length} pageSize={PAGE_SIZE} onPageChange={setVendorPage} /></div>
+          <div className="2xl:hidden mb-20"><AdminPagination page={vendorPage} totalPages={vendorTotalPages} totalItems={payouts.length} pageSize={PAGE_SIZE} onPageChange={setVendorPage} /></div>
 
           {/* Desktop Table */}
-          <div className="hidden md:block">
+          <div className="hidden 2xl:block">
             <Card>
               <Table>
                 <TableHeader>
@@ -258,9 +262,9 @@ export default function AdminFinance() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="font-medium">{formatCurrency(payout.totalSales)}</TableCell>
-                        <TableCell className="text-muted-foreground">{formatCurrency(payout.platformFee)}</TableCell>
-                        <TableCell className="font-semibold text-green-600">{formatCurrency(payout.netPayout)}</TableCell>
+                        <TableCell className="font-medium whitespace-nowrap [overflow-wrap:normal]">{formatCurrency(payout.totalSales)}</TableCell>
+                        <TableCell className="text-muted-foreground whitespace-nowrap [overflow-wrap:normal]">{formatCurrency(payout.platformFee)}</TableCell>
+                        <TableCell className="font-semibold text-green-600 whitespace-nowrap [overflow-wrap:normal]">{formatCurrency(payout.netPayout)}</TableCell>
                         <TableCell>
                           <span className="text-green-600">{payout.completedOrders}</span>
                           {payout.pendingOrders > 0 && (
@@ -270,8 +274,9 @@ export default function AdminFinance() {
                         <TableCell>
                           {payout.bankName ? (
                             <div className="text-sm">
-                              <p>{payout.bankName}</p>
-                              <p className="text-muted-foreground">{payout.accountNumber?.slice(-4).padStart(10, "•")}</p>
+                              <p className="break-words">{payout.bankName}</p>
+                              {payout.accountName && <p className="break-words text-xs text-muted-foreground">{payout.accountName}</p>}
+                              {payout.accountNumber && <CopyNumber value={payout.accountNumber} />}
                             </div>
                           ) : (
                             <span className="text-muted-foreground">Not set</span>
@@ -299,7 +304,7 @@ export default function AdminFinance() {
             />
           </div>
           {/* Mobile View */}
-          <div className="md:hidden space-y-3 mb-4">
+          <div className="2xl:hidden space-y-3 mb-4 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
             {isLoading ? (
               [...Array(5)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)
             ) : filteredTx.length === 0 ? (
@@ -309,7 +314,7 @@ export default function AdminFinance() {
                 <Card key={tx.id}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="font-medium truncate flex-1">{tx.vendorName}</p>
+                      <p className="font-medium break-words flex-1">{tx.vendorName}</p>
                       <Badge className={getStatusColor(tx.status)}>{tx.status}</Badge>
                     </div>
                     <div className="flex items-center justify-between text-sm">
@@ -325,10 +330,10 @@ export default function AdminFinance() {
               ))
             )}
           </div>
-          <div className="md:hidden mb-20"><AdminPagination page={page} totalPages={totalPages} totalItems={filteredTx.length} pageSize={PAGE_SIZE} onPageChange={setPage} /></div>
+          <div className="2xl:hidden mb-20"><AdminPagination page={page} totalPages={totalPages} totalItems={filteredTx.length} pageSize={PAGE_SIZE} onPageChange={setPage} /></div>
 
           {/* Desktop Table */}
-          <div className="hidden md:block">
+          <div className="hidden 2xl:block">
             <Card>
               <Table>
                 <TableHeader>
@@ -361,11 +366,11 @@ export default function AdminFinance() {
                       <TableRow key={tx.id}>
                         <TableCell className="text-sm">{format(new Date(tx.createdAt), "MMM dd, HH:mm")}</TableCell>
                         <TableCell className="font-mono text-xs">#{tx.orderId.slice(0, 8)}</TableCell>
-                        <TableCell className="font-medium">{tx.vendorName}</TableCell>
-                        <TableCell>{tx.customerName}</TableCell>
-                        <TableCell className="font-medium">{formatCurrency(tx.amount)}</TableCell>
-                        <TableCell className="text-muted-foreground">{formatCurrency(tx.platformFee)}</TableCell>
-                        <TableCell className="font-semibold text-green-600">{formatCurrency(tx.netAmount)}</TableCell>
+                        <TableCell className="font-medium whitespace-nowrap [overflow-wrap:normal]">{tx.vendorName}</TableCell>
+                        <TableCell className="whitespace-nowrap [overflow-wrap:normal]">{tx.customerName}</TableCell>
+                        <TableCell className="font-medium whitespace-nowrap [overflow-wrap:normal]">{formatCurrency(tx.amount)}</TableCell>
+                        <TableCell className="text-muted-foreground whitespace-nowrap [overflow-wrap:normal]">{formatCurrency(tx.platformFee)}</TableCell>
+                        <TableCell className="font-semibold text-green-600 whitespace-nowrap [overflow-wrap:normal]">{formatCurrency(tx.netAmount)}</TableCell>
                         <TableCell><Badge className={getStatusColor(tx.status)}>{tx.status}</Badge></TableCell>
                       </TableRow>
                     ))

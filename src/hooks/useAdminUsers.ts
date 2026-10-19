@@ -34,7 +34,8 @@ export interface AdminUser {
   last_seen_at: string | null;
   roles: string[];
   /** Bank account linked to unlock first-buyer prices and invite rewards (masked: last 4 digits only). */
-  bank: { bank_name: string; account_name: string; last4: string; verified_at: string } | null;
+  /** Full account number is null for accounts linked before it was saved (they confirm it once). */
+  bank: { bank_name: string; account_name: string; last4: string; account_number: string | null; verified_at: string } | null;
   invitedBy: { id: string; name: string } | null;
   friendsInvited: number;
   friendsVerified: number;
@@ -73,7 +74,7 @@ function toAdminUser(row: Record<string, unknown>): AdminUser {
     last_seen_at: strOrNull(row.last_seen_at),
     roles: roles.length ? roles : ["customer"],
     bank: row.bank_verified_at
-      ? { bank_name: str(row.bank_name), account_name: str(row.bank_account_name), last4: str(row.account_last4), verified_at: str(row.bank_verified_at) }
+      ? { bank_name: str(row.bank_name), account_name: str(row.bank_account_name), last4: str(row.account_last4), account_number: strOrNull(row.account_number), verified_at: str(row.bank_verified_at) }
       : null,
     invitedBy: row.invited_by_id ? { id: str(row.invited_by_id), name: str(row.invited_by_name) || "Someone" } : null,
     friendsInvited: num(row.friends_invited),

@@ -102,7 +102,7 @@ export default function AdminOrders() {
       )}
 
       {/* Mobile View */}
-      <div className="md:hidden space-y-3">
+      <div className="2xl:hidden space-y-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
         {isLoading ? (
           [...Array(5)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)
         ) : orders.length === 0 ? (
@@ -153,12 +153,12 @@ export default function AdminOrders() {
       </div>
 
       {/* Mobile pagination */}
-      <div className="md:hidden mb-20">
+      <div className="2xl:hidden mb-20">
         <AdminPagination page={page} totalPages={totalPages} totalItems={total} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </div>
 
       {/* Desktop Table */}
-      <div className="hidden md:block">
+      <div className="hidden 2xl:block">
         <div className="rounded-lg border bg-card">
           <Table>
             <TableHeader>
@@ -200,9 +200,9 @@ export default function AdminOrders() {
                         <p className="text-sm text-muted-foreground">{order.customer?.email}</p>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm">{vendorNames(order) || <span className="text-muted-foreground">—</span>}</TableCell>
-                    <TableCell className="text-center">{order.order_items.length}</TableCell>
-                    <TableCell className="text-right font-medium">{formatCurrency(Number(order.total))}</TableCell>
+                    <TableCell className="text-sm whitespace-nowrap [overflow-wrap:normal]">{vendorNames(order) || <span className="text-muted-foreground">—</span>}</TableCell>
+                    <TableCell className="text-center whitespace-nowrap [overflow-wrap:normal]">{order.order_items.length}</TableCell>
+                    <TableCell className="text-right font-medium whitespace-nowrap [overflow-wrap:normal]">{formatCurrency(Number(order.total))}</TableCell>
                     <TableCell>
                       <Badge className={getPaymentStatusColor(order.payment_status)}>
                         {order.payment_status === "paid" ? "Paid" : order.payment_status === "pending" ? "Unpaid" : order.payment_status}

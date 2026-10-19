@@ -24,17 +24,32 @@ export function BuyerBankCard({ className, compact = false }: { className?: stri
   const [bankCode, setBankCode] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [problem, setProblem] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
 
   if (isLoading) return <Skeleton className={cn("h-24 rounded-2xl", className)} />;
 
-  if (bank) {
+  if (bank && !confirming) {
     return (
-      <div className={cn("flex items-center gap-3 rounded-2xl border border-green-600/30 bg-green-50 p-3 text-sm dark:bg-green-950/30", className)}>
-        <BadgeCheck className="h-5 w-5 shrink-0 text-green-700 dark:text-green-400" />
-        <div className="min-w-0">
-          <p className="font-medium">Verified buyer</p>
-          <p className="truncate text-xs text-muted-foreground">{bank.account_name} · {bank.bank_name} ••••{bank.last4}</p>
+      <div className={cn("rounded-2xl border border-green-600/30 bg-green-50 p-3 text-sm dark:bg-green-950/30", className)}>
+        <div className="flex items-center gap-3">
+          <BadgeCheck className="h-5 w-5 shrink-0 text-green-700 dark:text-green-400" />
+          <div className="min-w-0">
+            <p className="font-medium">Verified buyer</p>
+            <p className="truncate text-xs text-muted-foreground">{bank.account_name} · {bank.bank_name} ••••{bank.last4}</p>
+          </div>
         </div>
+        {bank.number_saved === false && (
+          <div className="mt-2 flex items-center justify-between gap-2 rounded-xl bg-background/70 px-3 py-2 text-xs">
+            <span className="text-muted-foreground">Please confirm your full account number once.</span>
+            <button
+              type="button"
+              onClick={() => { setConfirming(true); setOpen(true); }}
+              className="shrink-0 rounded-full bg-primary px-3 py-1 font-semibold text-primary-foreground"
+            >
+              Confirm
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -52,6 +67,7 @@ export function BuyerBankCard({ className, compact = false }: { className?: stri
           toast.success("You're a verified buyer", { description: `${result.account_name} · ${result.bank_name}` });
           setAccountNumber("");
           setOpen(false);
+          setConfirming(false);
         },
         onError: (error) => setProblem(error.message),
       },
