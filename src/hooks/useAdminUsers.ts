@@ -44,7 +44,7 @@ export interface AdminUser {
 }
 
 export interface TrustFlag {
-  code: "same_bank_name" | "same_phone" | "blocked_invite" | "invite_burst";
+  code: "same_bank_name" | "same_phone" | "same_device" | "blocked_invite" | "invite_burst";
   label: string;
   other_id: string | null;
 }
@@ -175,18 +175,88 @@ export interface AdminUserTrust {
   invited_by: { id: string; name: string; status: string; joined_at: string } | null;
   k2_balance: number;
   k2_earned: number;
-  friends: { id: string; name: string; email: string; status: string; joined_at: string; pings: number; bank_linked: boolean }[];
+  friends: { id: string; name: string; email: string; referral_id: string; status: string; held_reason: string | null; joined_at: string; pings: number; bank_linked: boolean }[];
 }
 
 /** One user's invites, K² and duplicate-account hints (admin user page). */
 export function useAdminUserTrust(userId: string | undefined) {
   return useQuery({
-    queryKey: ["admin-users", "trust", userId],
+    queryKey: ["admin-trust", "user", userId],
     enabled: !!userId,
     queryFn: async (): Promise<AdminUserTrust> => {
       const { data, error } = await supabase.rpc("admin_user_trust" as never, { p_user_id: userId } as never);
       if (error) throw adminRpcError("admin_user_trust", error, { userId });
       return data as unknown as AdminUserTrust;
     },
+  });
+}
+
+export interface HeldReferral {
+  id: string;
+  held_at: string;
+  reason: string | null;
+  referrer_id: string;
+  referrer_name: string;
+  friend_id: string;
+  friend_name: string;
+  friend_bank_name: string | null;
+  amount: number;
+}
+
+async function adminCall<T>(fn: string, args: Record<string, unknown> = {}): Promise<T> {
+  const { data, error } = await supabase.rpc(fn as never, args as never);
+  if (error) throw adminRpcError(fn, error, args);
+  return data as T;
+}
+
+const TRUST_KEYS = [["admin-users"], ["admin-trust"]] as const;
+
+function useInvalidateTrust() {
+  const queryClient = useQueryClient();
+  return () => TRUST_KEYS.forEach((queryKey) => queryClient.invalidateQueries({ queryKey: [...queryKey] }));
+}
+
+/** Invite rewards waiting for an admin because one side has a warning. */
+export function useHeldReferrals() {
+  return useQuery({
+    queryKey: ["admin-trust", "held"],
+    queryFn: () => adminCall<HeldReferral[]>("admin_held_referrals"),
+    staleTime: ADMIN_LIST_STALE_TIME_MS,
+  });
+}
+
+/** When warnings were last worked out for everyone, and how many rewards wait. */
+export function useTrustStatus() {
+  return useQuery({
+    queryKey: ["admin-trust", "status"],
+    queryFn: () => adminCall<{ checked_at: string | null; held: number }>("admin_trust_status"),
+    staleTime: ADMIN_LIST_STALE_TIME_MS,
+  });
+}
+
+export function useReviewHeldReferral() {
+  const invalidate = useInvalidateTrust();
+  return useMutation({
+    mutationFn: ({ id, approve }: { id: string; approve: boolean }) =>
+      adminCall<"approved" | "rejected">("admin_review_held_referral", { p_id: id, p_approve: approve }),
+    onSettled: invalidate,
+  });
+}
+
+export function useDismissTrustFlag() {
+  const invalidate = useInvalidateTrust();
+  return useMutation({
+    mutationFn: ({ userId, code, otherId }: { userId: string; code: TrustFlag["code"]; otherId: string | null }) =>
+      adminCall<void>("admin_dismiss_trust_flag", { p_user_id: userId, p_code: code, p_other_id: otherId }),
+    onSettled: invalidate,
+  });
+}
+
+/** Works out everyone's warnings now (normally done each night). */
+export function useRecheckTrust() {
+  const invalidate = useInvalidateTrust();
+  return useMutation({
+    mutationFn: () => adminCall<number>("admin_recheck_trust_flags"),
+    onSettled: invalidate,
   });
 }

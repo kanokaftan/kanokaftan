@@ -1,7 +1,8 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { format, formatDistanceToNowStrict } from "date-fns";
 import { Calendar, CheckCircle2, ChevronLeft, Clock, Heart, Landmark, Mail, MessageCircle, Phone, ShieldAlert, ShoppingBag, Star, Store, UserPlus, Wallet } from "lucide-react";
-import { useAdminUserTrust, type AdminUserTrust } from "@/hooks/useAdminUsers";
+import { useAdminUserTrust, useDismissTrustFlag, useReviewHeldReferral, type AdminUserTrust } from "@/hooks/useAdminUsers";
+import { toast } from "sonner";
 import { k2 } from "@/lib/k2";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,8 +46,17 @@ function useLinkedBank(userId: string | undefined) {
 }
 
 /** Duplicate-account hints, each linking to the other account involved. */
-function TrustWarnings({ flags }: { flags: AdminUserTrust["flags"] }) {
+function TrustWarnings({ userId, flags }: { userId: string; flags: AdminUserTrust["flags"] }) {
+  const dismiss = useDismissTrustFlag();
   if (!flags.length) return null;
+  const notDuplicate = (flag: AdminUserTrust["flags"][number]) =>
+    dismiss.mutate(
+      { userId, code: flag.code, otherId: flag.other_id },
+      {
+        onSuccess: () => toast.success("Warning cleared for both accounts"),
+        onError: (e) => toast.error(e instanceof Error ? e.message : "Couldn't clear the warning."),
+      },
+    );
   return (
     <div className="rounded-2xl border border-red-500/30 bg-red-500/5 p-3">
       <p className="flex items-center gap-1.5 text-sm font-semibold text-red-600 dark:text-red-400">
@@ -55,7 +65,7 @@ function TrustWarnings({ flags }: { flags: AdminUserTrust["flags"] }) {
       </p>
       <ul className="mt-2 space-y-1.5 text-sm">
         {flags.map((flag, i) => (
-          <li key={`${flag.code}-${flag.other_id ?? i}`} className="flex flex-wrap items-baseline gap-x-1.5">
+          <li key={`${flag.code}-${flag.other_id ?? i}`} className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
             <span>{flag.label}</span>
             {flag.other_id && (
               <Link
@@ -65,10 +75,18 @@ function TrustWarnings({ flags }: { flags: AdminUserTrust["flags"] }) {
                 {flag.other_name || flag.other_email || "Open account"}{flag.other_is_seller ? " (seller)" : ""}
               </Link>
             )}
+            <button
+              type="button"
+              onClick={() => notDuplicate(flag)}
+              disabled={dismiss.isPending}
+              className="ml-auto rounded-full border px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground hover:bg-background disabled:opacity-50"
+            >
+              Not a duplicate
+            </button>
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-[11px] text-muted-foreground">A hint to check, not proof: relatives can share a name or a phone.</p>
+      <p className="mt-2 text-[11px] text-muted-foreground">A hint to check, not proof: relatives can share a name or a phone. "Not a duplicate" clears it for good.</p>
     </div>
   );
 }
@@ -76,6 +94,15 @@ function TrustWarnings({ flags }: { flags: AdminUserTrust["flags"] }) {
 /** Who invited them, who they invited, and their K². */
 function InvitesCard({ trust }: { trust: AdminUserTrust }) {
   const verified = trust.friends.filter((f) => f.status === "rewarded").length;
+  const review = useReviewHeldReferral();
+  const decide = (referralId: string, approve: boolean) =>
+    review.mutate(
+      { id: referralId, approve },
+      {
+        onSuccess: () => toast.success(approve ? "K² paid" : "Reward rejected"),
+        onError: (e) => toast.error(e instanceof Error ? e.message : "Couldn't save the decision."),
+      },
+    );
   return (
     <div className="rounded-2xl border bg-card p-3">
       <div className="flex items-center justify-between gap-2">
@@ -94,12 +121,23 @@ function InvitesCard({ trust }: { trust: AdminUserTrust }) {
           {trust.friends.map((f) => (
             <li key={f.id}>
               <Link to={`/admin/users/${f.id}`} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/50">
-                {f.status === "rewarded" ? <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" /> : <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />}
+                {f.status === "rewarded" ? <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
+                  : f.status === "held" ? <ShieldAlert className="h-4 w-4 shrink-0 text-amber-600" />
+                  : <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />}
                 <span className="min-w-0 flex-1 truncate">{f.name}</span>
                 <span className="shrink-0 text-[11px] text-muted-foreground">
-                  {f.status === "rewarded" ? "Verified" : f.status === "cancelled" ? "Blocked" : f.bank_linked ? "Bank linked" : `Waiting${f.pings ? ` · reminded ${f.pings}×` : ""}`}
+                  {f.status === "rewarded" ? "Verified" : f.status === "held" ? "Reward on hold" : f.status === "cancelled" ? "Blocked" : f.bank_linked ? "Bank linked" : `Waiting${f.pings ? ` · reminded ${f.pings}×` : ""}`}
                 </span>
               </Link>
+              {f.status === "held" && (
+                <div className="flex items-center justify-between gap-2 px-3 pb-2">
+                  <span className="min-w-0 truncate text-[11px] text-amber-700 dark:text-amber-400">{f.held_reason}</span>
+                  <span className="flex shrink-0 gap-1">
+                    <button type="button" disabled={review.isPending} onClick={() => decide(f.referral_id, false)} className="rounded-full border px-2.5 py-0.5 text-[11px] font-medium">Reject</button>
+                    <button type="button" disabled={review.isPending} onClick={() => decide(f.referral_id, true)} className="rounded-full bg-primary px-2.5 py-0.5 text-[11px] font-medium text-primary-foreground">Approve</button>
+                  </span>
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -156,7 +194,7 @@ export default function AdminCustomerDetail() {
 
         {error && <p className="text-sm text-destructive">{(error as Error).message}</p>}
 
-        {trust && <TrustWarnings flags={trust.flags} />}
+        {trust && id && <TrustWarnings userId={id} flags={trust.flags} />}
 
         <div className="flex items-center gap-3 rounded-2xl border bg-card p-3">
           <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", bank ? "bg-green-500/10 text-green-700 dark:text-green-400" : "bg-muted text-muted-foreground")}>

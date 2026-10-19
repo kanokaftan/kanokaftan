@@ -15,6 +15,7 @@ import { useState } from "react";
 import { ChevronRight, Download, Landmark, Loader2, ShieldAlert, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { downloadCsv } from "@/lib/csv";
+import { HeldRewards, TrustCheckBar } from "@/components/admin/trust/HeldRewards";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
@@ -140,11 +141,15 @@ export default function AdminUsers() {
       />
 
       {list.filter === "suspicious" && (
-        <p className="mb-3 rounded-xl bg-red-500/5 px-3 py-2 text-xs text-muted-foreground">
-          Accounts that may belong to someone who already has one: a bank account in the same name as another user, the same phone
-          number, an invite blocked as the same person, or many friends joining at once. These are hints to check, not proof.
-          Open a user to see which other account matches.
-        </p>
+        <>
+          <HeldRewards />
+          <p className="mb-2 rounded-xl bg-red-500/5 px-3 py-2 text-xs text-muted-foreground">
+            Accounts that may belong to someone who already has one: a bank account in the same name as another user, the same phone
+            number, signed in on the same phone, an invite blocked as the same person, or many friends joining at once. These are hints
+            to check, not proof. Open a user to see which account matches, and tap "Not a duplicate" if it's fine.
+          </p>
+          <TrustCheckBar />
+        </>
       )}
 
       {list.filter === "bank_linked" && (

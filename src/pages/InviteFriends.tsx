@@ -1,6 +1,6 @@
 import { Link, Navigate } from "react-router-dom";
 import { format } from "date-fns";
-import { BellRing, CheckCircle2, Clock, Copy, Gift, Loader2, Percent, Share2, ShoppingBag, Trophy, UserPlus, Wallet, XCircle } from "lucide-react";
+import { BellRing, ShieldCheck, CheckCircle2, Clock, Copy, Gift, Loader2, Percent, Share2, ShoppingBag, Trophy, UserPlus, Wallet, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { MobileLayout } from "@/components/layout/MobileLayout";
 import { BrandIcon } from "@/components/brand/BrandIcon";
@@ -206,13 +206,15 @@ export default function InviteFriends() {
                     <li key={f.id ?? `${f.name}-${f.joined_at}-${i}`} className="flex items-center gap-3 px-4 py-3 text-sm">
                       {f.status === "rewarded" ? <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
                         : f.status === "cancelled" ? <XCircle className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        : f.status === "held" ? <ShieldCheck className="h-4 w-4 shrink-0 text-amber-600" />
                         : <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />}
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-medium">{f.name}</p>
                         <p className="text-xs text-muted-foreground">
                           {f.status === "rewarded"
                             ? "Verified"
-                            : f.status === "cancelled" ? "Didn't count (same person)" : `Joined ${format(new Date(f.joined_at), "d MMM")} · waiting for them to verify`}
+                            : f.status === "cancelled" ? "Didn't count (same person)"
+                            : f.status === "held" ? "Verified · your K² is being checked" : `Joined ${format(new Date(f.joined_at), "d MMM")} · waiting for them to verify`}
                         </p>
                       </div>
                       {Number(f.earned ?? 0) > 0 && <span className="shrink-0 font-semibold text-green-700 dark:text-green-400">+{k2(Number(f.earned))}</span>}

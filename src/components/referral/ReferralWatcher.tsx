@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useClaimReferral } from "@/hooks/useReferral";
 import { clearSavedInviteCode, getSavedInviteCode, saveInviteCode } from "@/lib/customerInvite";
 import { k2 } from "@/lib/k2";
+import { recordDeviceOnce } from "@/lib/deviceId";
 
 /**
  * Keeps a customer invite code from any link (?invite=CODE; ambassador links use ?ref=) and, once the visitor is signed in
@@ -15,6 +16,11 @@ export function ReferralWatcher() {
   const { user, rolesLoading, isVendor, isAdmin } = useAuth();
   const claim = useClaimReferral();
   const triedFor = useRef<string | null>(null);
+
+  // Note which phone this account signs in on (helps admins spot duplicate accounts).
+  useEffect(() => {
+    if (user?.id) recordDeviceOnce(user.id);
+  }, [user?.id]);
 
   useEffect(() => {
     const invite = new URLSearchParams(location.search).get("invite");

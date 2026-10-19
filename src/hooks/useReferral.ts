@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 export interface ReferralFriend {
   id?: string;
   name: string;
-  status: "joined" | "rewarded" | "cancelled";
+  status: "joined" | "held" | "rewarded" | "cancelled";
   joined_at: string;
   rewarded_at: string | null;
   /** K² earned from this friend (verification reward + share of their orders). */
