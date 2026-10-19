@@ -227,6 +227,16 @@ export function useSavePartner() {
   });
 }
 
+/** Removes a partner: fully if they never earned commission, otherwise archived (money records kept). */
+export function useDeletePartner() {
+  const invalidate = useInvalidatePartners();
+  return useMutation({
+    mutationFn: (partnerId: string) =>
+      call<"deleted" | "archived">("admin_delete_partner", { p_id: partnerId }, "Couldn't remove the partner."),
+    onSuccess: invalidate,
+  });
+}
+
 export function useAddPartnerMember(partnerId: string) {
   const invalidate = useInvalidatePartners();
   return useMutation({

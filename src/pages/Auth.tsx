@@ -4,10 +4,11 @@ import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { CheckCircle2, Eye, EyeOff, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { GoogleSignInButton, OrDivider } from "@/components/auth/GoogleSignInButton";
+import { AccountTypeSwitch, ACCOUNT_TYPES, type AccountType } from "@/components/auth/AccountTypeSwitch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +26,9 @@ const PHONE_PATTERN = /^(\+?234|0)[789][01]\d{8}$/;
 
 type AuthFormData = z.infer<typeof authSchema>;
 type AuthMode = "login" | "register" | "forgot" | "reset";
+
+/** Ambassadors use a normal account, then fill in the ambassador form. */
+const AMBASSADOR_JOIN_PATH = "/ambassadors/join";
 
 function isRecoveryLink() {
   return typeof window !== "undefined" && window.location.hash.includes("type=recovery");
@@ -54,9 +58,17 @@ export default function AuthPage() {
 
   // Only same-site paths: "/orders" is fine, "//evil.com" or "https://…" is not.
   const requestedRedirect = searchParams.get("redirect");
-  const redirectTo = requestedRedirect && requestedRedirect.startsWith("/") && !requestedRedirect.startsWith("//") && !requestedRedirect.startsWith("/\\")
+  const safeRedirect = requestedRedirect && requestedRedirect.startsWith("/") && !requestedRedirect.startsWith("//") && !requestedRedirect.startsWith("/\\")
     ? requestedRedirect
     : "/";
+
+  // Who the account is for (?as=sell|ambassador). Coming from the ambassador page means ambassador.
+  const [accountType, setAccountType] = useState<AccountType>(() => {
+    const as = searchParams.get("as");
+    if (ACCOUNT_TYPES.includes(as as AccountType)) return as as AccountType;
+    return safeRedirect.startsWith(AMBASSADOR_JOIN_PATH) ? "ambassador" : "shop";
+  });
+  const redirectTo = accountType === "ambassador" ? AMBASSADOR_JOIN_PATH : safeRedirect;
 
   const {
     register,
@@ -127,7 +139,7 @@ export default function AuthPage() {
           setError("phone", { message: "Enter a valid Nigerian phone number, e.g. 0803 123 4567" });
           return;
         }
-        const redirectUrl = `${window.location.origin}/`;
+        const redirectUrl = `${window.location.origin}${redirectTo}`;
 
         const { error } = await supabase.auth.signUp({
           email: data.email,
@@ -243,10 +255,10 @@ export default function AuthPage() {
   return (
     <div className="flex min-h-screen">
       {/* Left Panel - Form */}
-      <div className="flex w-full flex-col justify-center px-6 py-12 lg:w-1/2 lg:px-16">
+      <div className="flex w-full flex-col justify-start px-6 py-8 lg:w-1/2 lg:justify-center lg:px-16">
         <div className="mx-auto w-full max-w-md">
           {/* Logo */}
-          <Link to="/" className="mb-8 flex items-center gap-3">
+          <Link to="/" className="mb-6 flex items-center gap-3">
             <BrandLogo alt="K² Kano Kaftan" className="h-12 w-12" />
             <div>
               <span className="font-display text-2xl font-bold text-primary">K²</span>
@@ -254,21 +266,53 @@ export default function AuthPage() {
             </div>
           </Link>
 
+          {showLoginRegister && (
+            <div className="mb-6">
+              <p className="mb-2 text-sm font-medium text-muted-foreground">{t("auth.typeQuestion", "I'm here to")}</p>
+              <AccountTypeSwitch value={accountType} onChange={setAccountType} />
+            </div>
+          )}
+
           <h1 className="font-display text-2xl font-bold text-primary">
-            {mode === "login" ? t("auth.welcomeBack") :
+            {showLoginRegister && accountType === "sell" ? t("auth.sellTitle", "Sell on Kano Kaftan") :
+             showLoginRegister && accountType === "ambassador" ? t("auth.ambassadorTitle", "Become an ambassador") :
+             mode === "login" ? t("auth.welcomeBack") :
              mode === "register" ? t("auth.createAccount") :
              mode === "forgot" ? t("auth.resetPassword") :
              t("auth.setNewPassword")}
           </h1>
           <p className="mt-2 text-muted-foreground">
-            {mode === "login" ? t("auth.signInSubtitle") :
+            {showLoginRegister && accountType === "sell" ? t("auth.sellSubtitle") :
+             showLoginRegister && accountType === "ambassador"
+               ? (mode === "register" ? t("auth.ambassadorRegisterSubtitle") : t("auth.ambassadorLoginSubtitle")) :
+             mode === "login" ? t("auth.signInSubtitle") :
              mode === "register" ? t("auth.registerSubtitle") :
              mode === "forgot" ? t("auth.forgotSubtitle") :
              t("auth.resetSubtitle")}
           </p>
 
+          {/* Sellers have their own application and sign-in */}
+          {showLoginRegister && accountType === "sell" && (
+            <div className="mt-6 space-y-4">
+              <ul className="space-y-2">
+                {(["sellPoint1", "sellPoint2", "sellPoint3"] as const).map((key) => (
+                  <li key={key} className="flex items-start gap-2 text-sm">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                    {t(`auth.${key}`)}
+                  </li>
+                ))}
+              </ul>
+              <Button asChild className="h-12 w-full rounded-xl text-base">
+                <Link to="/sell">{t("auth.sellApply", "Apply to open a shop")}</Link>
+              </Button>
+              <Button asChild variant="outline" className="h-12 w-full rounded-xl text-base">
+                <Link to="/vendor/login">{t("auth.sellSignIn", "I already have a shop: sign in")}</Link>
+              </Button>
+            </div>
+          )}
+
           {/* Google sign-in (login / register only) */}
-          {showLoginRegister && (
+          {showLoginRegister && accountType !== "sell" && (
             <>
               <div className="mt-8">
                 <GoogleSignInButton
@@ -356,7 +400,7 @@ export default function AuthPage() {
           )}
 
           {/* Login / Register form */}
-          {showLoginRegister && (
+          {showLoginRegister && accountType !== "sell" && (
           <>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {mode === "register" && (
@@ -467,20 +511,6 @@ export default function AuthPage() {
             )}
           </p>
 
-          <div className="mt-6 rounded-xl border border-dashed p-4 text-center">
-            <p className="text-sm font-medium text-foreground">{t("auth.areYouSeller", "Are you a tailor or seller?")}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {t("auth.sellerHint", "Seller accounts are separate. Apply to open a shop, or sign in to your seller dashboard.")}
-            </p>
-            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-center">
-              <Button asChild size="sm">
-                <Link to="/sell">{t("auth.applyToSell", "Apply to sell")}</Link>
-              </Button>
-              <Button asChild size="sm" variant="outline">
-                <Link to="/vendor/login">{t("auth.sellerSignIn", "Seller sign in")}</Link>
-              </Button>
-            </div>
-          </div>
           </>
           )}
           <p className="mt-6 text-center text-xs text-muted-foreground">

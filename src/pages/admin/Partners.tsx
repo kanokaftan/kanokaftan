@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
-import { Award, CheckCircle2, Circle, Gem, Loader2, Pencil, Plus, Receipt, Search, Store, UserPlus, X } from "lucide-react";
+import { Award, CheckCircle2, Circle, Gem, Loader2, Pencil, Plus, Receipt, Search, Store, Trash2, UserPlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +21,7 @@ import { ChoiceManager } from "@/components/partners/ChoiceManager";
 import { PartnerBadge } from "@/components/partners/PartnerMarks";
 import { PartnerStatementView } from "@/components/partners/PartnerStatementView";
 import {
-  useAddPartnerMember, usePartnerFindShops, usePartnerOverview, useRemovePartnerMember, useSavePartner,
+  useAddPartnerMember, useDeletePartner, usePartnerFindShops, usePartnerOverview, useRemovePartnerMember, useSavePartner,
   type ChoiceShop, type PartnerInput, type PartnerSummary,
 } from "@/hooks/usePartners";
 import { naira } from "@/lib/naira";
@@ -124,6 +128,61 @@ function StorePicker({ value, onChange }: { value: FormState["vendor"]; onChange
         {!isFetching && shops?.length === 0 && <li className="p-4 text-center text-sm text-muted-foreground">No stores found. They must open a seller account first.</li>}
       </ul>
     </div>
+  );
+}
+
+/** Remove a partner after confirming. Partners with commission history are archived so the money records stay. */
+function DeletePartnerButton({ partner, onDone, compact = false }: { partner: PartnerSummary; onDone?: () => void; compact?: boolean }) {
+  const remove = useDeletePartner();
+  const hasMoney = Number(partner.unpaid) > 0 || Number(partner.paid) > 0;
+
+  const confirm = () => {
+    remove.mutate(partner.id, {
+      onSuccess: (outcome) => {
+        toast.success(
+          outcome === "archived"
+            ? `${partner.name} removed. Their commission records are kept for your books.`
+            : `${partner.name} removed`,
+        );
+        onDone?.();
+      },
+      onError: (error) => toast.error(error.message),
+    });
+  };
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        {compact ? (
+          <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 hover:text-destructive" aria-label={`Remove ${partner.name}`}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        ) : (
+          <Button type="button" variant="outline" className="w-full border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive">
+            <Trash2 className="mr-2 h-4 w-4" />Remove partner
+          </Button>
+        )}
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Remove {partner.name}?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Their {partner.badge_label} badge, homepage spot and "{partner.choice_label || `${partner.name}'s Choice`}" picks disappear,
+            their staff lose access to /partner and they stop earning commission.
+            {hasMoney
+              ? " Their commission and payout records are kept so your books stay complete."
+              : " They have no commission history, so everything about them is deleted."}
+            {Number(partner.unpaid) > 0 && ` They still have ${naira(Number(partner.unpaid))} unpaid: pay it from their statement first if you owe it.`}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Keep</AlertDialogCancel>
+          <AlertDialogAction onClick={confirm} disabled={remove.isPending} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            {remove.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Remove
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
@@ -256,6 +315,7 @@ function PartnerForm({ partner, open, onOpenChange }: { partner: PartnerSummary 
           <Button type="submit" className="w-full" disabled={save.isPending}>
             {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{partner ? "Save" : "Add partner"}
           </Button>
+          {partner && <DeletePartnerButton partner={partner} onDone={() => onOpenChange(false)} />}
         </form>
       </SheetContent>
     </Sheet>
@@ -345,7 +405,10 @@ function PartnerCard({ partner, onEdit, onStatement, onPicks }: {
             <Link to={`/shop/${partner.store_slug}`} className="text-sm font-medium text-primary hover:underline">{partner.store_name}</Link>
           )}
         </div>
-        <Button variant="ghost" size="icon" onClick={onEdit} aria-label="Edit partner"><Pencil className="h-4 w-4" /></Button>
+        <div className="flex shrink-0">
+          <Button variant="ghost" size="icon" onClick={onEdit} aria-label="Edit partner"><Pencil className="h-4 w-4" /></Button>
+          <DeletePartnerButton partner={partner} compact />
+        </div>
       </div>
 
       <div className="mt-3 grid grid-cols-3 gap-2 text-center">
@@ -362,8 +425,8 @@ function PartnerCard({ partner, onEdit, onStatement, onPicks }: {
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2">
-        <Button variant="outline" onClick={onPicks}><Award className="mr-2 h-4 w-4" />{choiceLabel}</Button>
-        <Button variant="outline" onClick={onStatement}><Receipt className="mr-2 h-4 w-4" />Statement</Button>
+        <Button variant="outline" onClick={onPicks} className="min-w-0"><Award className="mr-2 h-4 w-4 shrink-0" /><span className="truncate">{choiceLabel}</span></Button>
+        <Button variant="outline" onClick={onStatement} className="min-w-0"><Receipt className="mr-2 h-4 w-4 shrink-0" /><span className="truncate">Statement</span></Button>
       </div>
     </article>
   );
@@ -384,9 +447,9 @@ export default function AdminPartners() {
 
   return (
     <AdminLayout title="Partners">
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mb-4 space-y-3 sm:flex sm:items-center sm:justify-between sm:gap-3 sm:space-y-0">
         <p className="text-sm text-muted-foreground">Brands with a signed partner agreement: their badge, their label and their commission.</p>
-        <Button onClick={() => openForm(null)} className="shrink-0"><Plus className="mr-2 h-4 w-4" />New partner</Button>
+        <Button onClick={() => openForm(null)} className="h-11 w-full shrink-0 sm:w-auto"><Plus className="mr-2 h-4 w-4" />Add partner</Button>
       </div>
 
       {isLoading ? (
@@ -402,7 +465,7 @@ export default function AdminPartners() {
           <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
             Once the agreement is signed, add the partner here. You'll get a checklist to finish setting them up.
           </p>
-          <Button className="mt-4" onClick={() => openForm(null)}><Plus className="mr-2 h-4 w-4" />Add Marmara Design</Button>
+          <Button className="mt-4" onClick={() => openForm(null)}><Plus className="mr-2 h-4 w-4" />Add a partner</Button>
         </div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
