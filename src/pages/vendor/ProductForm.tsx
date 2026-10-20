@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Camera, ChevronDown, Gift, Loader2, Megaphone, Minus, Plus, Star, X } from "lucide-react";
+import { Camera, ChevronDown, Gift, Loader2, Megaphone, Minus, Palette, Plus, Star, X } from "lucide-react";
 import { toast } from "sonner";
 import { missingSetupItems, useShopSetup } from "@/hooks/useShopSetup";
 import { VendorLayout, useVendorAuth } from "@/components/vendor/VendorLayout";
@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ColorPicker, SizePicker } from "@/components/products/OptionPickers";
-import { categoryOptions, cleanCategoryName, sortSizes, tidyLegacyOptions } from "@/lib/productOptions";
+import { COMMON_COLORS, categoryOptions, cleanCategoryName, sortSizes, tidyLegacyOptions } from "@/lib/productOptions";
 import { naira } from "@/lib/naira";
 import { detectPhotoColors } from "@/lib/photoColors";
 import { cn } from "@/lib/utils";
@@ -42,6 +42,33 @@ interface FormState {
 const EMPTY: FormState = {
   name: "", description: "", price: "", compareAt: "", discount: "", stock: 1, categoryId: "", isActive: true, sizes: [], colors: [],
 };
+
+interface PhotoItem {
+  url: string;
+  color: string | null;
+}
+
+/** Colour tag on a photo: tap to choose which of the product's colours the photo shows. */
+function PhotoColorTag({ color, choices, onChange }: { color: string | null; choices: string[]; onChange: (color: string | null) => void }) {
+  const options = [...new Set([...(color ? [color] : []), ...choices, ...COMMON_COLORS.map((c) => c.name)])];
+  const swatch = COMMON_COLORS.find((c) => c.name === color)?.swatch;
+  return (
+    <label className="absolute inset-x-1 bottom-1 flex cursor-pointer items-center gap-1 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+      {swatch ? <span className="h-3 w-3 shrink-0 rounded-full border border-white/60" style={{ background: swatch }} /> : <Palette className="h-3 w-3 shrink-0" />}
+      <span className="truncate">{color ?? "Colour?"}</span>
+      <ChevronDown className="ml-auto h-3 w-3 shrink-0" />
+      <select
+        value={color ?? ""}
+        onChange={(e) => onChange(e.target.value || null)}
+        className="absolute inset-0 cursor-pointer opacity-0"
+        aria-label="Colour shown in this photo"
+      >
+        <option value="">No colour</option>
+        {options.map((c) => <option key={c} value={c}>{c}</option>)}
+      </select>
+    </label>
+  );
+}
 
 function Section({ title, hint, children, sectionRef }: { title: string; hint?: string; children: React.ReactNode; sectionRef?: React.Ref<HTMLElement> }) {
   return (
@@ -77,7 +104,8 @@ export default function ProductForm() {
   const { data: minDiscount = DISCOUNT_PRESETS[0] } = useFirstBuyerMinPercent();
 
   const [form, setForm] = useState<FormState>(EMPTY);
-  const [images, setImages] = useState<string[]>([]);
+  /** Photos in display order, each with the colour it shows (so the product page can match them up). */
+  const [images, setImages] = useState<PhotoItem[]>([]);
   const [uploadingCount, setUploadingCount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [showSizes, setShowSizes] = useState(false);
@@ -115,7 +143,7 @@ export default function ProductForm() {
       [...(existing.product_images || [])]
         .sort((a: { is_primary: boolean; display_order: number | null }, b: { is_primary: boolean; display_order: number | null }) =>
           Number(b.is_primary) - Number(a.is_primary) || (a.display_order ?? 0) - (b.display_order ?? 0))
-        .map((img: { url: string }) => img.url),
+        .map((img: { url: string; color?: string | null }) => ({ url: img.url, color: img.color ?? null })),
     );
   }, [existing, isEditing]);
 
@@ -140,21 +168,25 @@ export default function ProductForm() {
     e.target.value = "";
     if (!files.length) return;
     setUploadingCount(files.length);
-    void addColorsFrom(files);
-    const results = await Promise.allSettled(files.map((file) => uploadImage(file)));
-    const ok = results.flatMap((r) => (r.status === "fulfilled" ? [r.value as string] : []));
+    // Upload and read each photo's colour at the same time.
+    const results = await Promise.allSettled(files.map(async (file) => {
+      const [url, colors] = await Promise.all([uploadImage(file), detectPhotoColors(file)]);
+      return { url: url as string, colors };
+    }));
+    const ok = results.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
     const failed = results.length - ok.length;
     if (failed) {
       console.error("[ProductForm] some photos failed", results.filter((r) => r.status === "rejected"));
       toast.error(failed === 1 ? "One photo didn't upload. Try it again." : `${failed} photos didn't upload. Try them again.`);
     }
-    setImages((prev) => [...prev, ...ok].slice(0, MAX_PHOTOS));
+    setImages((prev) => [...prev, ...ok.map(({ url, colors }) => ({ url, color: colors[0] ?? null }))].slice(0, MAX_PHOTOS));
+    addDetectedColors(ok.flatMap((o) => o.colors));
     setUploadingCount(0);
   };
 
   /** Reads the main colour of each new photo and ticks it in Colours (only colours not seen before). */
-  const addColorsFrom = async (files: File[]) => {
-    const found = [...new Set((await Promise.all(files.map(detectPhotoColors))).flat())];
+  const addDetectedColors = (detected: string[]) => {
+    const found = [...new Set(detected)];
     const seen = detectedRef.current;
     const fresh = found.filter((c) => !seen.includes(c)).slice(0, Math.max(0, MAX_AUTO_COLORS - seen.length));
     if (!fresh.length) return;
@@ -166,6 +198,12 @@ export default function ProductForm() {
 
   const makeCover = (index: number) => setImages((prev) => [prev[index], ...prev.filter((_, i) => i !== index)]);
   const removePhoto = (index: number) => setImages((prev) => prev.filter((_, i) => i !== index));
+  /** Seller picks which colour a photo shows; the colour is added to the product's colours too. */
+  const setPhotoColor = (index: number, color: string | null) => {
+    setImages((prev) => prev.map((img, i) => (i === index ? { ...img, color } : img)));
+    if (color) setForm((f) => (f.colors.includes(color) ? f : { ...f, colors: [...f.colors, color] }));
+    if (color) setShowColors(true);
+  };
 
   const problem = (): { message: string; ref: React.RefObject<HTMLElement> } | null => {
     if (!images.length) return { message: "Add at least one photo", ref: refs.photos };
@@ -197,7 +235,14 @@ export default function ProductForm() {
       sizes: form.sizes,
       colors: options.colors ? form.colors : [],
     };
-    const imageData = images.map((url, index) => ({ url, is_primary: index === 0, display_order: index }));
+    const keptColors = options.colors ? form.colors : [];
+    const imageData = images.map((img, index) => ({
+      url: img.url,
+      is_primary: index === 0,
+      display_order: index,
+      // A photo's colour only counts if the product still offers that colour.
+      color: img.color && keptColors.includes(img.color) ? img.color : null,
+    }));
     try {
       if (isEditing && id) await updateProduct.mutateAsync({ productId: id, product, images: imageData });
       else await createProduct.mutateAsync({ product, images: imageData });
@@ -243,19 +288,20 @@ export default function ProductForm() {
     <VendorLayout title={isEditing ? "Edit product" : "Add product"} hideTabBar>
       <form onSubmit={submit} className="mx-auto max-w-xl space-y-6 pb-28 md:pb-8" noValidate>
         {/* Photos */}
-        <Section title="Photos" hint="The first photo is the cover. Tap another photo to make it the cover." sectionRef={refs.photos}>
+        <Section title="Photos" hint="The first photo is the cover (tap another to change it). The colour tag on each photo shows shoppers that colour when they tap it." sectionRef={refs.photos}>
           <input ref={photoInput} type="file" accept="image/*" multiple className="hidden" onChange={addPhotos} />
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {images.map((url, index) => (
+            {images.map(({ url, color }, index) => (
               <div key={url} className={cn("relative aspect-square overflow-hidden rounded-2xl border-2", index === 0 ? "border-primary" : "border-transparent")}>
                 <button type="button" onClick={() => index !== 0 && makeCover(index)} className="h-full w-full" aria-label={index === 0 ? "Cover photo" : `Make photo ${index + 1} the cover`}>
                   <img src={url} alt="" className="h-full w-full object-cover" />
                 </button>
                 {index === 0 && (
-                  <span className="absolute bottom-1 left-1 inline-flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                  <span className="absolute left-1 top-1 inline-flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white">
                     <Star className="h-2.5 w-2.5 fill-current" />Cover
                   </span>
                 )}
+                {options.colors && <PhotoColorTag color={color} choices={form.colors} onChange={(c) => setPhotoColor(index, c)} />}
                 <button type="button" onClick={() => removePhoto(index)} aria-label={`Remove photo ${index + 1}`}
                   className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white">
                   <X className="h-4 w-4" />

@@ -85,7 +85,7 @@ export function useVendorProduct(productId: string | null) {
           colors,
           category_id,
           category:categories(id, name, slug),
-          product_images(id, url, is_primary, alt_text, display_order)
+          product_images(id, url, is_primary, alt_text, display_order, color)
         `)
         .is("deleted_at", null)
         .eq("id", productId)

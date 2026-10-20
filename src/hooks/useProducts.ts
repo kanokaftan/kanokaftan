@@ -29,6 +29,8 @@ export interface Product {
     is_primary: boolean;
     alt_text?: string | null;
     display_order?: number | null;
+    /** Which of the product's colours this photo shows. */
+    color?: string | null;
   }[];
   vendor?: {
     id: string;

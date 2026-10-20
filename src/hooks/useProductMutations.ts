@@ -24,6 +24,8 @@ interface ProductImage {
   is_primary: boolean;
   alt_text?: string;
   display_order: number;
+  /** Which of the product's colours this photo shows. */
+  color?: string | null;
 }
 
 function generateSlug(name: string): string {

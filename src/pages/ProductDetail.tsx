@@ -1,5 +1,5 @@
 import useEmblaCarousel from "embla-carousel-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { track } from "@/lib/analytics";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ChevronLeft, Heart, Minus, Plus, ShoppingCart, Truck, Shield, RotateCcw, BadgeCheck, Store, Share2, Check } from "lucide-react";
@@ -18,6 +18,7 @@ import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { ReviewsList } from "@/components/reviews/ReviewsList";
 import { RecentlyViewed } from "@/components/products/RecentlyViewed";
 import { toast } from "sonner";
+import { COMMON_COLORS } from "@/lib/productOptions";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { VerifiedBadge } from "@/components/shop/VerifiedBadge";
@@ -42,13 +43,20 @@ export default function ProductDetail() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [galleryRef, galleryApi] = useEmblaCarousel({ loop: false, align: "start" });
 
+  /** Set below once the photos are known: swiping to a photo selects the colour it shows. */
+  const colorForPhoto = useRef<(index: number) => void>(() => {});
+
   useEffect(() => {
     if (!galleryApi) return;
-    const onSelect = () => setSelectedImage(galleryApi.selectedScrollSnap());
-    onSelect();
-    galleryApi.on("select", onSelect).on("reInit", onSelect);
+    const sync = () => setSelectedImage(galleryApi.selectedScrollSnap());
+    const onSelect = () => {
+      sync();
+      colorForPhoto.current(galleryApi.selectedScrollSnap());
+    };
+    sync();
+    galleryApi.on("select", onSelect).on("reInit", sync);
     return () => {
-      galleryApi.off("select", onSelect).off("reInit", onSelect);
+      galleryApi.off("select", onSelect).off("reInit", sync);
     };
   }, [galleryApi]);
   const [quantity, setQuantity] = useState(1);
@@ -118,6 +126,18 @@ export default function ProductDetail() {
     ...variants.map(v => v.color).filter((v): v is string => !!v),
   ])];
   const inWishlist = isInWishlist(product.id);
+
+  // Photos and colours follow each other: swipe to a photo -> its colour; tap a colour -> its photo.
+  const colorMatches = (a: string | null | undefined, b: string) => !!a && a.toLowerCase() === b.toLowerCase();
+  colorForPhoto.current = (index: number) => {
+    const color = colors.find((c) => colorMatches(images[index]?.color, c));
+    if (color) setSelectedColor(color);
+  };
+  const chooseColor = (color: string) => {
+    setSelectedColor(color);
+    const photo = images.findIndex((img) => colorMatches(img.color, color));
+    if (photo >= 0 && photo !== selectedImage) galleryApi?.scrollTo(photo);
+  };
 
   // Find a stocked variant matching the size/color selection (if the vendor set one up)
   const selectedVariant = variants.length === 0 || (!selectedSize && !selectedColor)
@@ -465,8 +485,15 @@ export default function ProductDetail() {
                       variant={selectedColor === color ? "default" : "outline"}
                       size="sm"
                       className="rounded-full"
-                      onClick={() => setSelectedColor(color)}
+                      onClick={() => chooseColor(color)}
                     >
+                      {COMMON_COLORS.find((c) => c.name.toLowerCase() === color.toLowerCase()) && (
+                        <span
+                          className="mr-1.5 h-3.5 w-3.5 rounded-full border border-black/15"
+                          style={{ background: COMMON_COLORS.find((c) => c.name.toLowerCase() === color.toLowerCase())?.swatch }}
+                          aria-hidden="true"
+                        />
+                      )}
                       {color}
                     </Button>
                   ))}

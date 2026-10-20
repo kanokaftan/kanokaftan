@@ -120,6 +120,11 @@ export function SizePicker({ groups, value, onChange }: { groups: SizeGroup[]; v
 
 const COLLAPSED_COLORS = 12;
 
+/** ["Black", "Red", "Navy"] -> "Black, Red and Navy". */
+function listNames(names: string[]): string {
+  return names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names.join("");
+}
+
 /**
  * Tap colours to select several, with swatches. Colours found in the photos are
  * marked "from photo"; "Pick a shade" opens the phone's colour picker and uses the nearest name.
@@ -143,7 +148,7 @@ export function ColorPicker({ value, onChange, detected = [] }: { value: string[
       {detected.length > 0 && (
         <p className="flex items-center gap-1.5 rounded-xl bg-primary/5 px-3 py-2 text-xs">
           <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary" />
-          <span>We spotted <span className="font-semibold">{detected.join(" and ")}</span> in your photo. Tap to remove if it's wrong.</span>
+          <span>We spotted <span className="font-semibold">{listNames(detected)}</span> in your {detected.length > 1 ? "photos" : "photo"}. Tap to remove if it's wrong.</span>
         </p>
       )}
       <div className="flex flex-wrap gap-2">

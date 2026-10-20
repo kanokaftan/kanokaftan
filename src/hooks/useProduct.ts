@@ -11,7 +11,7 @@ export function useProduct(slug: string) {
         .select(`
           *,
           category:categories(id, name, slug),
-          product_images(id, url, is_primary, alt_text, display_order),
+          product_images(id, url, is_primary, alt_text, display_order, color),
           product_variants(id, name, size, color, price_adjustment, stock_quantity),
           vendor:profiles!products_vendor_id_fkey(id, full_name, avatar_url, is_verified, verification_tier, store_name)
         `)
