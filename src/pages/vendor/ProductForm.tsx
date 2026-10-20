@@ -1,160 +1,191 @@
-import { useState, useEffect } from "react";
-import { missingSetupItems, useShopSetup } from "@/hooks/useShopSetup";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { Camera, ChevronDown, Gift, Loader2, Megaphone, Minus, Plus, Star, X } from "lucide-react";
+import { toast } from "sonner";
+import { missingSetupItems, useShopSetup } from "@/hooks/useShopSetup";
 import { VendorLayout, useVendorAuth } from "@/components/vendor/VendorLayout";
 import { useVendorProduct } from "@/hooks/useVendorProducts";
 import { useProductMutations } from "@/hooks/useProductMutations";
 import { useCategories } from "@/hooks/useProducts";
+import { firstBuyerPrice, useFirstBuyerMinPercent } from "@/hooks/useBuyerTrust";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FirstBuyerDiscountField } from "@/components/products/FirstBuyerDiscountField";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Upload, X, Loader2, Star, Megaphone, ChevronLeft, ChevronRight } from "lucide-react";
+import { ColorPicker, SizePicker } from "@/components/products/OptionPickers";
+import { categoryOptions, cleanCategoryName, sortSizes, tidyLegacyOptions } from "@/lib/productOptions";
+import { naira } from "@/lib/naira";
+import { cn } from "@/lib/utils";
 
-/** "S, M ,, L" -> ["S", "M", "L"], de-duplicated. */
-function splitOptions(value: string): string[] {
-  return [...new Set(value.split(",").map((s) => s.trim()).filter(Boolean))];
+const MAX_PHOTOS = 6;
+const MAX_FIRST_BUYER_PERCENT = 90;
+const DISCOUNT_PRESETS = [5, 10, 15, 20];
+
+interface FormState {
+  name: string;
+  description: string;
+  price: string;
+  compareAt: string;
+  discount: string;
+  stock: number;
+  categoryId: string;
+  isActive: boolean;
+  sizes: string[];
+  colors: string[];
+}
+
+const EMPTY: FormState = {
+  name: "", description: "", price: "", compareAt: "", discount: "", stock: 1, categoryId: "", isActive: true, sizes: [], colors: [],
+};
+
+function Section({ title, hint, children, sectionRef }: { title: string; hint?: string; children: React.ReactNode; sectionRef?: React.Ref<HTMLElement> }) {
+  return (
+    <section ref={sectionRef} className="scroll-mt-20 space-y-2.5">
+      <div>
+        <h3 className="text-sm font-semibold">{title}</h3>
+        {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/** Tap-to-open optional block ("+ Add colours"), already open when it has content. */
+function Optional({ label, open, onOpen, children }: { label: string; open: boolean; onOpen: () => void; children: React.ReactNode }) {
+  if (open) return <>{children}</>;
+  return (
+    <button type="button" onClick={onOpen} className="flex w-full items-center gap-2 rounded-2xl border border-dashed px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted/50">
+      <Plus className="h-4 w-4" />{label}
+    </button>
+  );
 }
 
 export default function ProductForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { userId } = useVendorAuth();
-  const { data: existingProduct, isLoading: productLoading } = useVendorProduct(id || null);
+  const isEditing = !!id;
+  const { data: existing, isLoading: productLoading } = useVendorProduct(id || null);
   const { data: categories, isLoading: categoriesLoading } = useCategories();
   const { createProduct, updateProduct, uploadImage } = useProductMutations(userId);
-
-  const isEditing = !!id;
   const { data: setup } = useShopSetup(!id);
+  const { data: minDiscount = DISCOUNT_PRESETS[0] } = useFirstBuyerMinPercent();
 
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    price: "",
-    compare_at_price: "",
-    first_buyer_discount: "",
-    stock_quantity: "",
-    category_id: "",
-    is_active: true,
-    featured: false,
-    sizes: "",
-    colors: "",
-  });
-
-  // Order here is the order shoppers see; the first photo is the main one.
-  const [images, setImages] = useState<{ url: string }[]>([]);
-  const [uploading, setUploading] = useState(false);
+  const [form, setForm] = useState<FormState>(EMPTY);
+  const [images, setImages] = useState<string[]>([]);
+  const [uploadingCount, setUploadingCount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
-  
+  const [showSizes, setShowSizes] = useState(false);
+  const [showColors, setShowColors] = useState(false);
+  const [showMore, setShowMore] = useState(false);
+  const [customDiscount, setCustomDiscount] = useState(false);
+  const photoInput = useRef<HTMLInputElement>(null);
+  const refs = { photos: useRef<HTMLElement>(null), name: useRef<HTMLElement>(null), category: useRef<HTMLElement>(null), price: useRef<HTMLElement>(null) };
+
+  const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm((f) => ({ ...f, [key]: value }));
+
   useEffect(() => {
-    if (existingProduct && isEditing) {
-      setFormData({
-        name: existingProduct.name,
-        description: existingProduct.description || "",
-        price: existingProduct.price.toString(),
-        compare_at_price: existingProduct.compare_at_price?.toString() || "",
-        first_buyer_discount: existingProduct.first_buyer_discount_percent?.toString() ?? "",
-        stock_quantity: existingProduct.stock_quantity.toString(),
-        category_id: existingProduct.category_id || "",
-        is_active: existingProduct.is_active,
-        featured: existingProduct.featured,
-        sizes: (existingProduct.sizes || []).join(", "),
-        colors: (existingProduct.colors || []).join(", "),
-      });
-      setImages(
-        [...(existingProduct.product_images || [])]
-          .sort((a: { is_primary: boolean; display_order: number | null }, b: { is_primary: boolean; display_order: number | null }) =>
-            Number(b.is_primary) - Number(a.is_primary) || (a.display_order ?? 0) - (b.display_order ?? 0))
-          .map((img: { url: string }) => ({ url: img.url }))
-      );
-    }
-  }, [existingProduct, isEditing]);
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files?.length) return;
-
-    setUploading(true);
-    try {
-      const uploadPromises = Array.from(files).map(async (file) => {
-        const url = await uploadImage(file);
-        return { url };
-      });
-
-      const newImages = await Promise.all(uploadPromises);
-      setImages((prev) => [...prev, ...newImages]);
-    } catch (error) {
-      console.error("Upload error:", error);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const moveImage = (from: number, to: number) => {
-    setImages((prev) => {
-      if (to < 0 || to >= prev.length) return prev;
-      const updated = [...prev];
-      const [moved] = updated.splice(from, 1);
-      updated.splice(to, 0, moved);
-      return updated;
+    if (!existing || !isEditing) return;
+    const sizes = sortSizes(tidyLegacyOptions(existing.sizes));
+    const colors = tidyLegacyOptions(existing.colors);
+    setForm({
+      name: existing.name,
+      description: existing.description || "",
+      price: String(existing.price),
+      compareAt: existing.compare_at_price ? String(existing.compare_at_price) : "",
+      discount: existing.first_buyer_discount_percent != null ? String(existing.first_buyer_discount_percent) : "",
+      stock: existing.stock_quantity,
+      categoryId: existing.category_id || "",
+      isActive: existing.is_active,
+      sizes,
+      colors,
     });
+    setShowSizes(sizes.length > 0);
+    setShowColors(colors.length > 0);
+    setShowMore(!!existing.description || !!existing.compare_at_price || !existing.is_active);
+    setImages(
+      [...(existing.product_images || [])]
+        .sort((a: { is_primary: boolean; display_order: number | null }, b: { is_primary: boolean; display_order: number | null }) =>
+          Number(b.is_primary) - Number(a.is_primary) || (a.display_order ?? 0) - (b.display_order ?? 0))
+        .map((img: { url: string }) => img.url),
+    );
+  }, [existing, isEditing]);
+
+  // New products start with the smallest first-buyer discount allowed, so sellers needn't type it.
+  useEffect(() => {
+    if (!isEditing && form.discount === "" && minDiscount) set("discount", String(minDiscount));
+  }, [isEditing, minDiscount, form.discount]);
+
+  const category = categories?.find((c) => c.id === form.categoryId);
+  const options = categoryOptions(category?.slug);
+  const hasPresetSizes = options.sizeGroups.length > 0;
+  const discountChoices = useMemo(
+    () => [...new Set([minDiscount, ...DISCOUNT_PRESETS].filter((p) => p >= minDiscount))].sort((a, b) => a - b).slice(0, 4),
+    [minDiscount],
+  );
+  const priceNumber = Number(form.price);
+  const discountNumber = Number(form.discount);
+  const discountValid = form.discount !== "" && discountNumber >= minDiscount && discountNumber <= MAX_FIRST_BUYER_PERCENT;
+
+  const addPhotos = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []).slice(0, MAX_PHOTOS - images.length);
+    e.target.value = "";
+    if (!files.length) return;
+    setUploadingCount(files.length);
+    const results = await Promise.allSettled(files.map((file) => uploadImage(file)));
+    const ok = results.flatMap((r) => (r.status === "fulfilled" ? [r.value as string] : []));
+    const failed = results.length - ok.length;
+    if (failed) {
+      console.error("[ProductForm] some photos failed", results.filter((r) => r.status === "rejected"));
+      toast.error(failed === 1 ? "One photo didn't upload. Try it again." : `${failed} photos didn't upload. Try them again.`);
+    }
+    setImages((prev) => [...prev, ...ok].slice(0, MAX_PHOTOS));
+    setUploadingCount(0);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const makeCover = (index: number) => setImages((prev) => [prev[index], ...prev.filter((_, i) => i !== index)]);
+  const removePhoto = (index: number) => setImages((prev) => prev.filter((_, i) => i !== index));
+
+  const problem = (): { message: string; ref: React.RefObject<HTMLElement> } | null => {
+    if (!images.length) return { message: "Add at least one photo", ref: refs.photos };
+    if (!form.name.trim()) return { message: "Give your product a name", ref: refs.name };
+    if (!form.categoryId) return { message: "Choose a category", ref: refs.category };
+    if (!(priceNumber > 0)) return { message: "Enter the price", ref: refs.price };
+    if (!discountValid) return { message: `First-order discount must be ${minDiscount}% to ${MAX_FIRST_BUYER_PERCENT}%`, ref: refs.price };
+    return null;
+  };
+
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const issue = problem();
+    if (issue) {
+      toast.error(issue.message);
+      issue.ref.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     setSubmitting(true);
-
-    const productData = {
-      name: formData.name,
-      description: formData.description,
-      price: parseFloat(formData.price),
-      compare_at_price: formData.compare_at_price
-        ? parseFloat(formData.compare_at_price)
-        : null,
-      first_buyer_discount_percent: Number(formData.first_buyer_discount),
-      stock_quantity: parseInt(formData.stock_quantity),
-      category_id: formData.category_id,
-      is_active: formData.is_active,
-      // Featured status is bought on the Promote page; never changed from this form.
-      sizes: splitOptions(formData.sizes),
-      colors: splitOptions(formData.colors),
+    const product = {
+      name: form.name.trim(),
+      description: form.description.trim(),
+      price: priceNumber,
+      compare_at_price: Number(form.compareAt) > priceNumber ? Number(form.compareAt) : null,
+      first_buyer_discount_percent: discountNumber,
+      stock_quantity: Math.max(0, Math.round(form.stock)),
+      category_id: form.categoryId,
+      is_active: form.isActive,
+      sizes: form.sizes,
+      colors: options.colors ? form.colors : [],
     };
-
-    const imageData = images.map((img, index) => ({
-      url: img.url,
-      is_primary: index === 0,
-      display_order: index,
-    }));
-
+    const imageData = images.map((url, index) => ({ url, is_primary: index === 0, display_order: index }));
     try {
-      if (isEditing && id) {
-        await updateProduct.mutateAsync({
-          productId: id,
-          product: productData,
-          images: imageData,
-        });
-      } else {
-        await createProduct.mutateAsync({
-          product: productData,
-          images: imageData,
-        });
-      }
+      if (isEditing && id) await updateProduct.mutateAsync({ productId: id, product, images: imageData });
+      else await createProduct.mutateAsync({ product, images: imageData });
       navigate("/vendor/products");
+    } catch (error) {
+      // The mutation hooks already show the reason.
+      console.error("[ProductForm] save failed", error);
     } finally {
       setSubmitting(false);
     }
@@ -162,11 +193,11 @@ export default function ProductForm() {
 
   if (isEditing && productLoading) {
     return (
-      <VendorLayout title="Edit Product">
-        <div className="max-w-2xl space-y-6">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-10 w-full" />
+      <VendorLayout title="Edit product">
+        <div className="mx-auto max-w-xl space-y-4">
+          <Skeleton className="h-28 w-full rounded-2xl" />
+          <Skeleton className="h-11 w-full" />
+          <Skeleton className="h-24 w-full" />
         </div>
       </VendorLayout>
     );
@@ -175,371 +206,195 @@ export default function ProductForm() {
   // New products need phone, exact location and bank account first (the database enforces it too).
   if (!isEditing && setup && !setup.complete) {
     return (
-      <VendorLayout title="Add New Product">
+      <VendorLayout title="Add product">
         <div className="mx-auto max-w-md rounded-2xl border bg-card p-6 text-center">
-          <p className="font-semibold">Complete your shop setup first</p>
+          <p className="font-semibold">One step before your first product</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Add your {missingSetupItems(setup).join(", ")} in Settings. Then you can list products.
+            Add your {missingSetupItems(setup).join(", ")} so buyers can trust your shop and you can get paid.
           </p>
-          <Button asChild className="mt-4 rounded-full"><Link to="/vendor/settings">Open Settings</Link></Button>
+          <Button asChild className="mt-4 rounded-full"><Link to="/vendor/settings">Finish shop setup</Link></Button>
         </div>
       </VendorLayout>
     );
   }
 
+  const busy = submitting || uploadingCount > 0;
+
   return (
-    <VendorLayout title={isEditing ? "Edit Product" : "Add New Product"}>
-      <form onSubmit={handleSubmit} className="pb-24 md:pb-6">
-        <div className="max-w-2xl mx-auto space-y-4 md:space-y-6">
-          {/* Progress Header - Mobile */}
-          <div className="md:hidden sticky top-0 z-10 bg-background/95 backdrop-blur -mx-4 px-4 py-3 border-b">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold">
-                {isEditing ? "Edit Product" : "New Product"}
-              </h2>
-              <Button type="submit" size="sm" disabled={submitting}>
-                {submitting && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
-                {isEditing ? "Save" : "Create"}
-              </Button>
+    <VendorLayout title={isEditing ? "Edit product" : "Add product"} hideTabBar>
+      <form onSubmit={submit} className="mx-auto max-w-xl space-y-6 pb-28 md:pb-8" noValidate>
+        {/* Photos */}
+        <Section title="Photos" hint="The first photo is the cover. Tap another photo to make it the cover." sectionRef={refs.photos}>
+          <input ref={photoInput} type="file" accept="image/*" multiple className="hidden" onChange={addPhotos} />
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+            {images.map((url, index) => (
+              <div key={url} className={cn("relative aspect-square overflow-hidden rounded-2xl border-2", index === 0 ? "border-primary" : "border-transparent")}>
+                <button type="button" onClick={() => index !== 0 && makeCover(index)} className="h-full w-full" aria-label={index === 0 ? "Cover photo" : `Make photo ${index + 1} the cover`}>
+                  <img src={url} alt="" className="h-full w-full object-cover" />
+                </button>
+                {index === 0 && (
+                  <span className="absolute bottom-1 left-1 inline-flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                    <Star className="h-2.5 w-2.5 fill-current" />Cover
+                  </span>
+                )}
+                <button type="button" onClick={() => removePhoto(index)} aria-label={`Remove photo ${index + 1}`}
+                  className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+            {Array.from({ length: uploadingCount }, (_, i) => (
+              <div key={`up-${i}`} className="flex aspect-square items-center justify-center rounded-2xl bg-muted">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ))}
+            {images.length + uploadingCount < MAX_PHOTOS && (
+              <button type="button" onClick={() => photoInput.current?.click()} disabled={uploadingCount > 0}
+                className={cn("flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed text-muted-foreground transition-colors hover:border-primary/50 hover:bg-muted/50",
+                  images.length === 0 && "col-span-3 aspect-[3/1] border-primary/40 bg-primary/5 text-primary sm:col-span-4")}>
+                <Camera className="h-6 w-6" />
+                <span className="text-xs font-semibold">{images.length === 0 ? "Add photos (up to 6)" : "Add"}</span>
+              </button>
+            )}
+          </div>
+        </Section>
+
+        {/* Name */}
+        <Section title="What are you selling?" sectionRef={refs.name}>
+          <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Embroidered Babban Riga" className="h-12 text-base" maxLength={120} />
+        </Section>
+
+        {/* Category */}
+        <Section title="Category" sectionRef={refs.category}>
+          {categoriesLoading ? (
+            <Skeleton className="h-10 w-full" />
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {categories?.map((c) => (
+                <button key={c.id} type="button" onClick={() => set("categoryId", c.id)} aria-pressed={form.categoryId === c.id}
+                  className={cn("min-h-10 rounded-full border px-4 text-sm font-medium transition-colors active:scale-95",
+                    form.categoryId === c.id ? "border-primary bg-primary text-primary-foreground" : "bg-background hover:bg-muted")}>
+                  {cleanCategoryName(c.name)}
+                </button>
+              ))}
+            </div>
+          )}
+        </Section>
+
+        {/* Price & quantity */}
+        <Section title="Price and quantity" sectionRef={refs.price}>
+          <div className="grid grid-cols-[1fr_auto] gap-3">
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₦</span>
+              <Input type="number" inputMode="numeric" min="0" step="100" value={form.price} onChange={(e) => set("price", e.target.value)}
+                placeholder="Price" className="h-12 pl-7 text-base" aria-label="Price in naira" />
+            </div>
+            <div className="flex h-12 items-center rounded-md border">
+              <button type="button" onClick={() => set("stock", Math.max(0, form.stock - 1))} className="flex h-full w-11 items-center justify-center" aria-label="One less">
+                <Minus className="h-4 w-4" />
+              </button>
+              <Input type="number" inputMode="numeric" min="0" value={form.stock} onChange={(e) => set("stock", Math.max(0, Number(e.target.value) || 0))}
+                className="h-full w-14 border-0 px-0 text-center text-base shadow-none focus-visible:ring-0" aria-label="How many in stock" />
+              <button type="button" onClick={() => set("stock", form.stock + 1)} className="flex h-full w-11 items-center justify-center" aria-label="One more">
+                <Plus className="h-4 w-4" />
+              </button>
             </div>
           </div>
+          <p className="text-right text-[11px] text-muted-foreground -mt-1">in stock</p>
 
-          {/* Basic Info */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">1</span>
-                Basic Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm">Product Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, name: e.target.value }))
-                  }
-                  placeholder="e.g. Premium Kaftan Set"
-                  required
-                  className="h-11"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description" className="text-sm">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, description: e.target.value }))
-                  }
-                  placeholder="Describe your product - materials, fit, care instructions..."
-                  rows={4}
-                  className="resize-none"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="category" className="text-sm">Category *</Label>
-                {categoriesLoading ? (
-                  <Skeleton className="h-11 w-full" />
-                ) : (
-                  <Select
-                    value={formData.category_id}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({ ...prev, category_id: value }))
-                    }
-                    required
-                  >
-                    <SelectTrigger className="h-11">
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories?.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Pricing & Stock */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">2</span>
-                Pricing & Stock
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="price" className="text-sm">Price (₦) *</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₦</span>
-                    <Input
-                      id="price"
-                      type="number"
-                      value={formData.price}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, price: e.target.value }))
-                      }
-                      placeholder="0"
-                      min="0"
-                      step="100"
-                      required
-                      className="h-11 pl-7"
-                    />
-                  </div>
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3">
+            <p className="flex items-center gap-1.5 text-sm font-medium"><Gift className="h-4 w-4 text-primary" />First-order discount</p>
+            <p className="text-xs text-muted-foreground">Only for shoppers buying on Kano Kaftan for the first time. It brings you new customers.</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {discountChoices.map((p) => (
+                <button key={p} type="button" onClick={() => { set("discount", String(p)); setCustomDiscount(false); }}
+                  aria-pressed={!customDiscount && discountNumber === p}
+                  className={cn("min-h-10 rounded-xl border px-4 text-sm font-semibold", !customDiscount && discountNumber === p ? "border-primary bg-primary text-primary-foreground" : "bg-background")}>
+                  {p}%
+                </button>
+              ))}
+              {customDiscount ? (
+                <div className="relative">
+                  <Input autoFocus type="number" inputMode="numeric" min={minDiscount} max={MAX_FIRST_BUYER_PERCENT} value={form.discount}
+                    onChange={(e) => set("discount", e.target.value)} className="h-10 w-20 pr-6" aria-label="Discount percent" />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="compare_at_price" className="text-sm">Compare Price</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₦</span>
-                    <Input
-                      id="compare_at_price"
-                      type="number"
-                      value={formData.compare_at_price}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          compare_at_price: e.target.value,
-                        }))
-                      }
-                      placeholder="0"
-                      min="0"
-                      step="100"
-                      className="h-11 pl-7"
-                    />
-                  </div>
-                  <p className="text-[10px] text-muted-foreground">Original price for showing discount</p>
-                </div>
-              </div>
-
-              <FirstBuyerDiscountField
-                value={formData.first_buyer_discount}
-                price={formData.price}
-                onChange={(v) => setFormData((prev) => ({ ...prev, first_buyer_discount: v }))}
-              />
-
-              <div className="space-y-2">
-                <Label htmlFor="stock" className="text-sm">Stock Quantity *</Label>
-                <Input
-                  id="stock"
-                  type="number"
-                  value={formData.stock_quantity}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      stock_quantity: e.target.value,
-                    }))
-                  }
-                  placeholder="How many do you have?"
-                  min="0"
-                  required
-                  className="h-11"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="sizes" className="text-sm">Sizes</Label>
-                  <Input
-                    id="sizes"
-                    value={formData.sizes}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, sizes: e.target.value }))}
-                    placeholder="S, M, L, XL"
-                    className="h-11"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="colors" className="text-sm">Colours</Label>
-                  <Input
-                    id="colors"
-                    value={formData.colors}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, colors: e.target.value }))}
-                    placeholder="White, Navy, Gold"
-                    className="h-11"
-                  />
-                </div>
-              </div>
-              <p className="text-[10px] text-muted-foreground -mt-2">
-                Separate with commas. Leave empty if the item has one size or colour. Buyers must pick one when you list several.
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Images */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">3</span>
-                Product Images
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-xs text-muted-foreground">
-                Add up to 6 photos. Shoppers see them in this order and the first is the main photo. Use the arrows to change the order.
-              </p>
-              <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-                {images.map((image, index) => (
-                  <div key={image.url} className="space-y-1.5">
-                    <div
-                      className={`relative rounded-xl overflow-hidden border-2 aspect-square ${
-                        index === 0 ? "border-primary ring-2 ring-primary/20" : "border-border"
-                      }`}
-                    >
-                      <img src={image.url} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
-                      <span className="absolute top-1 left-1 text-[10px] bg-black/60 text-white px-1.5 py-0.5 rounded-full font-medium">
-                        {index === 0 ? "Main" : index + 1}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/60 text-white flex items-center justify-center"
-                        aria-label={`Remove photo ${index + 1}`}
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                    {images.length > 1 && (
-                      <div className="flex items-center justify-between gap-1">
-                        <Button type="button" variant="outline" size="icon" className="h-7 w-7"
-                          onClick={() => moveImage(index, index - 1)} disabled={index === 0} aria-label="Move left">
-                          <ChevronLeft className="h-4 w-4" />
-                        </Button>
-                        {index !== 0 ? (
-                          <Button type="button" variant="ghost" size="sm" className="h-7 px-1.5 text-[11px]"
-                            onClick={() => moveImage(index, 0)} aria-label="Make main photo">
-                            <Star className="h-3 w-3 mr-0.5" />
-                            Main
-                          </Button>
-                        ) : <span />}
-                        <Button type="button" variant="outline" size="icon" className="h-7 w-7"
-                          onClick={() => moveImage(index, index + 1)} disabled={index === images.length - 1} aria-label="Move right">
-                          <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-
-                {images.length < 6 && (
-                  <label className="flex flex-col items-center justify-center aspect-square border-2 border-dashed rounded-xl cursor-pointer hover:bg-muted/50 hover:border-primary/50 transition-all">
-                    {uploading ? (
-                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                    ) : (
-                      <>
-                        <Upload className="h-6 w-6 text-muted-foreground mb-1" />
-                        <span className="text-xs text-muted-foreground">Add Photo</span>
-                      </>
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      className="hidden"
-                      onChange={handleImageUpload}
-                      disabled={uploading}
-                    />
-                  </label>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Status */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">4</span>
-                Visibility & Features
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                <div className="flex-1">
-                  <Label htmlFor="is_active" className="text-sm font-medium">Publish Product</Label>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Make visible to customers
-                  </p>
-                </div>
-                <Switch
-                  id="is_active"
-                  checked={formData.is_active}
-                  onCheckedChange={(checked) =>
-                    setFormData((prev) => ({ ...prev, is_active: checked }))
-                  }
-                />
-              </div>
-
-              <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium flex items-center gap-2">
-                    <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
-                    {formData.featured ? "Featured on homepage" : "Homepage promotion"}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {isEditing
-                      ? "Show this product in the homepage carousel"
-                      : "Save the product first, then promote it"}
-                  </p>
-                </div>
-                {isEditing && id && (
-                  <Button asChild type="button" size="sm" variant="outline" className="gap-1.5 flex-shrink-0">
-                    <Link to={`/vendor/promote?product=${id}`}>
-                      <Megaphone className="h-3.5 w-3.5" />
-                      Promote
-                    </Link>
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Desktop Actions */}
-          <div className="hidden md:flex gap-4 pt-2">
-            <Button type="submit" size="lg" disabled={submitting} className="gap-2">
-              {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              {isEditing ? "Save Changes" : "Create Product"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              onClick={() => navigate("/vendor/products")}
-            >
-              Cancel
-            </Button>
-          </div>
-
-          {/* Mobile Fixed Actions */}
-          <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t z-40">
-            <div className="flex gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1"
-                onClick={() => navigate("/vendor/products")}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" className="flex-1 gap-2" disabled={submitting}>
-                {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                {isEditing ? "Save" : "Create"}
-              </Button>
+              ) : (
+                <button type="button" onClick={() => setCustomDiscount(true)} className="min-h-10 rounded-xl border border-dashed px-3 text-sm text-muted-foreground">Other</button>
+              )}
             </div>
+            {priceNumber > 0 && discountValid && (
+              <p className="mt-2 text-xs">First-time buyers pay <span className="font-semibold">{naira(firstBuyerPrice(priceNumber, discountNumber))}</span> instead of {naira(priceNumber)}.</p>
+            )}
+          </div>
+        </Section>
+
+        {/* Sizes (only when they fit the category) */}
+        {(hasPresetSizes || showSizes || form.sizes.length > 0) ? (
+          <Section title={`${options.sizeLabel} available`} hint="Tap every size you have. Skip if it comes in one size.">
+            <SizePicker groups={options.sizeGroups} value={form.sizes} onChange={(sizes) => set("sizes", sizes)} />
+          </Section>
+        ) : (
+          form.categoryId && <Optional label="Add sizes (optional)" open={false} onOpen={() => setShowSizes(true)}>{null}</Optional>
+        )}
+
+        {/* Colours (optional) */}
+        {options.colors && (
+          <Optional label="Add colours (optional)" open={showColors || form.colors.length > 0} onOpen={() => setShowColors(true)}>
+            <Section title="Colours available" hint="Tap every colour you have.">
+              <ColorPicker value={form.colors} onChange={(colors) => set("colors", colors)} />
+            </Section>
+          </Optional>
+        )}
+
+        {/* More details */}
+        <div className="rounded-2xl border">
+          <button type="button" onClick={() => setShowMore((v) => !v)} className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold" aria-expanded={showMore}>
+            More details (optional)
+            <ChevronDown className={cn("h-4 w-4 transition-transform", showMore && "rotate-180")} />
+          </button>
+          {showMore && (
+            <div className="space-y-4 border-t px-4 pb-4 pt-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="description">Description</Label>
+                <Textarea id="description" value={form.description} onChange={(e) => set("description", e.target.value)} rows={4} className="resize-none"
+                  placeholder="Material, fit, how to care for it…" />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="compare">Old price (shows a "sale" tag)</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₦</span>
+                  <Input id="compare" type="number" inputMode="numeric" min="0" step="100" value={form.compareAt} onChange={(e) => set("compareAt", e.target.value)}
+                    placeholder="Leave empty if not on sale" className="h-11 pl-7" />
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <Label htmlFor="active">Show in my shop</Label>
+                  <p className="text-xs text-muted-foreground">Turn off to hide it without deleting.</p>
+                </div>
+                <Switch id="active" checked={form.isActive} onCheckedChange={(v) => set("isActive", v)} />
+              </div>
+              {isEditing && id && (
+                <Button asChild type="button" variant="outline" className="w-full gap-1.5">
+                  <Link to={`/vendor/promote?product=${id}`}><Megaphone className="h-4 w-4" />Promote on the homepage</Link>
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* One clear action */}
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] backdrop-blur md:static md:border-0 md:bg-transparent md:p-0">
+          <div className="mx-auto flex max-w-xl gap-2">
+            <Button type="button" variant="ghost" className="h-12 rounded-full" onClick={() => navigate("/vendor/products")}>Cancel</Button>
+            <Button type="submit" className="h-12 flex-1 rounded-full text-base" disabled={busy}>
+              {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {uploadingCount > 0 ? "Uploading photos…" : isEditing ? "Save changes" : "Post product"}
+            </Button>
           </div>
         </div>
       </form>
-
     </VendorLayout>
   );
 }

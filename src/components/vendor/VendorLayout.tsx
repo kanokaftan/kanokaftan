@@ -17,6 +17,8 @@ import { BubbleTabBar } from "@/components/layout/BubbleTabBar";
 interface VendorLayoutProps {
   children: ReactNode;
   title: string;
+  /** Full-focus screens (e.g. adding a product) hide the phone tab bar so their own action button shows. */
+  hideTabBar?: boolean;
 }
 
 const navItems = [
@@ -39,7 +41,7 @@ function useSellerUnreadChats(): number {
   return conversations.filter((c) => c.unread && (c.role === "vendor" || c.role === "support_user")).length;
 }
 
-export function VendorLayout({ children, title }: VendorLayoutProps) {
+export function VendorLayout({ children, title, hideTabBar = false }: VendorLayoutProps) {
   const { isLoading, isVendor } = useVendorAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -131,7 +133,7 @@ export function VendorLayout({ children, title }: VendorLayoutProps) {
       </div>
 
       {/* Phone tab bar: the five things sellers do most */}
-      <BubbleTabBar
+      {!hideTabBar && <BubbleTabBar
         className="md:hidden"
         items={[
           { href: "/vendor/dashboard", label: "Home", icon: LayoutDashboard },
@@ -145,7 +147,7 @@ export function VendorLayout({ children, title }: VendorLayoutProps) {
             match: (pathname) => MORE_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`)),
           },
         ]}
-      />
+      />}
     </div>
   );
 }
