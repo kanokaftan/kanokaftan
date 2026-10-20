@@ -5,6 +5,8 @@ import { ArrowRight, Laptop, Smartphone, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LiveVisitorsList } from "@/components/admin/LiveVisitorsList";
+import { useLiveVisitors } from "@/hooks/useTrafficAnalytics";
 
 interface TodayOverview {
   live: number;
@@ -18,6 +20,7 @@ interface TodayOverview {
 }
 
 const REFRESH_MS = 60_000;
+const LIVE_PREVIEW = 4;
 const count = (n: number) => new Intl.NumberFormat("en-NG").format(n);
 
 /** Admin dashboard: today's traffic at a glance, plus the newest sign-ups. */
@@ -44,6 +47,7 @@ export function TodayTrafficCard() {
     },
     refetchInterval: REFRESH_MS,
   });
+  const { data: live } = useLiveVisitors();
 
   if (isLoading) return <Skeleton className="h-48 rounded-2xl" />;
   if (error || !data) {
@@ -71,7 +75,7 @@ export function TodayTrafficCard() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-60" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
               </span>
-              {count(data.live)}
+              {count(live?.visitors ?? data.live)}
             </p>
             <p className="text-[11px] text-muted-foreground">Online now</p>
           </div>
@@ -86,6 +90,13 @@ export function TodayTrafficCard() {
             </div>
           ))}
         </div>
+
+        {!!live?.people.length && (
+          <div className="-mx-4 overflow-hidden">
+            <p className="px-4 pb-1.5 text-xs text-muted-foreground">Who's on the site now</p>
+            <LiveVisitorsList people={live.people} preview={LIVE_PREVIEW} />
+          </div>
+        )}
 
         {data.devices.length > 0 && (
           <div>

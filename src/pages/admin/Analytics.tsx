@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { format, formatDistanceToNowStrict, parseISO } from "date-fns";
-import { ArrowDownRight, ArrowUpRight, ChevronDown, ChevronRight, Globe, Info, Minus, RefreshCw, Smartphone } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { format, parseISO } from "date-fns";
+import { ArrowDownRight, ArrowUpRight, Globe, Info, Minus, RefreshCw } from "lucide-react";
+import { LiveVisitorsList } from "@/components/admin/LiveVisitorsList";
+import { pageLabel, zoneLabel } from "@/lib/analyticsLabels";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   RANGE_LABELS, useAdminAnalytics, useLiveVisitors,
-  type AnalyticsReport, type LiveVisitor, type LiveVisitorRole, type NamedCount, type RangeKey,
+  type AnalyticsReport, type NamedCount, type RangeKey,
 } from "@/hooks/useTrafficAnalytics";
 import { cn } from "@/lib/utils";
 
@@ -41,44 +42,6 @@ function duration(seconds: number | null): string {
 }
 
 /** "/products/blue-kaftan" -> "Product · blue kaftan" so the list reads like the app. */
-function pageLabel(path: string): string {
-  if (path === "/") return "Home";
-  const known: Record<string, string> = {
-    "/products": "All products", "/shops": "Shops", "/cart": "Cart", "/checkout": "Checkout", "/orders": "My orders",
-    "/wishlist": "Favourites", "/messages": "Messages", "/profile": "Profile", "/auth": "Sign in", "/sell": "Sell on Kano Kaftan",
-    "/notifications": "Notifications", "/help": "Help", "/vendor/dashboard": "Seller dashboard", "/vendor/login": "Seller sign in",
-  };
-  if (known[path]) return known[path];
-  const [, section, rest] = path.split("/");
-  const name = rest ? decodeURIComponent(rest).replace(/-/g, " ") : "";
-  if (section === "products" && name) return `Product · ${name}`;
-  if (section === "shop" && name) return `Shop · ${name}`;
-  if (section === "orders") return "Order details";
-  if (section === "messages") return "Chat";
-  if (section === "stories") return "Stories";
-  if (section === "vendor") return `Seller dashboard${rest ? ` · ${rest.replace(/-/g, " ")}` : ""}`;
-  if (section === "admin") return "Admin";
-  if (section === "invite") return "Invite friends";
-  if (section === "delivery") return "Delivery dashboard";
-  if (section === "checkout") return "Checkout";
-  return path;
-}
-
-/** Device time zones give a good idea of country without asking for location. */
-const ZONE_COUNTRIES: Record<string, string> = {
-  "Africa/Lagos": "Nigeria", "Africa/Accra": "Ghana", "Africa/Abidjan": "Côte d'Ivoire", "Africa/Niamey": "Niger",
-  "Africa/Douala": "Cameroon", "Africa/Ndjamena": "Chad", "Africa/Porto-Novo": "Benin", "Africa/Lome": "Togo",
-  "Africa/Dakar": "Senegal", "Africa/Nairobi": "Kenya", "Africa/Johannesburg": "South Africa", "Africa/Cairo": "Egypt",
-  "Africa/Khartoum": "Sudan", "Europe/London": "United Kingdom", "Europe/Dublin": "Ireland", "Europe/Paris": "France",
-  "Europe/Berlin": "Germany", "Europe/Rome": "Italy", "Europe/Madrid": "Spain", "Europe/Amsterdam": "Netherlands",
-  "Asia/Dubai": "UAE", "Asia/Riyadh": "Saudi Arabia", "Asia/Qatar": "Qatar", "Asia/Kolkata": "India", "Asia/Shanghai": "China",
-  "America/New_York": "USA (East)", "America/Chicago": "USA (Central)", "America/Denver": "USA (Mountain)",
-  "America/Los_Angeles": "USA (West)", "America/Toronto": "Canada", "Australia/Sydney": "Australia",
-};
-function zoneLabel(zone: string): string {
-  return ZONE_COUNTRIES[zone] ?? (zone === "Unknown" ? "Unknown" : zone.split("/").pop()!.replace(/_/g, " "));
-}
-
 function Delta({ now, before }: { now: number; before: number }) {
   if (!before && !now) return null;
   if (!before) return <span className="text-xs text-muted-foreground">New</span>;
@@ -282,62 +245,10 @@ function HoursCard({ hours }: { hours: AnalyticsReport["hours"] }) {
   );
 }
 
-const ROLE_LABEL: Record<LiveVisitorRole, string> = {
-  guest: "Guest", buyer: "Customer", seller: "Seller", admin: "Admin", delivery: "Delivery",
-};
-const ROLE_TONE: Record<LiveVisitorRole, string> = {
-  guest: "bg-muted text-muted-foreground",
-  buyer: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
-  seller: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
-  admin: "bg-primary/15 text-primary",
-  delivery: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300",
-};
-const LIVE_PEOPLE_PREVIEW = 6;
-
-function personLink(person: LiveVisitor): string | null {
-  if (!person.user_id) return null;
-  return person.role === "seller" ? `/admin/vendors/${person.user_id}` : `/admin/users/${person.user_id}`;
-}
-
-function LivePersonRow({ person }: { person: LiveVisitor }) {
-  const name = person.name || person.email || (person.role === "guest" ? "Guest" : "Signed-in visitor");
-  const link = personLink(person);
-  const country = person.timezone ? ZONE_COUNTRIES[person.timezone] : undefined;
-  const device = [person.device, person.os, person.app ? "installed app" : person.browser].filter(Boolean).join(" · ");
-  const onSite = person.visit_started ? formatDistanceToNowStrict(parseISO(person.visit_started)) : null;
-  const body = (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
-      <Avatar className="h-9 w-9">
-        <AvatarImage src={person.avatar_url || undefined} />
-        <AvatarFallback className="text-xs">{person.role === "guest" ? <Smartphone className="h-4 w-4" /> : name.charAt(0).toUpperCase()}</AvatarFallback>
-      </Avatar>
-      <div className="min-w-0">
-        <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-          <span className="break-words text-sm font-medium">{name}</span>
-          <span className={cn("rounded-full px-1.5 py-0.5 text-[10px] font-semibold", ROLE_TONE[person.role])}>{ROLE_LABEL[person.role]}</span>
-        </p>
-        {person.store_name && person.role === "seller" && <p className="break-words text-xs text-muted-foreground">{person.store_name}</p>}
-        <p className="break-words text-xs">
-          <span className="text-muted-foreground">Now on </span>
-          <span className="font-medium">{pageLabel(person.path)}</span>
-        </p>
-        <p className="break-words text-[11px] text-muted-foreground">
-          {[device, country, onSite && `on site ${onSite}`, `${person.pages_seen} ${person.pages_seen === 1 ? "page" : "pages"}`, person.source && person.source !== "direct" ? `came from ${person.source}` : null]
-            .filter(Boolean).join(" · ")}
-        </p>
-      </div>
-      {link ? <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" /> : <span />}
-    </div>
-  );
-  return link ? <Link to={link} className="block transition-colors hover:bg-muted/40">{body}</Link> : body;
-}
-
 function LiveCard() {
   const { data, isLoading } = useLiveVisitors();
-  const [showAll, setShowAll] = useState(false);
   const people = data?.people ?? [];
   const signedIn = people.filter((p) => p.user_id).length;
-  const shown = showAll ? people : people.slice(0, LIVE_PEOPLE_PREVIEW);
   return (
     <Card>
       <CardContent className="flex items-start gap-3 p-4">
@@ -358,19 +269,7 @@ function LiveCard() {
           )}
         </div>
       </CardContent>
-      {people.length > 0 && (
-        <div className="border-t">
-          <ul className="divide-y">
-            {shown.map((person) => <li key={person.visitor_id}><LivePersonRow person={person} /></li>)}
-          </ul>
-          {people.length > LIVE_PEOPLE_PREVIEW && (
-            <button type="button" onClick={() => setShowAll((v) => !v)} className="flex w-full items-center justify-center gap-1 border-t py-2.5 text-xs font-medium text-primary">
-              {showAll ? "Show fewer" : `Show all ${people.length}`}
-              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showAll && "rotate-180")} />
-            </button>
-          )}
-        </div>
-      )}
+      <LiveVisitorsList people={people} preview={6} />
     </Card>
   );
 }
