@@ -272,7 +272,62 @@ async function savePhotos(limit = 40) {
   note(`saved ${index.length} product photos`);
 }
 
-if (MODE === 'reel') {
+/** Every photo of one shop's products, plus its logo and banner, and the logos/banners of the other shops. */
+async function saveShopMedia(slug) {
+  if (!publicKey) return note('FAILED shop media: no public key seen');
+  const base = 'https://anptvdidwxiigzkqhdia.supabase.co/rest/v1/';
+  const get = async (q) => {
+    const res = await fetch(base + q, { headers: { apikey: publicKey, authorization: 'Bearer ' + publicKey } });
+    if (!res.ok) throw new Error(q + ' ' + res.status);
+    return res.json();
+  };
+  const save = async (url, file) => {
+    const img = await fetch(url.startsWith('http') ? url : STORAGE + url);
+    if (!img.ok) return false;
+    writeFileSync(OUT + 'shop/' + file, Buffer.from(await img.arrayBuffer()));
+    return true;
+  };
+  mkdirSync(OUT + 'shop', { recursive: true });
+  const index = { shop: null, products: [], others: [] };
+  try {
+    const [shop] = await get(`profiles?select=id,store_name,store_slug,avatar_url,store_banner_url,store_description,verification_tier&store_slug=eq.${slug}`);
+    index.shop = shop;
+    if (shop.avatar_url) await save(shop.avatar_url, 'avatar.jpg');
+    if (shop.store_banner_url) await save(shop.store_banner_url, 'banner.jpg');
+    const products = await get(`products?select=id,name,slug,price,compare_at_price,colors,sizes,product_images(url,display_order)&vendor_id=eq.${shop.id}&is_active=eq.true&order=created_at.desc`);
+    for (const [pi, p] of products.entries()) {
+      const files = [];
+      const imgs = [...(p.product_images || [])].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+      for (const [ii, im] of imgs.entries()) {
+        const file = `p${pi + 1}-${ii + 1}.jpg`;
+        if (await save(im.url, file)) files.push(file);
+      }
+      index.products.push({ name: p.name, slug: p.slug, price: p.price, compare_at_price: p.compare_at_price, colors: p.colors, sizes: p.sizes, files });
+    }
+    const others = await get(`profiles?select=store_name,store_slug,avatar_url,store_banner_url,verification_tier&store_slug=not.is.null&store_slug=neq.${slug}&limit=30`);
+    for (const [oi, o] of others.entries()) {
+      const entry = { name: o.store_name, slug: o.store_slug, tier: o.verification_tier, avatar: null, banner: null };
+      if (o.avatar_url && (await save(o.avatar_url, `other${oi + 1}-avatar.jpg`))) entry.avatar = `other${oi + 1}-avatar.jpg`;
+      if (o.store_banner_url && (await save(o.store_banner_url, `other${oi + 1}-banner.jpg`))) entry.banner = `other${oi + 1}-banner.jpg`;
+      index.others.push(entry);
+    }
+  } catch (e) {
+    note('FAILED shop media: ' + e.message);
+  }
+  writeFileSync(OUT + 'shop/index.json', JSON.stringify(index, null, 2));
+  note(`saved shop media: ${index.products.length} products, ${index.others.length} other shops`);
+}
+
+if (MODE === 'shop') {
+  const slug = process.env.SHOP_SLUG || 'hajmeer-enterprises';
+  await scrollShot('shop', '/shop/' + slug, 'Hajmeer');
+  await scrollShot('shops', '/shops', 'MK Shoes');
+  await scrollShot('home', '/', 'MK Shoes');
+  for (const p of ['exclusive-rings-mvgtqgo3', 'original-nice-style-shoe-mvgt9zzf', 'original-lv-mvgt4dc8', 'nice-style-shoes-mvftv84v']) {
+    await scrollShot('product-' + p, '/products/' + p, 'Hajmeer');
+  }
+  await saveShopMedia(slug);
+} else if (MODE === 'reel') {
   await scrollShot('home', '/', 'MK Shoes');
   await scrollShot('invite', '/invite', '200 K²');
   await scrollShot('profile', '/profile', 'Aisha');
