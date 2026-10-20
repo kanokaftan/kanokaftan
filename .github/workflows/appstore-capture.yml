@@ -4,7 +4,7 @@
 name: App Store screenshots
 on:
   push:
-    branches: [appstore-capture]
+    branches: [appstore-capture, reel-capture]
   workflow_dispatch:
 permissions:
   contents: write
@@ -24,13 +24,14 @@ jobs:
       - name: Capture the live site
         run: |
           cp marketing/app-store/tools/capture-live.mjs /tmp/pw/capture-live.mjs
-          SHOTS_DIR=$GITHUB_WORKSPACE/out/ node /tmp/pw/capture-live.mjs
+          MODE=$([ "$GITHUB_REF_NAME" = "reel-capture" ] && echo reel || echo appstore) SHOTS_DIR=$GITHUB_WORKSPACE/out/ node /tmp/pw/capture-live.mjs
       - name: Save to the appstore-shots branch
         run: |
           cd out
-          git init -q -b appstore-shots
+          TARGET=$([ "$GITHUB_REF_NAME" = "reel-capture" ] && echo reel-shots || echo appstore-shots)
+          git init -q -b "$TARGET"
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
           git add -A
           git commit -q -m "App Store screenshots of the live site (run ${GITHUB_RUN_ID})"
-          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" appstore-shots
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" "$TARGET"
