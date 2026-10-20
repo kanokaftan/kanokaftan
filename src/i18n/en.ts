@@ -329,6 +329,8 @@ export const en = {
     ambassadorPendingDesc: "We're reviewing it. Tap to see the status",
     partnerDashboard: "Partner dashboard",
     partnerDashboardDesc: "Give \"{{label}}\" and see your earnings",
+    deliveryDashboard: "Delivery dashboard",
+    deliveryDashboardDesc: "Your deliveries, riders and delivery codes",
     ordersLabel: "Orders",
     wishlist: "Favorites",
     addresses: "Addresses",

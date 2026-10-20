@@ -1,5 +1,5 @@
 import {
-  Activity, AlertTriangle, BarChart, Boxes, DollarSign, Flag, Gem, LayoutDashboard, Megaphone,
+  Activity, AlertTriangle, Gift, BarChart, Boxes, DollarSign, Flag, Gem, LayoutDashboard, Megaphone,
   Landmark, MessageCircle, Package, Settings, ShoppingCart, Store, Tag, Truck, UserPlus, Users,
   type LucideIcon,
 } from "lucide-react";
@@ -56,6 +56,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
   {
     title: "Growth",
     items: [
+      { title: "Referrals", url: "/admin/referrals", icon: Gift, hint: "Who invites friends and what they earn", keywords: "invite k2 credit friends referrers earnings" },
       { title: "Ambassadors", url: "/admin/ambassadors", icon: UserPlus, hint: "Referrals and applications", keywords: "referral invite",
         count: (o) => o.ambassador_applications },
       { title: "Partners", url: "/admin/partners", icon: Gem, hint: "Founding partners and choices", keywords: "marmara choice commission" },

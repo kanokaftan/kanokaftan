@@ -81,3 +81,163 @@ export function whatsappNumber(raw: string | null | undefined): string | null {
   if (digits.startsWith("0")) return `234${digits.slice(1)}`;
   return digits;
 }
+
+// ---------------------------------------------------------------------------
+// Delivery company accounts (/delivery) and admin links to them
+// ---------------------------------------------------------------------------
+
+export type DeliveryStage = "new" | "accepted" | "picked_up" | "on_the_way" | "delivered" | "cancelled";
+export type DeliveryAction = "accept" | "picked_up" | "on_the_way" | "problem";
+
+export interface DeliveryPickup {
+  shop: string;
+  phone: string | null;
+  address: string;
+  lat: string | null;
+  lng: string | null;
+  items: number;
+  ready: boolean;
+}
+
+export interface DeliveryJob {
+  order_id: string;
+  ref: string;
+  stage: DeliveryStage;
+  order_status: string;
+  paid_at: string;
+  assigned_at: string;
+  accepted_at: string | null;
+  picked_up_at: string | null;
+  delivered_at: string | null;
+  rider_name: string | null;
+  rider_phone: string | null;
+  problem: string | null;
+  delivery_fee: number;
+  items: number;
+  customer: { name: string | null; phone: string | null; address: string };
+  pickups: DeliveryPickup[];
+}
+
+export interface DeliveryDashboard {
+  company: { id: string; name: string; phone: string | null; areas: string[] };
+  jobs: DeliveryJob[];
+}
+
+export interface LogisticsMember {
+  user_id: string;
+  email: string;
+  name: string;
+}
+
+const DELIVERY_KEY = ["delivery-dashboard"];
+const DELIVERY_REFRESH_MS = 30_000;
+
+/** Postgres error text is written for people; anything technical gets the fallback. */
+function readableError(error: unknown, fallback: string): Error {
+  const message = (error as { message?: string })?.message;
+  return new Error(message && !/^(JWT|PGRST|permission denied)/i.test(message) ? message : fallback);
+}
+
+/** "Kofar waika, , Gwale" → "Kofar waika, Gwale". */
+export function tidyAddress(address: string | null | undefined): string {
+  return (address ?? "").split(",").map((part) => part.trim()).filter(Boolean).join(", ");
+}
+
+/** The delivery company this account belongs to (links it by email the first time), or null. */
+export function useMyLogisticsCompanyId(enabled: boolean) {
+  return useQuery({
+    queryKey: ["my-logistics-company"],
+    enabled,
+    staleTime: 5 * 60_000,
+    queryFn: async (): Promise<string | null> => {
+      const { data, error } = await supabase.rpc("my_logistics_company_id" as never);
+      if (error) throw readableError(error, "Couldn't check your delivery account.");
+      return (data as string | null) ?? null;
+    },
+  });
+}
+
+export function useDeliveryDashboard(enabled: boolean) {
+  return useQuery({
+    queryKey: DELIVERY_KEY,
+    enabled,
+    refetchInterval: DELIVERY_REFRESH_MS,
+    queryFn: async (): Promise<DeliveryDashboard> => {
+      const { data, error } = await supabase.rpc("logistics_dashboard" as never);
+      if (error) throw readableError(error, "Couldn't load your deliveries.");
+      const raw = data as unknown as DeliveryDashboard;
+      return {
+        company: raw.company,
+        jobs: (raw.jobs ?? []).map((job) => ({
+          ...job,
+          delivery_fee: Number(job.delivery_fee) || 0,
+          items: Number(job.items) || 0,
+          customer: { ...job.customer, address: tidyAddress(job.customer?.address) },
+          pickups: (job.pickups ?? []).map((p) => ({ ...p, items: Number(p.items) || 0, address: tidyAddress(p.address) })),
+        })),
+      };
+    },
+  });
+}
+
+export function useUpdateDeliveryJob() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { orderId: string; action: DeliveryAction; note?: string; riderName?: string; riderPhone?: string }) => {
+      const { error } = await supabase.rpc("logistics_update_job" as never, {
+        p_order_id: input.orderId,
+        p_action: input.action,
+        p_note: input.note ?? null,
+        p_rider_name: input.riderName ?? null,
+        p_rider_phone: input.riderPhone ?? null,
+      } as never);
+      if (error) throw readableError(error, "Couldn't update this delivery. Please try again.");
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: DELIVERY_KEY }),
+  });
+}
+
+export interface ConfirmDeliveryResult {
+  ok: boolean;
+  code: "delivered" | "already_delivered" | "wrong_code" | "too_many" | "cancelled";
+  message: string;
+}
+
+/** The rider types the customer's 6-digit delivery code. */
+export function useConfirmDelivery() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { orderId: string; code: string }): Promise<ConfirmDeliveryResult> => {
+      const { data, error } = await supabase.rpc("logistics_confirm_delivery" as never, {
+        p_order_id: input.orderId,
+        p_code: input.code,
+      } as never);
+      if (error) throw readableError(error, "Couldn't check the code. Please try again.");
+      return data as unknown as ConfirmDeliveryResult;
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: DELIVERY_KEY }),
+  });
+}
+
+/** Admin: who has signed in for each company, keyed by company id. */
+export function useLogisticsMembers() {
+  return useQuery({
+    queryKey: ["logistics-members"],
+    queryFn: async (): Promise<Record<string, LogisticsMember[]>> => {
+      const { data, error } = await supabase.rpc("admin_logistics_members" as never);
+      if (error) throw readableError(error, "Couldn't load company logins.");
+      return (data as unknown as Record<string, LogisticsMember[]>) ?? {};
+    },
+  });
+}
+
+/** Admin: open (or reuse) the chat with one account, returns the conversation id. */
+export function useOpenUserChat() {
+  return useMutation({
+    mutationFn: async (userId: string): Promise<string> => {
+      const { data, error } = await supabase.rpc("admin_open_user_chat" as never, { p_user_id: userId } as never);
+      if (error) throw readableError(error, "Couldn't open the chat.");
+      return data as unknown as string;
+    },
+  });
+}

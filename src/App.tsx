@@ -30,6 +30,7 @@ const Terms = lazyPage(() => import("./pages/Terms"));
 const SupportChatRedirect = lazyPage(() => import("./pages/SupportChatRedirect"));
 const AdminDashboard = lazyPage(() => import("./pages/admin/Dashboard"));
 const AdminUsers = lazyPage(() => import("./pages/admin/Users"));
+const AdminReferrals = lazyPage(() => import("./pages/admin/Referrals"));
 const AdminVendors = lazyPage(() => import("./pages/admin/Vendors"));
 const AdminProducts = lazyPage(() => import("./pages/admin/Products"));
 const AdminOrders = lazyPage(() => import("./pages/admin/Orders"));
@@ -71,6 +72,7 @@ const AmbassadorJoin = lazyPage(() => import("./pages/AmbassadorJoin"));
 const InviteFriends = lazyPage(() => import("./pages/InviteFriends"));
 const InviteLanding = lazyPage(() => import("./pages/InviteLanding"));
 const PartnerDashboard = lazyPage(() => import("./pages/PartnerDashboard"));
+const DeliveryDashboard = lazyPage(() => import("./pages/DeliveryDashboard"));
 const SellerLogin = lazyPage(() => import("./pages/SellerLogin"));
 const VendorProfilePage = lazyPage(() => import("./pages/VendorProfile"));
 const Shops = lazyPage(() => import("./pages/Shops"));
@@ -181,6 +183,7 @@ const App = () => (
             <Route path="/invite" element={<InviteFriends />} />
             <Route path="/invite/:code" element={<InviteLanding />} />
             <Route path="/partner" element={<PartnerDashboard />} />
+            <Route path="/delivery" element={<DeliveryDashboard />} />
             <Route path="/become-vendor" element={<Navigate to="/sell" replace />} />
             <Route path="/vendor/login" element={<SellerLogin />} />
             <Route path="/vendor" element={<Navigate to="/vendor/dashboard" replace />} />
@@ -205,6 +208,7 @@ const App = () => (
             <Route path="/admin" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/referrals" element={<AdminReferrals />} />
             <Route path="/admin/vendors" element={<AdminVendors />} />
             <Route path="/admin/vendors/:id" element={<AdminVendorDetail />} />
             <Route path="/admin/users/:id" element={<AdminCustomerDetail />} />

@@ -11,11 +11,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   MessageCircle, Users, Package, ShoppingCart, Store, Wallet, ShieldCheck,
   ArrowRight, Clock, CheckCircle, XCircle, Plus, BadgeCheck, Truck, Megaphone, UserPlus,
-  PartyPopper, Boxes, Scale, AlertTriangle, Flag, RotateCcw, ChevronRight, type LucideIcon,
+  PartyPopper, Boxes, Scale, AlertTriangle, Flag, RotateCcw, ChevronRight, Gift, type LucideIcon,
 } from "lucide-react";
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
 import { withoutLeadingEmoji } from "@/lib/text";
+import { useAdminReferrers } from "@/hooks/useAdminReferrers";
+import { k2 } from "@/lib/k2";
 
 const formatTime = (date: string | null) => {
   if (!date) return "";
@@ -70,6 +72,7 @@ const statusColor = (status: string) => {
 
 export default function AdminDashboard() {
   const { data: overview, isLoading: statsLoading, error: overviewError } = useAdminOverview();
+  const { data: referrals, isLoading: referralsLoading } = useAdminReferrers({ pageSize: 1 });
   const { data: analytics, isLoading: analyticsLoading } = useAdminAnalytics(30);
   const { data: orders = [], isLoading: ordersLoading } = useRecentAdminOrders();
   const { conversations, isLoading: chatsLoading } = useConversations();
@@ -104,6 +107,7 @@ export default function AdminDashboard() {
     revenue: d.revenue,
   }));
 
+  const referralTotals = referrals?.totals;
   const statCards = [
     {
       label: "Chats Waiting",
@@ -139,6 +143,14 @@ export default function AdminDashboard() {
       value: statsLoading ? null : o?.customers ?? 0,
       icon: Users,
       href: "/admin/users",
+      urgent: false,
+    },
+    {
+      label: "Referrals",
+      value: referralsLoading ? null : referralTotals?.invited ?? 0,
+      sub: referralTotals ? `${referralTotals.verified} verified · ${k2(referralTotals.reward_k2 + referralTotals.commission_k2)}` : undefined,
+      icon: Gift,
+      href: "/admin/referrals",
       urgent: false,
     },
     {

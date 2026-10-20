@@ -329,6 +329,8 @@ export const ha = {
     ambassadorPendingDesc: "Muna dubawa. Taɓa don ganin halin da yake ciki",
     partnerDashboard: "Allon abokin hulɗa",
     partnerDashboardDesc: "Ba da \"{{label}}\" ka ga kuɗinka",
+    deliveryDashboard: "Dashboard na kai kaya",
+    deliveryDashboardDesc: "Kayan da za a kai, masu kai kaya da lambobin karɓa",
     ordersLabel: "Oda-oda",
     wishlist: "Jerin So",
     addresses: "Adireshi-adireshi",

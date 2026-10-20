@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { Loader2, MapPin, MessageCircle, Phone, Plus, Star, Truck, X } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Copy, KeyRound, Loader2, MapPin, MessageCircle, Phone, Plus, Star, Truck, X } from "lucide-react";
 import { toast } from "sonner";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Badge } from "@/components/ui/badge";
@@ -12,8 +12,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  KANO_LGAS, useLogisticsCompanies, useLogisticsOverview, useSaveLogisticsCompany, whatsappNumber,
-  type LogisticsCompany, type LogisticsCompanyInput,
+  KANO_LGAS, useLogisticsCompanies, useLogisticsMembers, useLogisticsOverview, useOpenUserChat, useSaveLogisticsCompany,
+  whatsappNumber, type LogisticsCompany, type LogisticsCompanyInput, type LogisticsMember,
 } from "@/hooks/useLogistics";
 import { cn } from "@/lib/utils";
 import { BrandIcon } from "@/components/brand/BrandIcon";
@@ -21,8 +21,16 @@ import { BrandIcon } from "@/components/brand/BrandIcon";
 const DEFAULT_PRIORITY = 100;
 const EMPTY: LogisticsCompanyInput = {
   name: "", contact_name: "", phone: "", whatsapp: "", email: "", areas: [], is_default: false, is_active: true,
-  priority: DEFAULT_PRIORITY, notes: "",
+  priority: DEFAULT_PRIORITY, notes: "", login_emails: [],
 };
+const DELIVERY_PORTAL_URL = "https://www.kanokaftan.shop/delivery";
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** "a@x.com, B@y.com\nc@z.com" → ["a@x.com", "b@y.com", "c@z.com"] (invalid ones returned separately). */
+function parseEmails(text: string): { valid: string[]; invalid: string[] } {
+  const parts = [...new Set(text.split(/[\s,;]+/).map((e) => e.trim().toLowerCase()).filter(Boolean))];
+  return { valid: parts.filter((e) => EMAIL_PATTERN.test(e)), invalid: parts.filter((e) => !EMAIL_PATTERN.test(e)) };
+}
 
 function errorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : (error as { message?: string })?.message;
@@ -34,9 +42,13 @@ function CompanySheet({ company, open, onClose }: { company: LogisticsCompany | 
   const save = useSaveLogisticsCompany();
   const [form, setForm] = useState<LogisticsCompanyInput>(EMPTY);
   const [customArea, setCustomArea] = useState("");
+  const [loginText, setLoginText] = useState("");
 
   useEffect(() => {
-    if (open) setForm(company ? { ...company } : EMPTY);
+    if (open) {
+      setForm(company ? { ...company } : EMPTY);
+      setLoginText((company?.login_emails ?? []).join(", "));
+    }
     setCustomArea("");
   }, [open, company]);
 
@@ -61,8 +73,13 @@ function CompanySheet({ company, open, onClose }: { company: LogisticsCompany | 
       toast.error("Pick at least one area, or make this the default company");
       return;
     }
+    const logins = parseEmails(loginText);
+    if (logins.invalid.length) {
+      toast.error(`Check this email: ${logins.invalid[0]}`);
+      return;
+    }
     try {
-      await save.mutateAsync({ ...form, priority: Number(form.priority) || DEFAULT_PRIORITY });
+      await save.mutateAsync({ ...form, login_emails: logins.valid, priority: Number(form.priority) || DEFAULT_PRIORITY });
       toast.success(company ? "Company updated" : "Company added");
       onClose();
     } catch (error) {
@@ -97,6 +114,23 @@ function CompanySheet({ company, open, onClose }: { company: LogisticsCompany | 
           <div className="space-y-1.5">
             <Label htmlFor="lc-contact">Contact person (optional)</Label>
             <Input id="lc-contact" value={form.contact_name ?? ""} onChange={(e) => set("contact_name", e.target.value)} />
+          </div>
+
+          <div className="space-y-1.5 rounded-xl border bg-muted/30 p-3">
+            <Label htmlFor="lc-logins" className="flex items-center gap-1.5"><KeyRound className="h-3.5 w-3.5" />Login emails</Label>
+            <Textarea
+              id="lc-logins"
+              rows={2}
+              value={loginText}
+              onChange={(e) => setLoginText(e.target.value)}
+              placeholder="dispatch@company.com, manager@company.com"
+              autoCapitalize="none"
+              spellCheck={false}
+            />
+            <p className="text-xs text-muted-foreground">
+              These people create a Kano Kaftan account (or sign in) with this email, then open {DELIVERY_PORTAL_URL.replace("https://", "")}.
+              They see every delivery given to this company and get a notification for each new one.
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -173,7 +207,49 @@ function CompanySheet({ company, open, onClose }: { company: LogisticsCompany | 
   );
 }
 
-function CompanyCard({ company, openJobs, onEdit }: { company: LogisticsCompany; openJobs: number; onEdit: () => void }) {
+/** Who can sign in for the company, with a button to message each one in the app. */
+function CompanyLogins({ company, members }: { company: LogisticsCompany; members: LogisticsMember[] }) {
+  const navigate = useNavigate();
+  const openChat = useOpenUserChat();
+  const joined = new Set(members.map((m) => m.email.toLowerCase()));
+  const waiting = (company.login_emails ?? []).filter((e) => !joined.has(e.toLowerCase()));
+
+  const message = async (member: LogisticsMember) => {
+    try {
+      const id = await openChat.mutateAsync(member.user_id);
+      navigate(`/admin/messages/${id}`);
+    } catch (error) {
+      console.error("[AdminLogistics] open chat failed", error);
+      toast.error(errorMessage(error));
+    }
+  };
+
+  if (!members.length && !waiting.length) {
+    return <p className="mt-3 text-xs text-muted-foreground">No login yet. Edit the company and add the email they'll sign in with.</p>;
+  }
+  return (
+    <div className="mt-3 space-y-1.5">
+      {members.map((m) => (
+        <div key={m.user_id} className="flex items-center justify-between gap-2 rounded-xl bg-muted/50 px-3 py-2">
+          <div className="min-w-0">
+            <p className="break-words text-sm font-medium">{m.name}</p>
+            <p className="break-all text-[11px] text-muted-foreground">{m.email} · signed in</p>
+          </div>
+          <Button size="sm" variant="outline" className="h-8 shrink-0" onClick={() => message(m)} disabled={openChat.isPending}>
+            <MessageCircle className="mr-1.5 h-3.5 w-3.5" />Message
+          </Button>
+        </div>
+      ))}
+      {waiting.map((email) => (
+        <p key={email} className="break-all rounded-xl border border-dashed px-3 py-2 text-[11px] text-muted-foreground">
+          {email} · hasn't signed in yet
+        </p>
+      ))}
+    </div>
+  );
+}
+
+function CompanyCard({ company, openJobs, members, onEdit }: { company: LogisticsCompany; openJobs: number; members: LogisticsMember[]; onEdit: () => void }) {
   const wa = whatsappNumber(company.whatsapp || company.phone);
   return (
     <div className={cn("rounded-2xl border bg-card p-4", !company.is_active && "opacity-60")}>
@@ -205,6 +281,7 @@ function CompanyCard({ company, openJobs, onEdit }: { company: LogisticsCompany;
         )}
         <Button size="sm" variant="secondary" onClick={onEdit}>Edit</Button>
       </div>
+      <CompanyLogins company={company} members={members} />
     </div>
   );
 }
@@ -213,6 +290,7 @@ function CompanyCard({ company, openJobs, onEdit }: { company: LogisticsCompany;
 export default function AdminLogistics() {
   const { data: companies, isLoading, isError, refetch } = useLogisticsCompanies();
   const { data: overview } = useLogisticsOverview();
+  const { data: members } = useLogisticsMembers();
   const [editing, setEditing] = useState<LogisticsCompany | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -252,6 +330,19 @@ export default function AdminLogistics() {
           </div>
         </div>
 
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border bg-card p-3 text-sm">
+          <KeyRound className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <span className="min-w-0 flex-1">Delivery companies manage their jobs at <span className="font-medium">{DELIVERY_PORTAL_URL.replace("https://", "")}</span></span>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8"
+            onClick={() => navigator.clipboard.writeText(DELIVERY_PORTAL_URL).then(() => toast.success("Link copied"), () => toast.error("Couldn't copy the link"))}
+          >
+            <Copy className="mr-1.5 h-3.5 w-3.5" />Copy link
+          </Button>
+        </div>
+
         {companies && !hasDefault && (
           <div className="rounded-2xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
             No default company yet. Orders from areas nobody covers still get a pickup code, but you'll need to pick a company by hand.
@@ -275,7 +366,7 @@ export default function AdminLogistics() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {companies.map((c) => (
-              <CompanyCard key={c.id} company={c} openJobs={overview?.openByCompany[c.id] ?? 0} onEdit={() => openSheet(c)} />
+              <CompanyCard key={c.id} company={c} openJobs={overview?.openByCompany[c.id] ?? 0} members={members?.[c.id] ?? []} onEdit={() => openSheet(c)} />
             ))}
           </div>
         )}

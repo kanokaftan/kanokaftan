@@ -11,7 +11,7 @@ import {
   Package,
   MapPin,
   Bell,
-  UserPlus, Gem, Gift
+  UserPlus, Gem, Gift, Truck
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ import { withProfilePrivate } from "@/lib/profilePrivate";
 import { useTranslation } from "react-i18next";
 import { useMyAmbassadorApplication, useMyAmbassadorDashboard } from "@/hooks/useAmbassadors";
 import { useMyPartner } from "@/hooks/usePartners";
+import { useMyLogisticsCompanyId } from "@/hooks/useLogistics";
 
 export default function Profile() {
   const { t } = useTranslation();
@@ -33,6 +34,8 @@ export default function Profile() {
   // Only ambassadors get a dashboard link; this also links them by email the first time.
   const { data: ambassador } = useMyAmbassadorDashboard(!!user);
   const { data: partner } = useMyPartner(!!user);
+  // Delivery company logins (linked by email the first time they sign in).
+  const { data: logisticsCompanyId } = useMyLogisticsCompanyId(!!user);
   // Customers and sellers who aren't ambassadors yet can join (or see how their application is going).
   const canJoinAmbassadors = !!user && !ambassador && !isAdmin;
   const { data: ambassadorApplication } = useMyAmbassadorApplication(canJoinAmbassadors);
@@ -150,6 +153,15 @@ export default function Profile() {
       label: t("profile.partnerDashboard"),
       description: t("profile.partnerDashboardDesc", { label: partner.choice_label || `${partner.name}'s Choice` }),
       href: "/partner",
+    });
+  }
+
+  if (logisticsCompanyId) {
+    menuItems.unshift({
+      icon: Truck,
+      label: t("profile.deliveryDashboard"),
+      description: t("profile.deliveryDashboardDesc"),
+      href: "/delivery",
     });
   }
 
