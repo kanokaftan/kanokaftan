@@ -73,6 +73,7 @@ const InviteFriends = lazyPage(() => import("./pages/InviteFriends"));
 const InviteLanding = lazyPage(() => import("./pages/InviteLanding"));
 const PartnerDashboard = lazyPage(() => import("./pages/PartnerDashboard"));
 const DeliveryDashboard = lazyPage(() => import("./pages/DeliveryDashboard"));
+const DeleteAccountInfo = lazyPage(() => import("./pages/DeleteAccountInfo"));
 const SellerLogin = lazyPage(() => import("./pages/SellerLogin"));
 const VendorProfilePage = lazyPage(() => import("./pages/VendorProfile"));
 const Shops = lazyPage(() => import("./pages/Shops"));
@@ -184,6 +185,7 @@ const App = () => (
             <Route path="/invite/:code" element={<InviteLanding />} />
             <Route path="/partner" element={<PartnerDashboard />} />
             <Route path="/delivery" element={<DeliveryDashboard />} />
+            <Route path="/delete-account" element={<DeleteAccountInfo />} />
             <Route path="/become-vendor" element={<Navigate to="/sell" replace />} />
             <Route path="/vendor/login" element={<SellerLogin />} />
             <Route path="/vendor" element={<Navigate to="/vendor/dashboard" replace />} />

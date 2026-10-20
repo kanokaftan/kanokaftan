@@ -88,8 +88,9 @@ export default function Privacy() {
                 respond within 30 days. You may also complain to the Nigeria Data Protection Commission.
               </p>
               <p>
-                To delete your account, email us from the address on your account. We will delete or anonymise your data, except
-                records we must keep by law.
+                To delete your account, open Account settings and tap "Delete my account" (see{" "}
+                <a href="/delete-account" className="underline">kanokaftan.shop/delete-account</a>), or email us from the address on
+                your account. We will delete or anonymise your data, except records we must keep by law.
               </p>
             </>
           ),

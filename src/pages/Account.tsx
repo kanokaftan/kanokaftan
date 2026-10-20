@@ -22,6 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
 import { AVATAR_MAX_DIMENSION, compressImage } from "@/lib/compressImage";
 import { BuyerBankCard } from "@/components/referral/BuyerBankCard";
+import { DeleteAccountButton } from "@/components/account/DeleteAccountCard";
 
 const accountSchema = z.object({
   full_name: z.string().min(2, "Name must be at least 2 characters"),
@@ -346,6 +347,8 @@ export default function Account() {
           <LogOut className="mr-2 h-4 w-4" />
           {t("profile.signOut")}
         </Button>
+
+        <DeleteAccountButton />
 
       </div>
     </MobileLayout>
