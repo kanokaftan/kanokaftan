@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Check, Plus, X } from "lucide-react";
+import { Check, Palette, Plus, Sparkles, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { COMMON_COLORS, sortSizes, type SizeGroup } from "@/lib/productOptions";
+import { COMMON_COLORS, LIGHT_COLORS, sortSizes, type SizeGroup } from "@/lib/productOptions";
+import { nearestColorName } from "@/lib/photoColors";
 import { cn } from "@/lib/utils";
 
 const MAX_CUSTOM_LENGTH = 20;
@@ -117,24 +118,58 @@ export function SizePicker({ groups, value, onChange }: { groups: SizeGroup[]; v
   );
 }
 
-/** Tap colours to select several, with swatches; "Other" for anything else. */
-export function ColorPicker({ value, onChange }: { value: string[]; onChange: (colors: string[]) => void }) {
+const COLLAPSED_COLORS = 12;
+
+/**
+ * Tap colours to select several, with swatches. Colours found in the photos are
+ * marked "from photo"; "Pick a shade" opens the phone's colour picker and uses the nearest name.
+ */
+export function ColorPicker({ value, onChange, detected = [] }: { value: string[]; onChange: (colors: string[]) => void; detected?: string[] }) {
+  const [showAll, setShowAll] = useState(false);
   const has = (c: string) => value.some((v) => v.toLowerCase() === c.toLowerCase());
+  const fromPhoto = (c: string) => detected.some((d) => d.toLowerCase() === c.toLowerCase());
   const extras = value.filter((v) => !COMMON_COLORS.some((c) => c.name.toLowerCase() === v.toLowerCase()));
+  // Selected and detected colours always show, even when the list is collapsed.
+  const visible = showAll
+    ? COMMON_COLORS
+    : COMMON_COLORS.filter((c, i) => i < COLLAPSED_COLORS || has(c.name) || fromPhoto(c.name));
+  const addShade = (hex: string) => {
+    const name = nearestColorName(hex);
+    if (!has(name)) onChange([...value, name]);
+  };
+
   return (
-    <div className="flex flex-wrap gap-2">
-      {COMMON_COLORS.map((c) => (
-        <Chip key={c.name} soft selected={has(c.name)} onClick={() => onChange(toggle(value, c.name))} className="pl-2">
-          <span className="relative h-5 w-5 shrink-0 rounded-full border border-black/15" style={{ background: c.swatch }}>
-            {has(c.name) && <Check className={cn("absolute inset-0 m-auto h-3.5 w-3.5", ["White", "Cream", "Sky blue"].includes(c.name) ? "text-black" : "text-white")} />}
-          </span>
-          {c.name}
-        </Chip>
-      ))}
-      {extras.map((c) => (
-        <Chip key={c} selected onClick={() => onChange(toggle(value, c))}>{c}<X className="h-3.5 w-3.5" /></Chip>
-      ))}
-      <AddOther placeholder="e.g. Peach" onAdd={(c) => onChange(has(c) ? value : [...value, c])} />
+    <div className="space-y-2.5">
+      {detected.length > 0 && (
+        <p className="flex items-center gap-1.5 rounded-xl bg-primary/5 px-3 py-2 text-xs">
+          <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary" />
+          <span>We spotted <span className="font-semibold">{detected.join(" and ")}</span> in your photo. Tap to remove if it's wrong.</span>
+        </p>
+      )}
+      <div className="flex flex-wrap gap-2">
+        {visible.map((c) => (
+          <Chip key={c.name} soft selected={has(c.name)} onClick={() => onChange(toggle(value, c.name))} className="pl-2">
+            <span className="relative h-5 w-5 shrink-0 rounded-full border border-black/15" style={{ background: c.swatch }}>
+              {has(c.name) && <Check className={cn("absolute inset-0 m-auto h-3.5 w-3.5", LIGHT_COLORS.has(c.name) ? "text-black" : "text-white")} />}
+            </span>
+            {c.name}
+            {fromPhoto(c.name) && <Sparkles className="h-3.5 w-3.5 text-primary" aria-label="found in photo" />}
+          </Chip>
+        ))}
+        {extras.map((c) => (
+          <Chip key={c} selected onClick={() => onChange(toggle(value, c))}>{c}<X className="h-3.5 w-3.5" /></Chip>
+        ))}
+        <label className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-xl border border-dashed px-3 text-sm font-medium text-muted-foreground hover:bg-muted">
+          <Palette className="h-4 w-4" />Pick a shade
+          <input type="color" className="sr-only" onChange={(e) => addShade(e.target.value)} aria-label="Pick a colour" />
+        </label>
+        <AddOther placeholder="e.g. Ash" onAdd={(c) => onChange(has(c) ? value : [...value, c])} />
+      </div>
+      {COMMON_COLORS.length > COLLAPSED_COLORS && (
+        <button type="button" onClick={() => setShowAll((v) => !v)} className="text-xs font-medium text-primary">
+          {showAll ? "Fewer colours" : "More colours"}
+        </button>
+      )}
     </div>
   );
 }

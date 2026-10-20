@@ -59,16 +59,28 @@ export const COMMON_COLORS: { name: string; swatch: string }[] = [
   { name: "Black", swatch: "#111111" },
   { name: "White", swatch: "#FFFFFF" },
   { name: "Cream", swatch: "#F3E9D2" },
+  { name: "Beige", swatch: "#D6C2A0" },
   { name: "Brown", swatch: "#7B4A2A" },
   { name: "Navy", swatch: "#1F2A4D" },
   { name: "Blue", swatch: "#2F6FD6" },
   { name: "Sky blue", swatch: "#8EC5F0" },
+  { name: "Teal", swatch: "#1F7A7A" },
   { name: "Green", swatch: "#2F7D4A" },
+  { name: "Olive", swatch: "#6B6B2A" },
   { name: "Red", swatch: "#C62E2E" },
   { name: "Wine", swatch: "#6E1E2B" },
+  { name: "Pink", swatch: "#E89AB5" },
+  { name: "Peach", swatch: "#F2B89A" },
+  { name: "Orange", swatch: "#E57A2E" },
+  { name: "Yellow", swatch: "#E8C62E" },
   { name: "Gold", swatch: "#C9A13E" },
+  { name: "Purple", swatch: "#6D3D91" },
   { name: "Grey", swatch: "#8A8A8A" },
+  { name: "Silver", swatch: "#C4C4C4" },
 ];
+
+/** Colours light enough that a white tick wouldn't show on them. */
+export const LIGHT_COLORS = new Set(["White", "Cream", "Beige", "Sky blue", "Pink", "Peach", "Yellow", "Silver"]);
 
 /** "Kaftan 👕" -> "Kaftan": category names carry emoji in the database. */
 export function cleanCategoryName(name: string): string {

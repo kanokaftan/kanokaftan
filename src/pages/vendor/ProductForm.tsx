@@ -17,11 +17,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ColorPicker, SizePicker } from "@/components/products/OptionPickers";
 import { categoryOptions, cleanCategoryName, sortSizes, tidyLegacyOptions } from "@/lib/productOptions";
 import { naira } from "@/lib/naira";
+import { detectPhotoColors } from "@/lib/photoColors";
 import { cn } from "@/lib/utils";
 
 const MAX_PHOTOS = 6;
 const MAX_FIRST_BUYER_PERCENT = 90;
 const DISCOUNT_PRESETS = [5, 10, 15, 20];
+/** At most this many colours are added automatically from photos. */
+const MAX_AUTO_COLORS = 3;
 
 interface FormState {
   name: string;
@@ -81,6 +84,9 @@ export default function ProductForm() {
   const [showColors, setShowColors] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [customDiscount, setCustomDiscount] = useState(false);
+  /** Colours found in the photos (kept even if the seller unticks one, so it isn't added again). */
+  const [detectedColors, setDetectedColors] = useState<string[]>([]);
+  const detectedRef = useRef<string[]>([]);
   const photoInput = useRef<HTMLInputElement>(null);
   const refs = { photos: useRef<HTMLElement>(null), name: useRef<HTMLElement>(null), category: useRef<HTMLElement>(null), price: useRef<HTMLElement>(null) };
 
@@ -134,6 +140,7 @@ export default function ProductForm() {
     e.target.value = "";
     if (!files.length) return;
     setUploadingCount(files.length);
+    void addColorsFrom(files);
     const results = await Promise.allSettled(files.map((file) => uploadImage(file)));
     const ok = results.flatMap((r) => (r.status === "fulfilled" ? [r.value as string] : []));
     const failed = results.length - ok.length;
@@ -143,6 +150,18 @@ export default function ProductForm() {
     }
     setImages((prev) => [...prev, ...ok].slice(0, MAX_PHOTOS));
     setUploadingCount(0);
+  };
+
+  /** Reads the main colour of each new photo and ticks it in Colours (only colours not seen before). */
+  const addColorsFrom = async (files: File[]) => {
+    const found = [...new Set((await Promise.all(files.map(detectPhotoColors))).flat())];
+    const seen = detectedRef.current;
+    const fresh = found.filter((c) => !seen.includes(c)).slice(0, Math.max(0, MAX_AUTO_COLORS - seen.length));
+    if (!fresh.length) return;
+    detectedRef.current = [...seen, ...fresh];
+    setDetectedColors(detectedRef.current);
+    setForm((f) => ({ ...f, colors: [...f.colors, ...fresh.filter((c) => !f.colors.includes(c))] }));
+    setShowColors(true);
   };
 
   const makeCover = (index: number) => setImages((prev) => [prev[index], ...prev.filter((_, i) => i !== index)]);
@@ -342,7 +361,7 @@ export default function ProductForm() {
         {options.colors && (
           <Optional label="Add colours (optional)" open={showColors || form.colors.length > 0} onOpen={() => setShowColors(true)}>
             <Section title="Colours available" hint="Tap every colour you have.">
-              <ColorPicker value={form.colors} onChange={(colors) => set("colors", colors)} />
+              <ColorPicker value={form.colors} onChange={(colors) => set("colors", colors)} detected={detectedColors.filter((c) => form.colors.includes(c))} />
             </Section>
           </Optional>
         )}
