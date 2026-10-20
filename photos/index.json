@@ -1,0 +1,282 @@
+[
+  {
+    "file": "photo-01.jpg",
+    "name": "VELDT Shoe",
+    "price": 17000,
+    "category": "shoes",
+    "slug": "veldt-shoe-mvgvnjf5"
+  },
+  {
+    "file": "photo-02.jpg",
+    "name": "VELDT Shoe",
+    "price": 17000,
+    "category": "shoes",
+    "slug": "veldt-shoe-mvgvnjf5"
+  },
+  {
+    "file": "photo-03.jpg",
+    "name": "Prada shoes",
+    "price": 8000,
+    "category": "shoes",
+    "slug": "prada-shoes-mvgvghhb"
+  },
+  {
+    "file": "photo-04.jpg",
+    "name": "Exclusive rings ",
+    "price": 3000,
+    "category": "accessories",
+    "slug": "exclusive-rings-mvgtqgo3"
+  },
+  {
+    "file": "photo-05.jpg",
+    "name": "Exclusive rings ",
+    "price": 3000,
+    "category": "accessories",
+    "slug": "exclusive-rings-mvgtqgo3"
+  },
+  {
+    "file": "photo-06.jpg",
+    "name": "Exclusive rings ",
+    "price": 3000,
+    "category": "accessories",
+    "slug": "exclusive-rings-mvgtqgo3"
+  },
+  {
+    "file": "photo-07.jpg",
+    "name": "Exclusive rings ",
+    "price": 3000,
+    "category": "accessories",
+    "slug": "exclusive-rings-mvgtqgo3"
+  },
+  {
+    "file": "photo-08.jpg",
+    "name": "Nice style shoes",
+    "price": 28000,
+    "category": "shoes",
+    "slug": "nice-style-shoes-mvftv84v"
+  },
+  {
+    "file": "photo-09.jpg",
+    "name": "Nice style shoes",
+    "price": 28000,
+    "category": "shoes",
+    "slug": "nice-style-shoes-mvftv84v"
+  },
+  {
+    "file": "photo-10.jpg",
+    "name": "Nice style shoes",
+    "price": 28000,
+    "category": "shoes",
+    "slug": "nice-style-shoes-mvftv84v"
+  },
+  {
+    "file": "photo-11.jpg",
+    "name": "Nice style shoes",
+    "price": 28000,
+    "category": "shoes",
+    "slug": "nice-style-shoes-mvftv84v"
+  },
+  {
+    "file": "photo-12.jpg",
+    "name": "Original nice style shoe",
+    "price": 28000,
+    "category": "shoes",
+    "slug": "original-nice-style-shoe-mvgt9zzf"
+  },
+  {
+    "file": "photo-13.jpg",
+    "name": "Original nice style shoe",
+    "price": 28000,
+    "category": "shoes",
+    "slug": "original-nice-style-shoe-mvgt9zzf"
+  },
+  {
+    "file": "photo-14.jpg",
+    "name": "Original nice style shoe",
+    "price": 28000,
+    "category": "shoes",
+    "slug": "original-nice-style-shoe-mvgt9zzf"
+  },
+  {
+    "file": "photo-15.jpg",
+    "name": "Original nice style shoe",
+    "price": 28000,
+    "category": "shoes",
+    "slug": "original-nice-style-shoe-mvgt9zzf"
+  },
+  {
+    "file": "photo-16.jpg",
+    "name": "Original LV",
+    "price": 18500,
+    "category": "shoes",
+    "slug": "original-lv-mvgt4dc8"
+  },
+  {
+    "file": "photo-17.jpg",
+    "name": "Osaka",
+    "price": 7500,
+    "category": "textiles",
+    "slug": "osaka-mvfkm9a3"
+  },
+  {
+    "file": "photo-18.jpg",
+    "name": "Osaka",
+    "price": 7500,
+    "category": "textiles",
+    "slug": "osaka-mvfkm9a3"
+  },
+  {
+    "file": "photo-19.jpg",
+    "name": "Osaka",
+    "price": 7500,
+    "category": "textiles",
+    "slug": "osaka-mvfkm9a3"
+  },
+  {
+    "file": "photo-20.jpg",
+    "name": "Osaka",
+    "price": 7500,
+    "category": "textiles",
+    "slug": "osaka-mvfkm9a3"
+  },
+  {
+    "file": "photo-21.jpg",
+    "name": "Osaka",
+    "price": 7500,
+    "category": "textiles",
+    "slug": "osaka-mvfkm9a3"
+  },
+  {
+    "file": "photo-22.jpg",
+    "name": "Osaka",
+    "price": 7500,
+    "category": "textiles",
+    "slug": "osaka-mvfkm9a3"
+  },
+  {
+    "file": "photo-23.jpg",
+    "name": "Osaka",
+    "price": 7500,
+    "category": "textiles",
+    "slug": "osaka-mvfkm9a3"
+  },
+  {
+    "file": "photo-24.jpg",
+    "name": "Osaka",
+    "price": 7500,
+    "category": "textiles",
+    "slug": "osaka-mvfkm9a3"
+  },
+  {
+    "file": "photo-25.jpg",
+    "name": "Osaka",
+    "price": 7500,
+    "category": "textiles",
+    "slug": "osaka-mvfkm9a3"
+  },
+  {
+    "file": "photo-26.jpg",
+    "name": "Osaka",
+    "price": 7500,
+    "category": "textiles",
+    "slug": "osaka-mvfkm9a3"
+  },
+  {
+    "file": "photo-27.jpg",
+    "name": "Osaka",
+    "price": 7500,
+    "category": "textiles",
+    "slug": "osaka-mvfkm9a3"
+  },
+  {
+    "file": "photo-28.jpg",
+    "name": "Shadda wifi",
+    "price": 9000,
+    "category": "textiles",
+    "slug": "shadda-wifi-mvfkfl4m"
+  },
+  {
+    "file": "photo-29.jpg",
+    "name": "Shadda wifi",
+    "price": 9000,
+    "category": "textiles",
+    "slug": "shadda-wifi-mvfkfl4m"
+  },
+  {
+    "file": "photo-30.jpg",
+    "name": "Shadda wifi",
+    "price": 9000,
+    "category": "textiles",
+    "slug": "shadda-wifi-mvfkfl4m"
+  },
+  {
+    "file": "photo-31.jpg",
+    "name": "Shadda wifi",
+    "price": 9000,
+    "category": "textiles",
+    "slug": "shadda-wifi-mvfkfl4m"
+  },
+  {
+    "file": "photo-32.jpg",
+    "name": "Shadda wifi",
+    "price": 9000,
+    "category": "textiles",
+    "slug": "shadda-wifi-mvfkfl4m"
+  },
+  {
+    "file": "photo-33.jpg",
+    "name": "Shadda wifi",
+    "price": 9000,
+    "category": "textiles",
+    "slug": "shadda-wifi-mvfkfl4m"
+  },
+  {
+    "file": "photo-34.jpg",
+    "name": "Shadda wifi",
+    "price": 9000,
+    "category": "textiles",
+    "slug": "shadda-wifi-mvfkfl4m"
+  },
+  {
+    "file": "photo-35.jpg",
+    "name": "Shadda wifi",
+    "price": 9000,
+    "category": "textiles",
+    "slug": "shadda-wifi-mvfkfl4m"
+  },
+  {
+    "file": "photo-36.jpg",
+    "name": "Shadda wifi",
+    "price": 9000,
+    "category": "textiles",
+    "slug": "shadda-wifi-mvfkfl4m"
+  },
+  {
+    "file": "photo-37.jpg",
+    "name": "Premium footwear",
+    "price": 25000,
+    "category": "shoes",
+    "slug": "premium-footwear-mvff8whu"
+  },
+  {
+    "file": "photo-38.jpg",
+    "name": "Fumo Wears",
+    "price": 12500,
+    "category": "shoes",
+    "slug": "fumo-wears-mvff5sl4"
+  },
+  {
+    "file": "photo-39.jpg",
+    "name": "Fumo Wears",
+    "price": 12500,
+    "category": "shoes",
+    "slug": "fumo-wears-mvff5sl4"
+  },
+  {
+    "file": "photo-40.jpg",
+    "name": "Loe we Shoe ",
+    "price": 5000,
+    "category": "shoes",
+    "slug": "loe-we-shoe-mv3084ja"
+  }
+]
