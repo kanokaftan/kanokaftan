@@ -71,9 +71,33 @@ export interface AnalyticsReport {
   hours: { hour: number; page_views: number }[];
 }
 
+export type LiveVisitorRole = "guest" | "buyer" | "seller" | "admin" | "delivery";
+
+/** One person on the site in the last 5 minutes (account details when signed in on this device today). */
+export interface LiveVisitor {
+  visitor_id: string;
+  user_id: string | null;
+  name: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  store_name: string | null;
+  role: LiveVisitorRole;
+  path: string;
+  source: string | null;
+  device: string | null;
+  os: string | null;
+  browser: string | null;
+  app: boolean;
+  timezone: string | null;
+  last_seen: string;
+  visit_started: string | null;
+  pages_seen: number;
+}
+
 export interface LiveVisitors {
   visitors: number;
   pages: { name: string; visitors: number }[];
+  people: LiveVisitor[];
 }
 
 export function useAdminAnalytics(range: RangeKey) {
@@ -102,7 +126,8 @@ export function useLiveVisitors() {
         console.error("[analytics] live visitors failed", error);
         throw new Error(error.message || "Could not load live visitors");
       }
-      return data as unknown as LiveVisitors;
+      const raw = data as unknown as LiveVisitors;
+      return { ...raw, people: raw.people ?? [] };
     },
     refetchInterval: LIVE_REFRESH_MS,
   });
