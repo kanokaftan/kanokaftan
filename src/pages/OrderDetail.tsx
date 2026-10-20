@@ -48,6 +48,23 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.E
   cancelled: { label: "Cancelled", color: "bg-red-500", icon: Package },
 };
 
+/** Tracking steps are saved with codes ("ready_for_pickup"); older ones with words. Show words either way. */
+const TRACKING_LABELS: Record<string, string> = {
+  pending_payment: "Waiting for payment",
+  payment_confirmed: "Payment received",
+  processing: "Seller is preparing your order",
+  ready_for_pickup: "Packed and ready",
+  rider_assigned: "Rider assigned",
+  shipped: "Collected by rider",
+  out_for_delivery: "Out for delivery",
+  delivered: "Delivered",
+  completed: "Completed",
+  cancelled: "Cancelled",
+  refunded: "Refunded",
+};
+const trackingLabel = (status: string) =>
+  TRACKING_LABELS[status] ?? (/^[a-z]+(_[a-z]+)+$/.test(status) ? status.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase()) : status);
+
 /** One "purchase" per order for analytics, however many times payment is re-checked. */
 function recordPurchase(orderId: string, amount?: number) {
   trackOnce(`purchase:${orderId}`, "purchase", { value: amount });
@@ -318,7 +335,7 @@ export default function OrderDetail() {
                     )}
                   </div>
                   <div>
-                    <p className="text-sm font-medium">{update.status}</p>
+                    <p className="text-sm font-medium">{trackingLabel(update.status)}</p>
                     <p className="text-xs text-muted-foreground">{update.message}</p>
                     <p className="text-xs text-muted-foreground">
                       {format(new Date(update.timestamp), "MMM d, h:mm a")}
