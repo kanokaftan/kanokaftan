@@ -189,6 +189,9 @@ async function shot(name, path, text, opts = {}, after) {
     const page = await newPage(opts);
     await page.goto(SITE + path, { waitUntil: 'domcontentloaded' });
     await settle(page, text);
+    // Which build of the site was captured (its main script name changes with every deploy).
+    const build = await page.evaluate(() => document.querySelector('script[type=module][src*="/assets/"]')?.getAttribute('src') ?? 'unknown');
+    note(`${name}: site build ${build}`);
     if (after) await after(page);
     await page.screenshot({ path: OUT + name + '.png' });
     // A taller version too, in case the slide needs more of the page.
