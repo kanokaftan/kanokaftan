@@ -1,0 +1,15 @@
+home: site build /assets/index-B6r0vOlN.js
+captured home
+shops: site build /assets/index-B6r0vOlN.js
+captured shops
+product: site build /assets/index-B6r0vOlN.js
+captured product
+shop: site build /assets/index-B6r0vOlN.js
+captured shop
+chat: site build /assets/index-B6r0vOlN.js
+captured chat
+invite: site build /assets/index-B6r0vOlN.js
+captured invite
+order: site build /assets/index-B6r0vOlN.js
+captured order
+no page errors
