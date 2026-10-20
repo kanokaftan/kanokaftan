@@ -1,0 +1,36 @@
+# Takes App Store screenshots of the live site and saves them to the
+# "appstore-shots" branch. Runs when the appstore-capture branch is pushed,
+# or by hand from the Actions tab.
+name: App Store screenshots
+on:
+  push:
+    branches: [appstore-capture]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Playwright
+        run: |
+          mkdir -p /tmp/pw && cd /tmp/pw && npm init -y >/dev/null && npm i playwright@1.48.2
+          npx playwright install --with-deps chromium
+      - name: Capture the live site
+        run: |
+          cp marketing/app-store/tools/capture-live.mjs /tmp/pw/capture-live.mjs
+          SHOTS_DIR=$GITHUB_WORKSPACE/out/ node /tmp/pw/capture-live.mjs
+      - name: Save to the appstore-shots branch
+        run: |
+          cd out
+          git init -q -b appstore-shots
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A
+          git commit -q -m "App Store screenshots of the live site (run ${GITHUB_RUN_ID})"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" appstore-shots
