@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { BadgeCheck, Landmark, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,20 @@ export function BuyerBankCard({ className, compact = false }: { className?: stri
   const [accountNumber, setAccountNumber] = useState("");
   const [problem, setProblem] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [params, setParams] = useSearchParams();
+  const askedToConfirm = params.get("confirm_bank") === "1";
+
+  // Opened from the "please confirm your account number" notification: go straight to the form.
+  useEffect(() => {
+    if (!askedToConfirm || !bank) return;
+    if (bank.number_saved === false) {
+      setConfirming(true);
+      setOpen(true);
+    }
+    const next = new URLSearchParams(params);
+    next.delete("confirm_bank");
+    setParams(next, { replace: true });
+  }, [askedToConfirm, bank, params, setParams]);
 
   if (isLoading) return <Skeleton className={cn("h-24 rounded-2xl", className)} />;
 

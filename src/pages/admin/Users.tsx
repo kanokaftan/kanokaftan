@@ -11,7 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
-import { ChevronRight, Download, Landmark, Loader2, ShieldAlert, UserPlus } from "lucide-react";
+import { BellRing, ChevronRight, Download, Landmark, Loader2, ShieldAlert, UserPlus } from "lucide-react";
+import { useBankNumbersMissing, useRequestBankNumberConfirm, type ConfirmRequestResult } from "@/hooks/useBuyerTrust";
 import { toast } from "sonner";
 import { downloadCsv } from "@/lib/csv";
 import { CopyNumber } from "@/components/admin/CopyNumber";
@@ -71,8 +72,60 @@ function FlagBadge({ user }: { user: AdminUser }) {
   );
 }
 
+function confirmToast(result: ConfirmRequestResult) {
+  if (result.sent) toast.success(result.sent === 1 ? "Reminder sent" : `Reminder sent to ${result.sent} people`, { description: "They'll get a notification to confirm their account number." });
+  else toast.info("Already reminded in the last 24 hours");
+}
+
+/** One-tap reminder for a buyer whose full account number wasn't saved. */
+function AskToConfirmButton({ userId }: { userId: string }) {
+  const request = useRequestBankNumberConfirm();
+  const ask = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      confirmToast(await request.mutateAsync([userId]));
+    } catch (error) {
+      console.error("[AdminUsers] confirm request failed", error);
+      toast.error(error instanceof Error ? error.message : "Couldn't send the reminder");
+    }
+  };
+  return (
+    <Button size="sm" variant="outline" className="mt-1.5 h-7 rounded-full px-2.5 text-xs" onClick={ask} onKeyDown={(e) => e.stopPropagation()} disabled={request.isPending}>
+      {request.isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <BellRing className="mr-1 h-3 w-3" />}Ask to confirm
+    </Button>
+  );
+}
+
+/** Banner on Bank accounts: some links only kept the last 4 digits; remind them all at once. */
+function MissingNumbersBanner() {
+  const { data: missing } = useBankNumbersMissing();
+  const request = useRequestBankNumberConfirm();
+  if (!missing) return null;
+  const askAll = async () => {
+    try {
+      confirmToast(await request.mutateAsync(undefined));
+    } catch (error) {
+      console.error("[AdminUsers] confirm request failed", error);
+      toast.error(error instanceof Error ? error.message : "Couldn't send the reminders");
+    }
+  };
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-2 rounded-2xl border border-amber-500/40 bg-amber-500/5 p-3 text-sm">
+      <Landmark className="h-4 w-4 shrink-0 text-amber-600" />
+      <span className="min-w-0 flex-1 basis-[220px]">
+        {missing === 1 ? "1 person" : `${missing} people`} linked a bank before full numbers were saved, so only the last 4 digits are known.
+        Ask them to confirm it once in the app.
+      </span>
+      <Button size="sm" className="h-8 w-full rounded-full sm:w-auto" onClick={askAll} disabled={request.isPending}>
+        {request.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <BellRing className="mr-1.5 h-3.5 w-3.5" />}
+        Ask {missing === 1 ? "them" : `all ${missing}`} to confirm
+      </Button>
+    </div>
+  );
+}
+
 /** Bank, account name and full account number (copyable) a user linked. */
-function BankDetails({ bank }: { bank: NonNullable<AdminUser["bank"]> }) {
+function BankDetails({ bank, userId }: { bank: NonNullable<AdminUser["bank"]>; userId: string }) {
   return (
     <div className="min-w-0 text-sm">
       <p className="flex items-center gap-1.5 text-xs font-medium text-green-700 dark:text-green-400">
@@ -83,7 +136,10 @@ function BankDetails({ bank }: { bank: NonNullable<AdminUser["bank"]> }) {
       {bank.account_number ? (
         <CopyNumber value={bank.account_number} />
       ) : (
-        <p className="text-xs text-muted-foreground">••{bank.last4} · full number not saved yet (linked before it was kept)</p>
+        <>
+          <p className="text-xs text-muted-foreground">••{bank.last4} · full number not saved yet (linked before it was kept)</p>
+          <AskToConfirmButton userId={userId} />
+        </>
       )}
     </div>
   );
@@ -145,6 +201,8 @@ export default function AdminUsers() {
           </Button>
         }
       />
+
+      {(list.filter === "bank_linked" || list.filter === "bank_missing") && <MissingNumbersBanner />}
 
       {list.filter === "suspicious" && (
         <>
@@ -208,7 +266,7 @@ export default function AdminUsers() {
                 <ChevronRight className="h-4 w-4 shrink-0 self-center text-muted-foreground md:order-last" aria-hidden="true" />
 
                 <div className="col-span-3 col-start-1 min-w-0 pl-[52px] md:col-span-1 md:col-start-auto md:pl-0">
-                  {user.bank ? <BankDetails bank={user.bank} /> : <span className="text-xs text-muted-foreground">Bank not linked</span>}
+                  {user.bank ? <BankDetails bank={user.bank} userId={user.id} /> : <span className="text-xs text-muted-foreground">Bank not linked</span>}
                 </div>
 
                 <div className="col-span-3 col-start-1 min-w-0 pl-[52px] text-sm md:col-span-1 md:col-start-auto md:pl-0">

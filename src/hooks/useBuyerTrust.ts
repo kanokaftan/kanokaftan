@@ -132,3 +132,38 @@ export function useFirstBuyerMinPercent() {
     },
   });
 }
+
+// ---------------------------------------------------------------------------
+// Admin: bank links made before full account numbers were kept
+// ---------------------------------------------------------------------------
+
+const MISSING_NUMBERS_KEY = ["admin-bank-numbers-missing"];
+
+/** How many linked buyer bank accounts only have the last 4 digits saved. */
+export function useBankNumbersMissing() {
+  return useQuery({
+    queryKey: MISSING_NUMBERS_KEY,
+    queryFn: async (): Promise<number> => {
+      const { data, error } = await supabase.rpc("admin_bank_numbers_missing" as never);
+      if (error) throw new Error(error.message || "Couldn't count missing account numbers");
+      return Number(data) || 0;
+    },
+  });
+}
+
+export interface ConfirmRequestResult {
+  sent: number;
+  skipped: number;
+}
+
+/** Notify buyers (all of them still missing it, or just the ones given) to confirm their full number once. */
+export function useRequestBankNumberConfirm() {
+  return useMutation({
+    mutationFn: async (userIds?: string[]): Promise<ConfirmRequestResult> => {
+      const { data, error } = await supabase.rpc("admin_request_bank_number_confirm" as never, { p_user_ids: userIds ?? null } as never);
+      if (error) throw new Error(error.message || "Couldn't send the reminder");
+      const raw = data as unknown as ConfirmRequestResult;
+      return { sent: Number(raw?.sent) || 0, skipped: Number(raw?.skipped) || 0 };
+    },
+  });
+}
