@@ -1,0 +1,146 @@
+{
+  "shop": {
+    "id": "1621b019-8748-43e5-b4fd-078d09908fbc",
+    "store_name": "Hajmeer-enterprises",
+    "store_slug": "hajmeer-enterprises",
+    "avatar_url": "https://anptvdidwxiigzkqhdia.supabase.co/storage/v1/object/public/product-images/1621b019-8748-43e5-b4fd-078d09908fbc/avatar.jpg?t=1792446005756",
+    "store_banner_url": "https://anptvdidwxiigzkqhdia.supabase.co/storage/v1/object/public/product-images/1621b019-8748-43e5-b4fd-078d09908fbc/banner.jpg?t=1792448274347",
+    "store_description": "Sleeping dress ,baby wears 0 to 12ys\nVeils ,jewelry’s",
+    "verification_tier": "blue"
+  },
+  "products": [
+    {
+      "name": "Exclusive rings ",
+      "slug": "exclusive-rings-mvgtqgo3",
+      "price": 3000,
+      "compare_at_price": 3000,
+      "colors": [
+        "Golden",
+        "black",
+        "silver",
+        "pink"
+      ],
+      "sizes": [
+        "All sizes"
+      ],
+      "files": [
+        "p1-1.jpg",
+        "p1-2.jpg",
+        "p1-3.jpg",
+        "p1-4.jpg"
+      ]
+    },
+    {
+      "name": "Original nice style shoe",
+      "slug": "original-nice-style-shoe-mvgt9zzf",
+      "price": 28000,
+      "compare_at_price": 28000,
+      "colors": [
+        "Black",
+        "milk",
+        "ashe"
+      ],
+      "sizes": [
+        "36",
+        "37",
+        "38",
+        "39",
+        "40",
+        "41"
+      ],
+      "files": [
+        "p2-1.jpg",
+        "p2-2.jpg",
+        "p2-3.jpg",
+        "p2-4.jpg"
+      ]
+    },
+    {
+      "name": "Original LV",
+      "slug": "original-lv-mvgt4dc8",
+      "price": 18500,
+      "compare_at_price": 18500,
+      "colors": [
+        "Black"
+      ],
+      "sizes": [
+        "38",
+        "39",
+        "40",
+        "41"
+      ],
+      "files": [
+        "p3-1.jpg"
+      ]
+    },
+    {
+      "name": "Nice style shoes",
+      "slug": "nice-style-shoes-mvftv84v",
+      "price": 28000,
+      "compare_at_price": 30000,
+      "colors": [
+        "Milk",
+        "black",
+        "light brown"
+      ],
+      "sizes": [
+        "36",
+        "37",
+        "38",
+        "39",
+        "40",
+        "41"
+      ],
+      "files": [
+        "p4-1.jpg",
+        "p4-2.jpg",
+        "p4-3.jpg",
+        "p4-4.jpg"
+      ]
+    }
+  ],
+  "others": [
+    {
+      "name": "M_Asharif genaral merchandise",
+      "slug": "m-asharif-genaral-merchandise",
+      "tier": "gold",
+      "avatar": "other1-avatar.jpg",
+      "banner": "other1-banner.jpg"
+    },
+    {
+      "name": "MK Shoes",
+      "slug": "mk-shoes",
+      "tier": "gold",
+      "avatar": "other2-avatar.jpg",
+      "banner": "other2-banner.jpg"
+    },
+    {
+      "name": "AL QOLAANIS HOME OF FASHION",
+      "slug": "al-qolaanis-home-of-fashion",
+      "tier": "blue",
+      "avatar": "other3-avatar.jpg",
+      "banner": "other3-banner.jpg"
+    },
+    {
+      "name": "Queen's Land collection",
+      "slug": "queen-s-land-collection",
+      "tier": "blue",
+      "avatar": "other4-avatar.jpg",
+      "banner": "other4-banner.jpg"
+    },
+    {
+      "name": "Maishak",
+      "slug": "maishak",
+      "tier": "blue",
+      "avatar": "other5-avatar.jpg",
+      "banner": "other5-banner.jpg"
+    },
+    {
+      "name": "Gofat general enterprise",
+      "slug": "gofat-general-enterprise",
+      "tier": "blue",
+      "avatar": "other6-avatar.jpg",
+      "banner": "other6-banner.jpg"
+    }
+  ]
+}
