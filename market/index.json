@@ -1,0 +1,281 @@
+{
+  "shops": [
+    {
+      "name": "AL QOLAANIS HOME OF FASHION",
+      "slug": "al-qolaanis-home-of-fashion",
+      "tier": "blue",
+      "avatar": "shop1-avatar.jpg",
+      "banner": "shop1-banner.jpg"
+    },
+    {
+      "name": "Gofat general enterprise",
+      "slug": "gofat-general-enterprise",
+      "tier": "blue",
+      "avatar": "shop2-avatar.jpg",
+      "banner": "shop2-banner.jpg"
+    },
+    {
+      "name": "Hajmeer-enterprises",
+      "slug": "hajmeer-enterprises",
+      "tier": "blue",
+      "avatar": "shop3-avatar.jpg",
+      "banner": "shop3-banner.jpg"
+    },
+    {
+      "name": "M_Asharif genaral merchandise",
+      "slug": "m-asharif-genaral-merchandise",
+      "tier": "gold",
+      "avatar": "shop4-avatar.jpg",
+      "banner": "shop4-banner.jpg"
+    },
+    {
+      "name": "Maishak",
+      "slug": "maishak",
+      "tier": "blue",
+      "avatar": "shop5-avatar.jpg",
+      "banner": "shop5-banner.jpg"
+    },
+    {
+      "name": "MK Shoes",
+      "slug": "mk-shoes",
+      "tier": "gold",
+      "avatar": "shop6-avatar.jpg",
+      "banner": "shop6-banner.jpg"
+    },
+    {
+      "name": "Queen's Land collection",
+      "slug": "queen-s-land-collection",
+      "tier": "blue",
+      "avatar": "shop7-avatar.jpg",
+      "banner": "shop7-banner.jpg"
+    }
+  ],
+  "products": [
+    {
+      "name": "VELDT Shoe",
+      "slug": "veldt-shoe-mvgvnjf5",
+      "price": 17000,
+      "compare_at_price": null,
+      "shop": "MK Shoes",
+      "files": [
+        "prod1-1.jpg",
+        "prod1-2.jpg"
+      ]
+    },
+    {
+      "name": "Prada shoes",
+      "slug": "prada-shoes-mvgvghhb",
+      "price": 8000,
+      "compare_at_price": null,
+      "shop": "M_Asharif genaral merchandise",
+      "files": [
+        "prod2-1.jpg"
+      ]
+    },
+    {
+      "name": "Exclusive rings ",
+      "slug": "exclusive-rings-mvgtqgo3",
+      "price": 3000,
+      "compare_at_price": 3000,
+      "shop": "Hajmeer-enterprises",
+      "files": [
+        "prod3-1.jpg",
+        "prod3-2.jpg"
+      ]
+    },
+    {
+      "name": "Original nice style shoe",
+      "slug": "original-nice-style-shoe-mvgt9zzf",
+      "price": 28000,
+      "compare_at_price": 28000,
+      "shop": "Hajmeer-enterprises",
+      "files": [
+        "prod4-1.jpg",
+        "prod4-2.jpg"
+      ]
+    },
+    {
+      "name": "Original LV",
+      "slug": "original-lv-mvgt4dc8",
+      "price": 18500,
+      "compare_at_price": 18500,
+      "shop": "Hajmeer-enterprises",
+      "files": [
+        "prod5-1.jpg"
+      ]
+    },
+    {
+      "name": "Nice style shoes",
+      "slug": "nice-style-shoes-mvftv84v",
+      "price": 28000,
+      "compare_at_price": 30000,
+      "shop": "Hajmeer-enterprises",
+      "files": [
+        "prod6-1.jpg",
+        "prod6-2.jpg"
+      ]
+    },
+    {
+      "name": "Osaka",
+      "slug": "osaka-mvfkm9a3",
+      "price": 7500,
+      "compare_at_price": 7000,
+      "shop": "Maishak",
+      "files": [
+        "prod7-1.jpg",
+        "prod7-2.jpg"
+      ]
+    },
+    {
+      "name": "Shadda wifi",
+      "slug": "shadda-wifi-mvfkfl4m",
+      "price": 9000,
+      "compare_at_price": 8500,
+      "shop": "Maishak",
+      "files": [
+        "prod8-1.jpg",
+        "prod8-2.jpg"
+      ]
+    },
+    {
+      "name": "Premium footwear",
+      "slug": "premium-footwear-mvff8whu",
+      "price": 25000,
+      "compare_at_price": 27000,
+      "shop": "MK Shoes",
+      "files": [
+        "prod9-1.jpg"
+      ]
+    },
+    {
+      "name": "Fumo Wears",
+      "slug": "fumo-wears-mvff5sl4",
+      "price": 12500,
+      "compare_at_price": 15000,
+      "shop": "MK Shoes",
+      "files": [
+        "prod10-1.jpg",
+        "prod10-2.jpg"
+      ]
+    },
+    {
+      "name": "ROYAL JACKET (Falmaran) ",
+      "slug": "royal-jacket-falmaran-mv57jw9l",
+      "price": 18000,
+      "compare_at_price": 20000,
+      "shop": "AL QOLAANIS HOME OF FASHION",
+      "files": [
+        "prod11-1.jpg",
+        "prod11-2.jpg"
+      ]
+    },
+    {
+      "name": "FCT ELEGANCE CAPS ",
+      "slug": "fct-elegance-caps-mv4qxjlh",
+      "price": 10000,
+      "compare_at_price": null,
+      "shop": "AL QOLAANIS HOME OF FASHION",
+      "files": [
+        "prod12-1.jpg",
+        "prod12-2.jpg"
+      ]
+    },
+    {
+      "name": "Abaya",
+      "slug": "abaya-mv3wicxa",
+      "price": 20000,
+      "compare_at_price": 19000,
+      "shop": "Queen's Land collection",
+      "files": [
+        "prod13-1.jpg",
+        "prod13-2.jpg"
+      ]
+    },
+    {
+      "name": "Egyptian abaya",
+      "slug": "egyptian-abaya-mv3v8bfn",
+      "price": 38000,
+      "compare_at_price": 37500,
+      "shop": "Queen's Land collection",
+      "files": [
+        "prod14-1.jpg",
+        "prod14-2.jpg"
+      ]
+    },
+    {
+      "name": "Glitter veil ",
+      "slug": "glitter-veil-mv3s27ep",
+      "price": 10000,
+      "compare_at_price": 12500,
+      "shop": "Gofat general enterprise",
+      "files": [
+        "prod15-1.jpg",
+        "prod15-2.jpg"
+      ]
+    },
+    {
+      "name": "Louis votton Bag",
+      "slug": "louis-votton-bag-mv3oar4s",
+      "price": 48000,
+      "compare_at_price": 50000,
+      "shop": "M_Asharif genaral merchandise",
+      "files": [
+        "prod16-1.jpg",
+        "prod16-2.jpg"
+      ]
+    },
+    {
+      "name": "ZoTo Original",
+      "slug": "zoto-original-mv377ccz",
+      "price": 30000,
+      "compare_at_price": null,
+      "shop": "MK Shoes",
+      "files": [
+        "prod17-1.jpg"
+      ]
+    },
+    {
+      "name": "VIP Bangwal",
+      "slug": "vip-bangwal-mv331mmv",
+      "price": 27000,
+      "compare_at_price": 30000,
+      "shop": "MK Shoes",
+      "files": [
+        "prod18-1.jpg",
+        "prod18-2.jpg"
+      ]
+    },
+    {
+      "name": "Dior bag",
+      "slug": "dior-bag-mv32ocxx",
+      "price": 30000,
+      "compare_at_price": 35000,
+      "shop": "M_Asharif genaral merchandise",
+      "files": [
+        "prod19-1.jpg",
+        "prod19-2.jpg"
+      ]
+    },
+    {
+      "name": "Loe we Shoe ",
+      "slug": "loe-we-shoe-mv3084ja",
+      "price": 5000,
+      "compare_at_price": 7000,
+      "shop": "M_Asharif genaral merchandise",
+      "files": [
+        "prod20-1.jpg"
+      ]
+    },
+    {
+      "name": "Christian Dior",
+      "slug": "christian-dior-mv2zmc45",
+      "price": 50000,
+      "compare_at_price": 65000,
+      "shop": "MK Shoes",
+      "files": [
+        "prod21-1.jpg",
+        "prod21-2.jpg"
+      ]
+    }
+  ]
+}

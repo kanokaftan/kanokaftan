@@ -1,0 +1,10 @@
+captured sell-ha (2359px tall)
+captured sell-en (2359px tall)
+captured shops (1485px tall, tab bar saved)
+captured home (2908px tall, tab bar saved)
+captured shop-mk-shoes (1908px tall, tab bar saved)
+captured shop-queen-s-land-collection (932px tall, tab bar saved)
+captured shop-m-asharif-genaral-merchandise (1299px tall, tab bar saved)
+captured shop-hajmeer-enterprises (1606px tall, tab bar saved)
+saved market media: 7 shops, 21 products
+no page errors
