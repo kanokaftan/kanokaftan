@@ -63,16 +63,24 @@ Both are HyperFrames compositions (HTML + one paused GSAP timeline) rendered at 
    `PUPPETEER_EXECUTABLE_PATH=/opt/pw-browsers/chromium npx --yes hyperframes@0.8.181 snapshot --at 1.5,4.8,... --no-end -o snaps --timeout 25000`
    and Read the contact sheet. Look for: wrapped hero words, text over faces, wrong tap spots, ɗ/ƙ shown as đ.
 
-7. **Render 4K.** Run in the background:
+7. **Apply the pro motion rules** in `reference/pro-techniques.md` while building: entries ~0.35 s ease-out, exits
+   ease-in, arrive from oversize (never grow from 0), transforms over fades, cut on motion, something moving on every
+   frame (drift/Ken Burns under holds — re-timing to a voice makes holds longer, so add drift), end hold ≤ 1.4 s,
+   one hero per frame, no typed letter-by-letter headlines.
+
+8. **Render 4K.** Run in the background:
    `PUPPETEER_EXECUTABLE_PATH=/opt/pw-browsers/chromium npx --yes hyperframes@0.8.181 render -o renders/<name>-4k.mp4 --workers 3`
    (~4 min for 40 s). Verify with `ffprobe` (2160×3840) and `ffmpeg -af ebur128=peak=true` (aim ≈ −15 LUFS, peak < −1 dB).
-   Send with SendUserFile (`display: render`). Never commit renders to git (too big).
+   Then `bash scripts/qa.sh renders/<name>-4k.mp4 <seconds>` — fix every FAIL; look at each WARN (frozen stretches,
+   mono, loudness) and fix or explain it. Then `bash scripts/export_social.sh renders/<name>-4k.mp4` for the
+   1080×1920 Reels/TikTok copy and the 720p WhatsApp Status copy (−14 LUFS).
+   Send the 4K master and the 1080 copy with SendUserFile (`display: render`). Never commit renders to git (too big).
 
-8. **Hausa voiceover script.** Write `AI-VOICE-SCRIPT.txt` like `reference/example-voice-script-shop.txt`: timestamps,
+9. **Hausa voiceover script.** Write `AI-VOICE-SCRIPT.txt` like `reference/example-voice-script-shop.txt`: timestamps,
    ElevenLabs v3 emotion tags + `[pause Xs]`, an SSML version, pronunciation notes, export notes. Also paste
    Version A in chat as a code block. Facts only from step 1.
 
-9. **When the voiceover comes back** (an mp3 in `/root/.claude/uploads/...`):
+10. **When the voiceover comes back** (an mp3 in `/root/.claude/uploads/...`):
    1. `bash scripts/find_lines.sh <mp3>` → line starts (pauses ≥ 0.45 s = new line). Map them to the script's lines;
       short pauses inside a line are normal. AI voices run ~1.3–1.5× longer than the script timings.
    2. `bash scripts/prep_voice.sh <mp3> assets/voiceover.wav`
@@ -82,7 +90,7 @@ Both are HyperFrames compositions (HTML + one paused GSAP timeline) rendered at 
       always from the un-retimed template.
    5. Lint, snapshot, render, verify, send.
 
-10. **Captions vs. edited voice.** If the user edited words in ElevenLabs, ask for the exact text, then change only the
+11. **Captions vs. edited voice.** If the user edited words in ElevenLabs, ask for the exact text, then change only the
     caption spans (keep `.s .w` / `.h` structure), snapshot those moments, re-render. Also update the template in this
     skill if the change is permanent.
 
@@ -112,6 +120,9 @@ Both are HyperFrames compositions (HTML + one paused GSAP timeline) rendered at 
 - `scripts/music_bed.py` — beat with drop-outs before hits (`--mood gold|rose`)
 - `scripts/find_lines.sh`, `scripts/prep_voice.sh`, `scripts/retime.py` — voiceover sync
 - `scripts/locate_bar.py` — where a tab bar sits in a screenshot
+- `scripts/qa.sh` — delivery gates: 9:16, duration, −14 LUFS, true peak, mono, frozen/black frames, silence
+- `scripts/export_social.sh` — 1080×1920 Reels/TikTok and 720p WhatsApp copies from the 4K master
+- `reference/pro-techniques.md` — motion, caption, sound and delivery rules distilled from the best public video skills
 - `reference/caption-and-sound-rules.md` — caption style, sound design levels and placement (from the user's Drive course)
 - `reference/drive-visual-style.md` — what the Drive inspiration images look like
 - `reference/example-voice-script-*.txt` — the two AI voice scripts that worked
