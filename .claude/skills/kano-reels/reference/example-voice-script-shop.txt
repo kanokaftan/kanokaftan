@@ -1,0 +1,81 @@
+KANO KAFTAN × HAJMEER ENTERPRISES — SHOP ADVERT — AI VOICEOVER SCRIPT
+Language: Hausa (Nigeria, Kano accent) · Target length: about 30–40 seconds
+Voice: warm, friendly young Nigerian FEMALE voice, smiling, stylish, like a fashion influencer talking to her friends. Upbeat but classy, not shouting.
+Say "Hajmeer" as "Haj-meer". Say "kanokaftan.shop" as "Kano Kaftan dot shop". Say "₦3,000" as "naira dubu uku".
+
+Facts used (from the live shop): Hajmeer-enterprises · verified seller · Rijiyar Zaki, Kano · Exclusive rings ₦3,000 (gold, black, silver, pink) · stylish shoes from ₦18,500 · first-buyer discount on the first order · payment held safely until the item arrives.
+
+=====================================================================
+VERSION A — with emotion tags and pauses (ElevenLabs v3 and similar)
+=====================================================================
+
+[00:00]
+[curious, playful, leaning in] Kina neman takalma da zobba masu kyau a Kano?
+[pause 0.4s]
+
+[00:03]
+[excited, warm] Ki haɗu da Hajmeer Enterprises... shago mai tabbaci a Kano Kaftan!
+[pause 0.3s]
+
+[00:07]
+[proud, friendly] Daga Rijiyar Zaki, Kano.
+[pause 0.5s]
+
+[00:09]
+[delighted, sparkling] Zobba na musamman... naira dubu uku kacal! [light] Zinariya, baƙi, azurfa, da ruwan hoda.
+[pause 0.4s]
+
+[00:15]
+[confident, stylish] Takalma masu kyau, daga naira dubu goma sha takwas da ɗari biyar.
+[pause 0.4s]
+
+[00:19]
+[helpful, smiling] Ki zaɓi girmanki, da launin da kike so.
+[pause 0.4s]
+
+[00:22]
+[excited, secret-sharing] Idan ke sabuwar mai saye ce... kina samun rangwame a odarki ta farko!
+[pause 0.4s]
+
+[00:26]
+[calm, reassuring] Kuɗinki yana nan lafiya, har sai kayan sun iso hannunki.
+[pause 0.6s]
+
+[00:30]
+[surprised, building excitement] Kuma ba Hajmeer kaɗai ba... akwai shaguna da yawa suna jiranki!
+[pause 0.4s]
+
+[00:34]
+[energetic, call to action, big smile] Shiga Kano Kaftan yau! [pause 0.3s] Kano Kaftan dot shop.
+
+=====================================================================
+VERSION B — SSML (Google, Azure, Amazon Polly, or any SSML tool)
+=====================================================================
+
+<speak>
+  <prosody pitch="+2st">Kina neman takalma da zobba masu kyau a Kano?</prosody>
+  <break time="400ms"/>
+  <prosody rate="105%" pitch="+2st">Ki haɗu da <emphasis>Hajmeer Enterprises</emphasis>,<break time="200ms"/> shago mai tabbaci a Kano Kaftan!</prosody>
+  <break time="300ms"/>
+  Daga Rijiyar Zaki, Kano.
+  <break time="500ms"/>
+  <prosody pitch="+2st">Zobba na musamman,<break time="200ms"/> <emphasis level="strong">naira dubu uku kacal!</emphasis></prosody> Zinariya, baƙi, azurfa, da ruwan hoda.
+  <break time="400ms"/>
+  Takalma masu kyau, daga <emphasis>naira dubu goma sha takwas da ɗari biyar</emphasis>.
+  <break time="400ms"/>
+  Ki zaɓi girmanki, da launin da kike so.
+  <break time="400ms"/>
+  <prosody rate="105%">Idan ke sabuwar mai saye ce,<break time="200ms"/> kina samun <emphasis>rangwame</emphasis> a odarki ta farko!</prosody>
+  <break time="400ms"/>
+  <prosody rate="95%">Kuɗinki yana nan lafiya, har sai kayan sun iso hannunki.</prosody>
+  <break time="600ms"/>
+  <prosody pitch="+3st">Kuma ba Hajmeer kaɗai ba,<break time="200ms"/> akwai <emphasis level="strong">shaguna da yawa</emphasis> suna jiranki!</prosody>
+  <break time="400ms"/>
+  <prosody rate="105%" pitch="+3st"><emphasis level="strong">Shiga Kano Kaftan yau!</emphasis><break time="300ms"/> Kano Kaftan dot shop.</prosody>
+</speak>
+
+=====================================================================
+EXPORT
+=====================================================================
+- WAV or MP3, no music, no reverb. Any length is fine: I'll time the video to the voice.
+- If ɗ / ƙ / ɓ come out wrong, type them as d / k / b ("hadu", "bakar", "dari").

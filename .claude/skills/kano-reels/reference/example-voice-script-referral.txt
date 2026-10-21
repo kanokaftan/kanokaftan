@@ -1,0 +1,90 @@
+KANO KAFTAN — INVITE FRIENDS REEL — AI VOICEOVER SCRIPT
+Language: Hausa (Nigeria, Kano accent) · Total length: 31 seconds
+Voice: young Nigerian male or female, warm, confident, friendly, smiling, upbeat like a social media advert. Natural pace, not rushed.
+Say "K²" as "K biyu" every time. Say "kanokaftan.shop" as "Kano Kaftan dot shop".
+
+=====================================================================
+VERSION A — with emotion tags and pauses (for ElevenLabs v3 and similar)
+=====================================================================
+
+[00:00.0 – 00:02.6]
+[curious, playful, leaning in] Ka san... abokanka za su iya biya maka kayan sawa?
+[pause 0.3s]
+
+[00:02.6 – 00:05.4]
+[excited, proud] A Kano Kaftan, duk abokin da ka gayyata... kana samun K biyu ɗari biyu!
+[pause 0.4s]
+
+[00:05.4 – 00:07.0]
+[confident, slower, building up] Ga yadda ake yi.
+[pause 0.6s]
+
+[00:07.0 – 00:10.5]
+[clear, friendly, instructive] Buɗe app ɗin, shiga Profile, ka danna "Invite friends".
+[pause 0.4s]
+
+[00:10.5 – 00:14.0]
+[upbeat] Ga link ɗinka na musamman. [quick] Kwafe shi, ko ka tura ta WhatsApp kai tsaye.
+[pause 0.4s]
+
+[00:14.0 – 00:18.0]
+[warm, generous] Abokinka zai buɗe link ɗin, ya samu farashin sabon mai saye... [emphasis] rangwame daga kowane shago.
+[pause 0.4s]
+
+[00:18.0 – 00:22.0]
+[excited, rising energy] Da zarar ya tabbatar da asusun bankinsa... kai kuma ka samu K biyu ɗari biyu!
+[pause 0.3s]
+
+[00:22.0 – 00:25.5]
+[impressed, slightly amazed] Kuma duk lokacin da aka kawo masa oda... kana samun kashi biyar cikin ɗari.
+[pause 0.3s]
+
+[00:25.5 – 00:28.0]
+[calm, matter-of-fact, smiling] K biyu ɗaya, daidai yake da Naira ɗaya. Ka yi siyayya da shi.
+[pause 0.5s]
+
+[00:28.0 – 00:31.0]
+[energetic, call to action, big smile] Fara gayyata yau! [pause 0.3s] Kano Kaftan dot shop.
+
+=====================================================================
+VERSION B — SSML (for Google, Azure, Amazon Polly, or any tool that accepts SSML)
+=====================================================================
+
+<speak>
+  <!-- 00:00.0 curious -->
+  <prosody rate="100%" pitch="+2st">Ka san<break time="250ms"/> abokanka za su iya biya maka kayan sawa?</prosody>
+  <break time="300ms"/>
+  <!-- 00:02.6 excited -->
+  <prosody rate="105%" pitch="+3st">A Kano Kaftan, duk abokin da ka gayyata,<break time="200ms"/> kana samun <emphasis level="strong">K biyu ɗari biyu!</emphasis></prosody>
+  <break time="400ms"/>
+  <!-- 00:05.4 building up -->
+  <prosody rate="85%">Ga yadda ake yi.</prosody>
+  <break time="600ms"/>
+  <!-- 00:07.0 instructive -->
+  <prosody rate="100%">Buɗe app ɗin, shiga Profile, ka danna <emphasis>Invite friends</emphasis>.</prosody>
+  <break time="400ms"/>
+  <!-- 00:10.5 upbeat -->
+  <prosody rate="105%">Ga link ɗinka na musamman. Kwafe shi, ko ka tura ta WhatsApp kai tsaye.</prosody>
+  <break time="400ms"/>
+  <!-- 00:14.0 warm -->
+  <prosody rate="100%">Abokinka zai buɗe link ɗin, ya samu farashin sabon mai saye,<break time="200ms"/> <emphasis>rangwame daga kowane shago.</emphasis></prosody>
+  <break time="400ms"/>
+  <!-- 00:18.0 excited -->
+  <prosody rate="105%" pitch="+3st">Da zarar ya tabbatar da asusun bankinsa,<break time="200ms"/> kai kuma ka samu <emphasis level="strong">K biyu ɗari biyu!</emphasis></prosody>
+  <break time="300ms"/>
+  <!-- 00:22.0 impressed -->
+  <prosody rate="100%">Kuma duk lokacin da aka kawo masa oda,<break time="200ms"/> kana samun <emphasis>kashi biyar cikin ɗari.</emphasis></prosody>
+  <break time="300ms"/>
+  <!-- 00:25.5 calm -->
+  <prosody rate="95%">K biyu ɗaya, daidai yake da Naira ɗaya. Ka yi siyayya da shi.</prosody>
+  <break time="500ms"/>
+  <!-- 00:28.0 call to action -->
+  <prosody rate="105%" pitch="+3st"><emphasis level="strong">Fara gayyata yau!</emphasis><break time="300ms"/> Kano Kaftan dot shop.</prosody>
+</speak>
+
+=====================================================================
+EXPORT SETTINGS
+=====================================================================
+- Export as WAV or MP3, 44.1 or 48 kHz, no background music, no reverb.
+- If the AI voice comes out longer or shorter than 31s, that's fine: send it and I'll re-time the scenes to the voice.
+- If the AI mispronounces Hausa letters (ɗ, ƙ, ɓ), try typing them as plain d, k, b, or use the phonetic spelling: "dari biyu" (ɗari biyu), "dinka" (ɗinka), "bude" (buɗe).

@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="ha">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=2160, height=3840" />
+<title>Hajmeer shop advert</title>
+<script src="assets/gsap.min.js"></script>
+<style>
+/* Hausa letters (ɗ ƙ ɓ) and ₦ live in the latin-ext files */
+@font-face{font-family:"Inter";font-weight:400;src:url(assets/inter-latin-ext-400-normal.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Inter";font-weight:500;src:url(assets/inter-latin-ext-500-normal.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Inter";font-weight:600;src:url(assets/inter-latin-ext-600-normal.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Inter";font-weight:700;src:url(assets/inter-latin-ext-700-normal.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Inter";font-weight:800;src:url(assets/inter-latin-ext-800-normal.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Inter";font-weight:900;src:url(assets/inter-latin-ext-900-normal.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Playfair Display";font-weight:700;font-style:italic;src:url(assets/playfair-display-latin-ext-700-italic.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Playfair Display";font-weight:600;font-style:normal;src:url(assets/playfair-display-latin-ext-600-normal.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Playfair Display";font-weight:700;font-style:italic;src:url(assets/playfair-display-latin-700-italic.woff2) format("woff2")}
+@font-face{font-family:"Playfair Display";font-weight:600;font-style:normal;src:url(assets/playfair-display-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:400;src:url(assets/inter-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:500;src:url(assets/inter-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:600;src:url(assets/inter-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:700;src:url(assets/inter-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:800;src:url(assets/inter-latin-800-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:900;src:url(assets/inter-latin-900-normal.woff2) format("woff2")}
+/* colour tone: deep plum + rose gold (Hajmeer's own banner is gold on plum) */
+:root{--bg:#150A16;--plum:#3A1638;--rose:#F2B8A2;--rose2:#E58C9E;--cream:#FFF3EC;--line:rgba(255,220,210,.2);--green:#5FD39B}
+body{margin:0;background:var(--bg)}
+#root{position:relative;width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:"Inter",sans-serif;color:var(--cream)}
+.layer{position:absolute;inset:0}
+#glow{position:absolute;left:-500px;right:-500px;top:700px;height:2800px;background:radial-gradient(50% 50% at 50% 50%,rgba(229,140,158,.42) 0%,rgba(122,42,96,.25) 42%,rgba(0,0,0,0) 72%)}
+#glow2{position:absolute;left:-600px;width:1800px;top:-500px;height:1800px;background:radial-gradient(50% 50% at 50% 50%,rgba(242,184,162,.25),rgba(0,0,0,0) 70%)}
+#lines{position:absolute;inset:0;background-image:linear-gradient(rgba(255,220,210,.05) 2px,transparent 2px),linear-gradient(90deg,rgba(255,220,210,.05) 2px,transparent 2px);background-size:180px 180px;-webkit-mask-image:radial-gradient(65% 50% at 50% 60%,#000 20%,transparent 80%);mask-image:radial-gradient(65% 50% at 50% 60%,#000 20%,transparent 80%)}
+#vignette{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 50%,rgba(0,0,0,0) 55%,rgba(0,0,0,.8) 100%)}
+.cap{position:absolute;left:130px;right:130px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px}
+.cap .s{font-weight:600;font-size:96px;line-height:1.12;color:var(--cream);text-shadow:0 6px 30px rgba(0,0,0,.6)}
+.cap .h{font-family:"Playfair Display",serif;font-style:italic;font-weight:700;font-size:220px;line-height:1.04;white-space:nowrap;background:linear-gradient(100deg,#FFD9C8 0%,#F2B8A2 40%,#E58C9E 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 10px 40px rgba(229,140,158,.4))}
+.cap .h.sm{font-size:180px}
+.cap .w{display:inline-block}
+.cap-top{top:230px}
+.glass{position:absolute;background:linear-gradient(180deg,rgba(255,235,228,.13),rgba(255,235,228,.04));border:3px solid var(--line);border-radius:90px;box-shadow:0 40px 120px rgba(0,0,0,.55),inset 0 3px 0 rgba(255,255,255,.16)}
+.photo{position:absolute;border-radius:80px;overflow:hidden;border:4px solid rgba(255,220,210,.25);box-shadow:0 60px 160px rgba(0,0,0,.7)}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}
+.tag{position:absolute;left:40px;bottom:40px;background:rgba(21,10,22,.75);border:2px solid var(--line);border-radius:44px;padding:18px 34px;font-weight:700;font-size:58px;color:var(--cream)}
+.tag b{color:var(--rose)}
+.phone-wrap{position:absolute;left:0;right:0;top:960px;height:2660px;display:flex;justify-content:center}
+.phone{position:relative;width:1200px;height:2601px;border-radius:150px;border:28px solid #1E1220;background:#fafafa;overflow:hidden;box-shadow:0 0 0 4px rgba(255,220,210,.15),0 80px 180px rgba(0,0,0,.7),0 0 240px rgba(229,140,158,.25)}
+.native{position:absolute;left:0;top:0;width:1290px;height:2796px;transform:scale(.930233);transform-origin:0 0;overflow:hidden}
+.page{position:absolute;left:0;top:0;width:1290px}
+.page img{display:block;width:1290px}
+.bar{position:absolute;left:0;width:1290px}
+.tap{position:absolute;width:150px;height:150px;margin:-75px 0 0 -75px;border-radius:50%;background:rgba(229,140,158,.35);border:8px solid var(--rose2)}
+.hl{position:absolute;border:10px solid var(--rose2);border-radius:44px;box-shadow:0 0 60px rgba(229,140,158,.6)}
+.sel{position:absolute;background:#111;color:#fff;border-radius:60px;display:flex;align-items:center;justify-content:center;gap:24px;font-weight:600;font-size:46px}
+.chip{display:inline-flex;align-items:center;gap:22px;background:rgba(255,235,228,.1);border:3px solid var(--line);border-radius:100px;padding:26px 52px;font-weight:700;font-size:64px;color:var(--cream)}
+.dot{width:58px;height:58px;border-radius:50%;border:3px solid rgba(255,255,255,.4)}
+.badge{display:inline-flex;align-items:center;gap:20px;background:rgba(66,133,244,.16);border:3px solid rgba(110,160,255,.5);color:#cfe0ff;border-radius:100px;padding:20px 44px;font-weight:700;font-size:58px}
+.node{position:absolute;width:380px;display:flex;flex-direction:column;align-items:center;gap:26px;text-align:center}
+.node .ic{width:230px;height:230px;border-radius:70px;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,rgba(255,235,228,.16),rgba(255,235,228,.04));border:3px solid var(--line);box-shadow:0 0 80px rgba(229,140,158,.2)}
+.node .t{font-weight:700;font-size:58px;line-height:1.15}
+.link{position:absolute;height:8px;border-radius:4px;background:linear-gradient(90deg,rgba(242,184,162,.2),#F2B8A2,rgba(242,184,162,.2));transform-origin:0 50%}
+.shop{position:absolute;width:420px;display:flex;flex-direction:column;align-items:center;gap:22px}
+.shop .av{width:330px;height:330px;border-radius:50%;overflow:hidden;border:8px solid var(--rose);box-shadow:0 0 70px rgba(229,140,158,.45);background:#000}
+.shop .av img{width:100%;height:100%;object-fit:cover}
+.shop .n{font-weight:700;font-size:50px;text-align:center;line-height:1.15;max-width:420px}
+.cta{background:linear-gradient(100deg,#FFD9C8,#F2B8A2 45%,#E58C9E);color:#2a0f22;font-weight:900;font-size:88px;padding:58px 120px;border-radius:200px;box-shadow:0 30px 100px rgba(229,140,158,.5)}
+.url{font-weight:800;font-size:92px;color:var(--cream)}
+.coinline{font-weight:900;color:var(--cream);letter-spacing:-.02em}
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-width="2160" data-height="3840" data-duration="37">
+
+  <div id="stage" class="clip layer" data-start="0" data-duration="37" data-track-index="0">
+    <div id="glow"></div><div id="glow2"></div><div id="lines"></div><div id="vignette"></div>
+  </div>
+
+  <!-- S1 hook 0–3: ring macro + shoe -->
+  <div id="s1" class="clip layer" data-start="0" data-duration="3.2" data-track-index="1">
+    <div id="s1-a" class="photo" style="left:120px;top:560px;width:1100px;height:1700px"><img src="assets/shop/p1-1.jpg" alt="" /></div>
+    <div id="s1-b" class="photo" style="left:980px;top:1150px;width:1060px;height:1500px"><img src="assets/shop/p3-1.jpg" alt="" /></div>
+    <div id="cap1" class="cap" style="top:2720px"><span class="s"><span class="w">Kina</span> <span class="w">neman</span> <span class="w">takalma</span> <span class="w">da</span></span><span class="h w">zobe</span><span class="s"><span class="w">masu</span> <span class="w">kyau</span> <span class="w">a</span> <span class="w">Kano?</span></span></div>
+  </div>
+
+  <!-- S2 meet Hajmeer 3–7 -->
+  <div id="s2" class="clip layer" data-start="3.0" data-duration="4.2" data-track-index="2">
+    <div id="s2-banner" class="photo" style="left:-200px;right:-200px;top:300px;height:1700px;border-radius:0;border:0;opacity:.35;filter:blur(18px)"><img src="assets/shop/banner.jpg" alt="" /></div>
+    <div class="layer" style="top:860px;display:flex;flex-direction:column;align-items:center;gap:60px">
+      <div id="s2-av" style="width:760px;height:760px;border-radius:50%;overflow:hidden;border:14px solid #F2B8A2;box-shadow:0 0 0 30px rgba(242,184,162,.12),0 0 200px rgba(229,140,158,.6)"><img src="assets/shop/avatar.jpg" alt="" style="width:100%;height:100%;object-fit:cover" /></div>
+      <div id="s2-name" style="font-family:'Playfair Display',serif;font-weight:600;font-size:150px;text-align:center;line-height:1.05">Hajmeer<br />Enterprises</div>
+      <div id="s2-badge" class="badge"><svg width="56" height="56" viewBox="0 0 24 24" fill="#4C8BF5"><path d="M12 2l2.4 1.8 3-.2.9 2.9 2.5 1.7-1 2.8 1 2.8-2.5 1.7-.9 2.9-3-.2L12 22l-2.4-1.8-3 .2-.9-2.9-2.5-1.7 1-2.8-1-2.8 2.5-1.7.9-2.9 3 .2z"/><path d="m8.5 12 2.3 2.3 4.7-4.6" stroke="#fff" stroke-width="2" fill="none"/></svg>Shago mai tabbaci</div>
+    </div>
+  </div>
+
+  <!-- phone: shop page 6.6–10.4 -->
+  <div id="phA" class="clip layer" data-start="6.6" data-duration="3.8" data-track-index="3">
+    <div class="phone-wrap"><div class="phone" id="pA">
+      <div class="native">
+        <div class="page" id="pg-shop"><img src="assets/shop-scroll.png" alt="" /></div>
+        <img class="bar" src="assets/shop-tabbar.png" alt="" style="top:2581px" />
+        <div class="hl" id="hl-loc" style="left:30px;top:620px;width:900px;height:160px;opacity:0"></div>
+      </div>
+    </div></div>
+  </div>
+  <div id="cap3" class="clip cap cap-top" data-start="7.0" data-duration="2.6" data-track-index="5"><span class="s"><span class="w">Daga</span></span><span class="h sm w">Rijiyar Zaki</span></div>
+
+  <!-- S4 rings 9–15 -->
+  <div id="s4" class="clip layer" data-start="9.0" data-duration="6.2" data-track-index="4">
+    <div id="cap4" class="cap cap-top" style="top:250px"><span class="s"><span class="w">Zobe</span> <span class="w">na</span> <span class="w">musamman</span></span><span class="h w">₦3,000 kacal</span></div>
+    <div id="r1" class="photo" style="left:90px;top:900px;width:960px;height:1400px"><img src="assets/shop/p1-2.jpg" alt="" /></div>
+    <div id="r2" class="photo" style="left:1110px;top:900px;width:960px;height:1400px"><img src="assets/shop/p1-3.jpg" alt="" /></div>
+    <div id="r3" class="photo" style="left:90px;top:2380px;width:960px;height:900px"><img src="assets/shop/p1-4.jpg" alt="" /></div>
+    <div id="r4" class="photo" style="left:1110px;top:2380px;width:960px;height:900px"><img src="assets/shop/p1-1.jpg" alt="" /></div>
+    <div class="layer" style="top:3380px;height:200px;display:flex;justify-content:center;gap:30px">
+      <span class="chip c"><span class="dot" style="background:#D4A84B"></span>Zinariya</span>
+      <span class="chip c"><span class="dot" style="background:#111"></span>Baƙi</span>
+      <span class="chip c"><span class="dot" style="background:#C9CED6"></span>Azurfa</span>
+      <span class="chip c"><span class="dot" style="background:#F2A7BE"></span>Ruwan hoda</span>
+    </div>
+  </div>
+
+  <!-- S5 shoes carousel 15–19 -->
+  <div id="s5" class="clip layer" data-start="15.0" data-duration="4.2" data-track-index="6">
+    <div id="cap5" class="cap cap-top" style="top:250px"><span class="s"><span class="w">Takalma</span> <span class="w">masu</span> <span class="w">kyau,</span> <span class="w">daga</span></span><span class="h w">₦18,500</span></div>
+    <div id="track" class="layer">
+      <div class="photo sh" style="left:280px;top:1000px;width:1600px;height:2200px"><img src="assets/shop/p3-1.jpg" alt="" /><div class="tag">Original LV · <b>₦18,500</b></div></div>
+      <div class="photo sh" style="left:2000px;top:1000px;width:1600px;height:2200px"><img src="assets/shop/p4-1.jpg" alt="" /><div class="tag">Nice style shoes · <b>₦28,000</b></div></div>
+      <div class="photo sh" style="left:3720px;top:1000px;width:1600px;height:2200px"><img src="assets/shop/p2-1.jpg" alt="" /><div class="tag">Original nice style shoe · <b>₦28,000</b></div></div>
+    </div>
+    <div class="layer" style="top:3330px;height:120px;display:flex;justify-content:center;gap:24px">
+      <span class="pip" style="width:120px;height:24px;border-radius:12px;background:#F2B8A2"></span>
+      <span class="pip" style="width:24px;height:24px;border-radius:12px;background:rgba(255,255,255,.3)"></span>
+      <span class="pip" style="width:24px;height:24px;border-radius:12px;background:rgba(255,255,255,.3)"></span>
+    </div>
+  </div>
+
+  <!-- phone: product page 19–26 -->
+  <div id="phB" class="clip layer" data-start="18.8" data-duration="7.4" data-track-index="3">
+    <div class="phone-wrap"><div class="phone" id="pB">
+      <div class="native">
+        <div class="page" id="pg-prod">
+          <img src="assets/product-nice-style-shoes-mvftv84v-scroll.png" alt="" />
+          <div class="sel" id="sel38" style="left:436px;top:3436px;width:144px;height:106px;opacity:0">38</div>
+          <div class="sel" id="selblk" style="left:290px;top:3676px;width:270px;height:104px;opacity:0"><span style="width:40px;height:40px;border-radius:50%;background:#fff"></span>black</div>
+          <div class="tap" id="tap38" style="left:508px;top:3490px;opacity:0"></div>
+          <div class="tap" id="tapblk" style="left:424px;top:3728px;opacity:0"></div>
+          <div class="hl" id="hl-first" style="left:84px;top:1864px;width:1122px;height:134px;opacity:0"></div>
+        </div>
+        <img class="bar" src="assets/product-tabbar.png" alt="" style="top:2552px" />
+      </div>
+    </div></div>
+  </div>
+  <div id="cap6" class="clip cap cap-top" data-start="19.1" data-duration="2.9" data-track-index="5"><span class="s"><span class="w">Ki</span> <span class="w">zaɓi</span></span><span class="h sm w">size &amp; launi</span></div>
+  <div id="cap7" class="clip cap cap-top" data-start="22.0" data-duration="4.1" data-track-index="5"><span class="s"><span class="w">Sabuwar</span> <span class="w">mai</span> <span class="w">saye?</span> <span class="w">Zaki</span> <span class="w">samu</span></span><span class="h sm w">rangwame!</span></div>
+
+  <!-- S8 safe payment 26–30 -->
+  <div id="s8" class="clip layer" data-start="26.0" data-duration="4.2" data-track-index="7">
+    <div id="cap8" class="cap cap-top" style="top:300px"><span class="s"><span class="w">Kuɗinki</span> <span class="w">yana</span> <span class="w">nan</span></span><span class="h w">lafiya</span></div>
+    <div id="shield" class="layer" style="top:1080px;height:700px;display:flex;justify-content:center">
+      <svg width="620" height="620" viewBox="0 0 24 24" fill="none" stroke="url(#sg)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFD9C8"/><stop offset="1" stop-color="#E58C9E"/></linearGradient></defs><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path id="sh-tick" d="m8.5 12 2.5 2.5 4.5-5"/></svg>
+    </div>
+    <div class="link" id="l1" style="left:520px;top:2215px;width:300px"></div>
+    <div class="link" id="l2" style="left:1340px;top:2215px;width:300px"></div>
+    <div class="node" id="n1" style="left:150px;top:2100px"><div class="ic"><svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="#FFF3EC" stroke-width="1.6"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div><div class="t">Ki biya</div></div>
+    <div class="node" id="n2" style="left:890px;top:2100px"><div class="ic"><svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="#FFF3EC" stroke-width="1.6"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><div class="t">Kano Kaftan ta riƙe</div></div>
+    <div class="node" id="n3" style="left:1630px;top:2100px"><div class="ic"><svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="#FFF3EC" stroke-width="1.6"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/></svg></div><div class="t">Kaya sun iso</div></div>
+    <div id="s8-chip" class="layer" style="top:2900px;height:200px;display:flex;justify-content:center"><span class="chip">Sannan a biya mai shago ✓</span></div>
+  </div>
+
+  <!-- S9 other shops 30–34 -->
+  <div id="s9" class="clip layer" data-start="30.0" data-duration="4.2" data-track-index="8">
+    <div id="cap9" class="cap cap-top" style="top:250px"><span class="s"><span class="w">Ba</span> <span class="w">Hajmeer</span> <span class="w">kaɗai</span> <span class="w">ba</span></span><span class="h sm w">shaguna da yawa</span></div>
+    <div class="shop sp" style="left:140px;top:1000px"><div class="av"><img src="assets/shop/other1-avatar.jpg" alt="" /></div><div class="n">M_Asharif</div></div>
+    <div class="shop sp" style="left:870px;top:1000px"><div class="av"><img src="assets/shop/other2-avatar.jpg" alt="" /></div><div class="n">MK Shoes</div></div>
+    <div class="shop sp" style="left:1600px;top:1000px"><div class="av"><img src="assets/shop/other3-avatar.jpg" alt="" /></div><div class="n">Al Qolaanis</div></div>
+    <div class="shop sp" style="left:140px;top:1700px"><div class="av"><img src="assets/shop/other4-avatar.jpg" alt="" /></div><div class="n">Queen's Land</div></div>
+    <div class="shop sp" style="left:870px;top:1700px"><div class="av"><img src="assets/shop/other5-avatar.jpg" alt="" /></div><div class="n">Maishak</div></div>
+    <div class="shop sp" style="left:1600px;top:1700px"><div class="av"><img src="assets/shop/other6-avatar.jpg" alt="" /></div><div class="n">Gofat</div></div>
+    <div id="s9-banners" class="layer" style="top:2500px;height:900px">
+      <div class="photo bn" style="left:140px;top:0;width:900px;height:620px"><img src="assets/shop/other4-banner.jpg" alt="" /></div>
+      <div class="photo bn" style="left:1120px;top:0;width:900px;height:620px"><img src="assets/shop/other1-banner.jpg" alt="" /></div>
+    </div>
+    <div id="s9-count" class="layer" style="top:3220px;height:200px;display:flex;justify-content:center"><span class="chip"><span id="shopcount">1</span>&nbsp;shaguna a Kano Kaftan · da ƙari na zuwa</span></div>
+  </div>
+
+  <!-- S10 end 34–37 -->
+  <div id="s10" class="clip layer" data-start="34.0" data-duration="3.0" data-track-index="9">
+    <div class="layer" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:80px">
+      <img id="end-logo" src="assets/logo-dark.svg" alt="" style="width:600px;height:600px" />
+      <div id="cap10" class="cap" style="position:relative;left:auto;right:auto"><span class="s"><span class="w">Shiga</span> <span class="w">Kano</span> <span class="w">Kaftan</span></span><span class="h w">yau</span></div>
+      <div class="url" id="end-url">kanokaftan.shop</div>
+      <div class="cta" id="end-cta">Ziyarci Hajmeer →</div>
+    </div>
+    <div class="tap" id="tap-end" style="left:1080px;top:3090px;opacity:0;width:200px;height:200px;margin:-100px 0 0 -100px"></div>
+  </div>
+
+  <!-- ===== SOUND ===== -->
+  <!-- WHOOSHES -->
+  <audio id="wh1" src="assets/sfx/whoosh_big.wav" data-start="0.0" data-duration="1.200" data-track-index="20"></audio>
+  <audio id="wh2" src="assets/sfx/whoosh_standard.wav" data-start="2.6" data-duration="0.700" data-track-index="20"></audio>
+  <audio id="wh3" src="assets/sfx/whoosh_big.wav" data-start="6.25" data-duration="1.200" data-track-index="20"></audio>
+  <audio id="wh4" src="assets/sfx/whoosh_standard.wav" data-start="7.5" data-duration="0.700" data-track-index="26"></audio>
+  <audio id="wh5" src="assets/sfx/whoosh_transition.wav" data-start="8.6" data-duration="0.900" data-track-index="20"></audio>
+  <audio id="wh6" src="assets/sfx/whoosh_transition.wav" data-start="14.6" data-duration="0.900" data-track-index="20"></audio>
+  <audio id="wh7" src="assets/sfx/swipe.wav" data-start="16.25" data-duration="0.350" data-track-index="20"></audio>
+  <audio id="wh8" src="assets/sfx/swipe.wav" data-start="17.45" data-duration="0.350" data-track-index="26"></audio>
+  <audio id="wh9" src="assets/sfx/whoosh_big.wav" data-start="18.4" data-duration="1.200" data-track-index="20"></audio>
+  <audio id="wh10" src="assets/sfx/whoosh_standard.wav" data-start="19.6" data-duration="0.700" data-track-index="26"></audio>
+  <audio id="wh11" src="assets/sfx/whoosh_transition.wav" data-start="25.7" data-duration="0.900" data-track-index="20"></audio>
+  <audio id="wh12" src="assets/sfx/whoosh_transition.wav" data-start="29.65" data-duration="0.900" data-track-index="20"></audio>
+  <audio id="wh13" src="assets/sfx/whoosh_big.wav" data-start="33.5" data-duration="1.200" data-track-index="20"></audio>
+  <!-- TEXTURES -->
+  <audio id="tx1" src="assets/sfx/pop.wav" data-start="0.6" data-duration="0.120" data-track-index="21"></audio>
+  <audio id="tx2" src="assets/sfx/scifi_impact.wav" data-start="0.9" data-duration="1.200" data-track-index="22"></audio>
+  <audio id="tx3" src="assets/sfx/scifi_impact.wav" data-start="3.1" data-duration="1.200" data-track-index="21"></audio>
+  <audio id="tx4" src="assets/sfx/pop.wav" data-start="3.75" data-duration="0.120" data-track-index="22"></audio>
+  <audio id="tx5" src="assets/sfx/scifi_click.wav" data-start="4.3" data-duration="0.180" data-track-index="22"></audio>
+  <audio id="tx6" src="assets/sfx/pop.wav" data-start="7.1" data-duration="0.120" data-track-index="21"></audio>
+  <audio id="tx7" src="assets/sfx/scifi_click.wav" data-start="7.9" data-duration="0.180" data-track-index="22"></audio>
+  <audio id="tx8" src="assets/sfx/pop.wav" data-start="9.1" data-duration="0.120" data-track-index="21"></audio>
+  <audio id="tx9" src="assets/sfx/camera_click.wav" data-start="9.3" data-duration="0.120" data-track-index="22"></audio>
+  <audio id="tx10" src="assets/sfx/camera_click.wav" data-start="9.55" data-duration="0.120" data-track-index="21"></audio>
+  <audio id="tx11" src="assets/sfx/camera_click.wav" data-start="9.8" data-duration="0.120" data-track-index="22"></audio>
+  <audio id="tx12" src="assets/sfx/camera_click.wav" data-start="10.05" data-duration="0.120" data-track-index="21"></audio>
+  <audio id="tx13" src="assets/sfx/coin.wav" data-start="10.6" data-duration="0.600" data-track-index="22"></audio>
+  <audio id="tx14" src="assets/sfx/pop.wav" data-start="12.5" data-duration="0.120" data-track-index="21"></audio>
+  <audio id="tx15" src="assets/sfx/pop.wav" data-start="12.8" data-duration="0.120" data-track-index="22"></audio>
+  <audio id="tx16" src="assets/sfx/pop.wav" data-start="13.1" data-duration="0.120" data-track-index="21"></audio>
+  <audio id="tx17" src="assets/sfx/pop.wav" data-start="13.4" data-duration="0.120" data-track-index="22"></audio>
+  <audio id="tx18" src="assets/sfx/pop.wav" data-start="15.1" data-duration="0.120" data-track-index="21"></audio>
+  <audio id="tx19" src="assets/sfx/pop.wav" data-start="19.2" data-duration="0.120" data-track-index="21"></audio>
+  <audio id="tx20" src="assets/sfx/tap.wav" data-start="20.6" data-duration="0.080" data-track-index="22"></audio>
+  <audio id="tx21" src="assets/sfx/ui_click.wav" data-start="20.65" data-duration="0.050" data-track-index="21"></audio>
+  <audio id="tx22" src="assets/sfx/tap.wav" data-start="21.2" data-duration="0.080" data-track-index="22"></audio>
+  <audio id="tx23" src="assets/sfx/ui_click.wav" data-start="21.25" data-duration="0.050" data-track-index="21"></audio>
+  <audio id="tx24" src="assets/sfx/scifi_impact.wav" data-start="22.05" data-duration="1.200" data-track-index="22"></audio>
+  <audio id="tx25" src="assets/sfx/scifi_click.wav" data-start="22.6" data-duration="0.180" data-track-index="21"></audio>
+  <audio id="tx26" src="assets/sfx/coin.wav" data-start="23.2" data-duration="0.600" data-track-index="21"></audio>
+  <audio id="tx27" src="assets/sfx/scifi_impact.wav" data-start="26.1" data-duration="1.200" data-track-index="22"></audio>
+  <audio id="tx28" src="assets/sfx/scifi_click.wav" data-start="26.9" data-duration="0.180" data-track-index="21"></audio>
+  <audio id="tx29" src="assets/sfx/pop.wav" data-start="27.4" data-duration="0.120" data-track-index="21"></audio>
+  <audio id="tx30" src="assets/sfx/pop.wav" data-start="27.9" data-duration="0.120" data-track-index="22"></audio>
+  <audio id="tx31" src="assets/sfx/pop.wav" data-start="28.4" data-duration="0.120" data-track-index="21"></audio>
+  <audio id="tx32" src="assets/sfx/success.wav" data-start="28.9" data-duration="1.000" data-track-index="22"></audio>
+  <audio id="tx33" src="assets/sfx/scifi_impact.wav" data-start="30.05" data-duration="1.200" data-track-index="21"></audio>
+  <audio id="tx34" src="assets/sfx/pop.wav" data-start="30.5" data-duration="0.120" data-track-index="22"></audio>
+  <audio id="tx35" src="assets/sfx/pop.wav" data-start="30.65" data-duration="0.120" data-track-index="21"></audio>
+  <audio id="tx36" src="assets/sfx/pop.wav" data-start="30.8" data-duration="0.120" data-track-index="22"></audio>
+  <audio id="tx37" src="assets/sfx/pop.wav" data-start="30.95" data-duration="0.120" data-track-index="21"></audio>
+  <audio id="tx38" src="assets/sfx/pop.wav" data-start="31.1" data-duration="0.120" data-track-index="22"></audio>
+  <audio id="tx39" src="assets/sfx/pop.wav" data-start="31.25" data-duration="0.120" data-track-index="21"></audio>
+  <audio id="tx40" src="assets/sfx/typing.wav" data-start="32.3" data-duration="1.000" data-track-index="22"></audio>
+  <audio id="tx41" src="assets/sfx/scifi_impact.wav" data-start="34.05" data-duration="1.200" data-track-index="22"></audio>
+  <audio id="tx42" src="assets/sfx/pop.wav" data-start="34.6" data-duration="0.120" data-track-index="21"></audio>
+  <audio id="tx43" src="assets/sfx/tap.wav" data-start="35.7" data-duration="0.080" data-track-index="21"></audio>
+  <audio id="tx44" src="assets/sfx/success.wav" data-start="35.8" data-duration="1.000" data-track-index="22"></audio>
+  <!-- RISERS + HITS -->
+  <audio id="rs1" src="assets/sfx/riser_bass.wav" data-start="7.2" data-duration="1.800" data-track-index="23"></audio>
+  <audio id="rs2" src="assets/sfx/riser_metal.wav" data-start="20.4" data-duration="1.600" data-track-index="23"></audio>
+  <audio id="rs3" src="assets/sfx/riser_metal.wav" data-start="28.4" data-duration="1.600" data-track-index="23"></audio>
+  <audio id="rs4" src="assets/sfx/riser_bass.wav" data-start="32.2" data-duration="1.800" data-track-index="23"></audio>
+  <audio id="ht1" src="assets/sfx/hit.wav" data-start="9.0" data-duration="1.500" data-track-index="24"></audio>
+  <audio id="ht2" src="assets/sfx/hit.wav" data-start="22.0" data-duration="1.500" data-track-index="24"></audio>
+  <audio id="ht3" src="assets/sfx/hit.wav" data-start="30.0" data-duration="1.500" data-track-index="24"></audio>
+  <audio id="ht4" src="assets/sfx/hit.wav" data-start="34.0" data-duration="1.500" data-track-index="24"></audio>
+  <!-- MUSIC -->
+  <audio id="music" src="assets/music-bed.wav" data-start="0" data-duration="37" data-track-index="27" data-volume="0.4"></audio>
+  <!-- VOICEOVER: drop the recording in as assets/voiceover.wav and un-comment
+  <audio id="vo" src="assets/voiceover.wav" data-start="0" data-duration="37" data-track-index="25" data-volume="1"></audio>
+  -->
+</div>
+<script>
+const tl = gsap.timeline({ paused: true });
+const P = 1290;
+const E = { out: "power3.out", in: "power3.in", io: "power2.inOut", back: "back.out(1.8)" };
+
+tl.fromTo("#glow", { opacity: 0.75, scale: 0.95 }, { opacity: 1, scale: 1.08, duration: 37, ease: "none" }, 0);
+tl.fromTo("#glow2", { x: 0, y: 0 }, { x: 1500, y: 1800, duration: 37, ease: "none" }, 0);
+
+function caption(id, at, stagger = 0.07) {
+  tl.fromTo(`${id} .s .w`, { opacity: 0, y: 40, scale: 0.7 }, { opacity: 1, y: 0, scale: 1, duration: 0.25, ease: E.back, stagger }, at);
+  tl.fromTo(`${id} .h`, { opacity: 0, scale: 1.5, filter: "blur(18px) drop-shadow(0 10px 40px rgba(229,140,158,.4))" }, { opacity: 1, scale: 1, filter: "blur(0px) drop-shadow(0 10px 40px rgba(229,140,158,.4))", duration: 0.4, ease: E.out }, at + 0.25);
+}
+function out(targets, at) { tl.to(targets, { opacity: 0, y: -80, duration: 0.3, ease: E.in }, at); }
+function tap(id, at) {
+  tl.fromTo(id, { scale: 0.3, opacity: 0 }, { scale: 1.3, opacity: 1, duration: 0.18, ease: E.out }, at);
+  tl.to(id, { scale: 2.2, opacity: 0, duration: 0.35, ease: E.out }, at + 0.18);
+}
+
+// S1 hook
+tl.fromTo("#s1-a", { x: -1300, rotation: -12 }, { x: 0, rotation: -4, duration: 0.55, ease: E.out }, 0.05);
+tl.fromTo("#s1-b", { x: 1300, rotation: 12 }, { x: 0, rotation: 5, duration: 0.55, ease: E.out }, 0.2);
+tl.fromTo(["#s1-a img", "#s1-b img"], { scale: 1.18 }, { scale: 1, duration: 3, ease: "none" }, 0);
+caption("#cap1", 0.6);
+out(["#s1-a", "#s1-b", "#cap1"], 2.7);
+
+// S2 meet Hajmeer
+tl.fromTo("#s2-banner", { opacity: 0, scale: 1.15 }, { opacity: 0.35, scale: 1, duration: 1.2, ease: E.out }, 3.0);
+tl.fromTo("#s2-av", { scale: 0.2, opacity: 0, rotation: -30 }, { scale: 1, opacity: 1, rotation: 0, duration: 0.6, ease: "back.out(1.6)" }, 3.05);
+tl.fromTo("#s2-name", { opacity: 0, y: 80 }, { opacity: 1, y: 0, duration: 0.45, ease: E.out }, 3.7);
+tl.fromTo("#s2-badge", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.35, ease: E.back }, 4.3);
+tl.to("#s2-av", { boxShadow: "0 0 0 60px rgba(242,184,162,.05),0 0 320px rgba(229,140,158,.8)", duration: 1.2, yoyo: true, repeat: 1, ease: "sine.inOut" }, 4.6);
+out(["#s2-av", "#s2-name", "#s2-badge"], 6.4);
+tl.to("#s2-banner", { opacity: 0, duration: 0.4 }, 6.5);
+
+// phone A: shop page
+tl.fromTo("#pA", { y: 2700, scale: 1.2, rotation: 5 }, { y: 0, scale: 1, rotation: 0, duration: 0.75, ease: "power4.out" }, 6.6);
+caption("#cap3", 7.05);
+tl.fromTo("#hl-loc", { opacity: 0, scale: 1.05 }, { opacity: 1, scale: 1, duration: 0.25, ease: E.out }, 7.9);
+tl.to("#hl-loc", { opacity: 0, duration: 0.2 }, 8.4);
+tl.fromTo("#pg-shop", { y: 0 }, { y: -1500, duration: 0.8, ease: E.io }, 8.1);
+tl.to("#pA", { scale: 2.6, opacity: 0, duration: 0.45, ease: E.in }, 8.6);
+out("#cap3", 8.7);
+
+// S4 rings
+caption("#cap4", 9.05);
+["#r1", "#r2", "#r3", "#r4"].forEach((r, i) => tl.fromTo(r, { scale: 0.5, opacity: 0, rotation: (i % 2 ? 6 : -6) }, { scale: 1, opacity: 1, rotation: 0, duration: 0.4, ease: E.back }, 9.3 + i * 0.25));
+tl.fromTo(["#r1 img", "#r2 img", "#r3 img", "#r4 img"], { scale: 1.15 }, { scale: 1, duration: 5.5, ease: "none" }, 9.3);
+tl.fromTo("#cap4 .h", { scale: 1 }, { scale: 1.1, duration: 0.2, yoyo: true, repeat: 1, immediateRender: false }, 10.6);
+tl.fromTo("#s4 .c", { opacity: 0, y: 60, scale: 0.7 }, { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: E.back, stagger: 0.3 }, 12.5);
+out(["#r1", "#r2", "#r3", "#r4", "#cap4", "#s4 .c"], 14.7);
+
+// S5 shoes carousel (swipe)
+caption("#cap5", 15.05);
+tl.fromTo("#s5 .sh", { y: 1200, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: E.out, stagger: 0.05 }, 15.1);
+tl.fromTo("#track", { x: 0 }, { x: -1720, duration: 0.45, ease: E.io }, 16.25);
+tl.to("#track", { x: -3440, duration: 0.45, ease: E.io }, 17.45);
+tl.fromTo("#s5 .pip", { width: 24 }, { width: (i) => (i === 1 ? 120 : 24), duration: 0.3, immediateRender: false }, 16.3);
+tl.to("#s5 .pip", { width: (i) => (i === 2 ? 120 : 24), duration: 0.3 }, 17.5);
+out(["#track", "#cap5", "#s5 .pip"], 18.5);
+
+// phone B: product page, size + colour, first-buyer price
+tl.fromTo("#pB", { y: 2700, rotation: -5 }, { y: 0, rotation: 0, duration: 0.7, ease: "power4.out" }, 18.8);
+caption("#cap6", 19.15);
+tl.fromTo("#pg-prod", { y: 0 }, { y: -1300, duration: 0.8, ease: E.io }, 19.6);
+tap("#tap38", 20.6);
+tl.fromTo("#sel38", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.15, ease: E.back }, 20.62);
+tap("#tapblk", 21.2);
+tl.fromTo("#selblk", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.15, ease: E.back }, 21.22);
+out("#cap6", 21.8);
+caption("#cap7", 22.05);
+tl.fromTo("#hl-first", { opacity: 0, scale: 1.06 }, { opacity: 1, scale: 1, duration: 0.25, ease: E.out }, 22.6);
+tl.to("#pB", { scale: 1.45, y: 1050, duration: 0.6, ease: E.io }, 22.6);
+tl.to("#pB", { scale: 0.9, y: -2800, duration: 0.45, ease: E.in }, 25.6);
+out("#cap7", 25.6);
+
+// S8 safe payment flow
+caption("#cap8", 26.05);
+tl.fromTo("#shield svg", { scale: 0.4, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: E.back }, 26.1);
+tl.fromTo("#sh-tick", { strokeDasharray: 14, strokeDashoffset: 14 }, { strokeDashoffset: 0, duration: 0.4, ease: E.out }, 26.9);
+["#n1", "#n2", "#n3"].forEach((n, i) => tl.fromTo(n, { opacity: 0, y: 100, scale: 0.8 }, { opacity: 1, y: 0, scale: 1, duration: 0.35, ease: E.back }, 27.4 + i * 0.5));
+tl.fromTo(["#l1", "#l2"], { scaleX: 0 }, { scaleX: 1, duration: 0.35, ease: E.out, stagger: 0.5 }, 27.7);
+tl.fromTo("#s8-chip", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.35, ease: E.back }, 28.9);
+out(["#shield", "#n1", "#n2", "#n3", "#l1", "#l2", "#s8-chip", "#cap8"], 29.7);
+
+// S9 other shops
+caption("#cap9", 30.05);
+tl.fromTo("#s9 .sp", { scale: 0, opacity: 0, rotation: -40 }, { scale: 1, opacity: 1, rotation: 0, duration: 0.45, ease: "back.out(1.7)", stagger: 0.15 }, 30.45);
+tl.fromTo("#s9 .bn", { y: 700, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: E.out, stagger: 0.12 }, 31.4);
+tl.fromTo("#s9-count", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.3, ease: E.back }, 32.2);
+const shops = { v: 1 };
+tl.to(shops, { v: 9, duration: 0.9, ease: "power2.out", onUpdate: () => { document.getElementById("shopcount").textContent = Math.round(shops.v); } }, 32.3);
+tl.to("#s9 .sp .av", { boxShadow: "0 0 140px rgba(229,140,158,.9)", duration: 0.4, yoyo: true, repeat: 1, stagger: 0.05 }, 32.6);
+out(["#s9 .sp", "#s9-banners", "#s9-count", "#cap9"], 33.7);
+
+// S10 end
+tl.fromTo("#end-logo", { scale: 0.3, opacity: 0, rotation: -20 }, { scale: 1, opacity: 1, rotation: 0, duration: 0.6, ease: "back.out(2)" }, 34.05);
+caption("#cap10", 34.5);
+tl.fromTo("#end-url", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.35, ease: E.out }, 34.9);
+tl.fromTo("#end-cta", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.4, ease: E.back }, 35.1);
+tap("#tap-end", 35.7);
+tl.fromTo("#end-cta", { scale: 1 }, { scale: 0.94, duration: 0.1, yoyo: true, repeat: 1, immediateRender: false }, 35.7);
+
+window.__timelines["main"] = tl;
+</script>
+</body>
+</html>
