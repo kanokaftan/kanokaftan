@@ -166,17 +166,17 @@ async function newPage(opts = {}) {
   page.setDefaultTimeout(30000);
   await page.clock.setFixedTime(new Date(NOW));
   page.on('pageerror', (e) => errors.push(e.message));
-  await page.addInitScript(([key, u, guest]) => {
+  await page.addInitScript(([key, u, guest, lang]) => {
     try {
       if (!guest) localStorage.setItem(key, JSON.stringify({ access_token: 'x.eyJzdWIiOiIxIn0.x', refresh_token: 'r', expires_at: Math.floor(Date.now() / 1000) + 3600, expires_in: 3600, token_type: 'bearer', user: u }));
-      localStorage.setItem('i18nextLng', 'en');
+      localStorage.setItem('i18nextLng', lang);
       localStorage.setItem('kk-push-prompt-dismissed', String(Date.now()));
       localStorage.setItem('pwa-install-dismissed', String(Date.now()));
     } catch { /* storage unavailable */ }
     const style = document.createElement('style');
     style.textContent = '[data-sonner-toaster]{display:none!important} vercel-live-feedback{display:none!important} *{scrollbar-width:none!important} ::-webkit-scrollbar{display:none!important}';
     document.addEventListener('DOMContentLoaded', () => document.head.appendChild(style));
-  }, [AUTH_KEY, user, !!opts.guest]);
+  }, [AUTH_KEY, user, !!opts.guest, opts.lang || 'en']);
   await page.route(/supabase\.co/, (route) => router(route, opts).catch((e) => { note('route error ' + e.message); return route.abort(); }));
   return page;
 }
@@ -318,7 +318,60 @@ async function saveShopMedia(slug) {
   note(`saved shop media: ${index.products.length} products, ${index.others.length} other shops`);
 }
 
-if (MODE === 'shop') {
+/** Every shop's logo and banner, and every active product's photos with its shop, for seller-recruitment reels. */
+async function saveMarketMedia() {
+  if (!publicKey) return note('FAILED market media: no public key seen');
+  const base = 'https://anptvdidwxiigzkqhdia.supabase.co/rest/v1/';
+  const get = async (q) => {
+    const res = await fetch(base + q, { headers: { apikey: publicKey, authorization: 'Bearer ' + publicKey } });
+    if (!res.ok) throw new Error(q + ' ' + res.status);
+    return res.json();
+  };
+  const save = async (url, file) => {
+    const img = await fetch(url.startsWith('http') ? url : STORAGE + url);
+    if (!img.ok) return false;
+    writeFileSync(OUT + 'market/' + file, Buffer.from(await img.arrayBuffer()));
+    return true;
+  };
+  mkdirSync(OUT + 'market', { recursive: true });
+  const index = { shops: [], products: [] };
+  try {
+    const shops = await get('profiles?select=id,store_name,store_slug,avatar_url,store_banner_url,verification_tier&store_slug=not.is.null');
+    for (const [i, sh] of shops.entries()) {
+      const entry = { name: sh.store_name, slug: sh.store_slug, tier: sh.verification_tier, avatar: null, banner: null };
+      if (sh.avatar_url && (await save(sh.avatar_url, `shop${i + 1}-avatar.jpg`))) entry.avatar = `shop${i + 1}-avatar.jpg`;
+      if (sh.store_banner_url && (await save(sh.store_banner_url, `shop${i + 1}-banner.jpg`))) entry.banner = `shop${i + 1}-banner.jpg`;
+      index.shops.push({ ...entry, id: undefined });
+      sh.entry = entry;
+    }
+    const byId = Object.fromEntries(shops.map((sh) => [sh.id, sh.store_name]));
+    const products = await get('products?select=name,slug,price,compare_at_price,vendor_id,product_images(url,display_order)&is_active=eq.true&order=created_at.desc');
+    for (const [pi, p] of products.entries()) {
+      const imgs = [...(p.product_images || [])].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0)).slice(0, 2);
+      const files = [];
+      for (const [ii, im] of imgs.entries()) {
+        const file = `prod${pi + 1}-${ii + 1}.jpg`;
+        if (await save(im.url, file)) files.push(file);
+      }
+      index.products.push({ name: p.name, slug: p.slug, price: p.price, compare_at_price: p.compare_at_price, shop: byId[p.vendor_id] ?? null, files });
+    }
+  } catch (e) {
+    note('FAILED market media: ' + e.message);
+  }
+  writeFileSync(OUT + 'market/index.json', JSON.stringify(index, null, 2));
+  note(`saved market media: ${index.shops.length} shops, ${index.products.length} products`);
+}
+
+if (MODE === 'seller') {
+  await scrollShot('sell-ha', '/sell', 'Kano Kaftan', { guest: true, lang: 'ha' });
+  await scrollShot('sell-en', '/sell', 'Kano Kaftan', { guest: true });
+  await scrollShot('shops', '/shops', 'MK Shoes');
+  await scrollShot('home', '/', 'MK Shoes');
+  for (const slug of ['mk-shoes', 'queen-s-land-collection', 'm-asharif-genaral-merchandise', 'hajmeer-enterprises']) {
+    await scrollShot('shop-' + slug, '/shop/' + slug, 'Products');
+  }
+  await saveMarketMedia();
+} else if (MODE === 'shop') {
   const slug = process.env.SHOP_SLUG || 'hajmeer-enterprises';
   await scrollShot('shop', '/shop/' + slug, 'Hajmeer');
   await scrollShot('shops', '/shops', 'MK Shoes');

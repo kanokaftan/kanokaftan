@@ -4,7 +4,7 @@
 name: App Store screenshots
 on:
   push:
-    branches: [appstore-capture, reel-capture, shop-capture]
+    branches: [appstore-capture, reel-capture, shop-capture, seller-capture]
   workflow_dispatch:
 permissions:
   contents: write
@@ -24,11 +24,11 @@ jobs:
       - name: Capture the live site
         run: |
           cp marketing/app-store/tools/capture-live.mjs /tmp/pw/capture-live.mjs
-          MODE=$(case "$GITHUB_REF_NAME" in reel-capture) echo reel;; shop-capture) echo shop;; *) echo appstore;; esac) SHOTS_DIR=$GITHUB_WORKSPACE/out/ node /tmp/pw/capture-live.mjs
+          MODE=$(case "$GITHUB_REF_NAME" in reel-capture) echo reel;; shop-capture) echo shop;; seller-capture) echo seller;; *) echo appstore;; esac) SHOTS_DIR=$GITHUB_WORKSPACE/out/ node /tmp/pw/capture-live.mjs
       - name: Save to the appstore-shots branch
         run: |
           cd out
-          TARGET=$(case "$GITHUB_REF_NAME" in reel-capture) echo reel-shots;; shop-capture) echo shop-shots;; *) echo appstore-shots;; esac)
+          TARGET=$(case "$GITHUB_REF_NAME" in reel-capture) echo reel-shots;; shop-capture) echo shop-shots;; seller-capture) echo seller-shots;; *) echo appstore-shots;; esac)
           git init -q -b "$TARGET"
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
